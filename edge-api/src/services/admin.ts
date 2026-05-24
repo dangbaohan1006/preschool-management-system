@@ -298,12 +298,24 @@ export class AdminService {
 
   // --- Teachers Management ---
   async getTeachers() {
-    return await this.db.prepare('SELECT * FROM teachers').all();
+    return await this.db.prepare(`
+      SELECT t.*, 
+             COALESCE(p.tab_dashboard, 'NONE') as tab_dashboard,
+             COALESCE(p.tab_students, 'NONE') as tab_students,
+             COALESCE(p.tab_calendar, 'NONE') as tab_calendar,
+             COALESCE(p.tab_report, 'WRITE') as tab_report,
+             COALESCE(p.tab_locks, 'NONE') as tab_locks,
+             COALESCE(p.tab_finance, 'NONE') as tab_finance,
+             COALESCE(p.tab_staff, 'NONE') as tab_staff
+      FROM teachers t
+      LEFT JOIN user_permissions p ON t.id = p.user_id
+    `).all();
   }
 
   async addTeacher(id: string, name: string, pin: string, classId: string) {
-    return await this.db.prepare('INSERT INTO teachers (id, name, pin, class_id, is_first_login) VALUES (?, ?, ?, ?, 1)')
-      .bind(id, name, pin, classId).run();
+    const tStmt = this.db.prepare('INSERT INTO teachers (id, name, pin, class_id, is_first_login) VALUES (?, ?, ?, ?, 1)').bind(id, name, pin, classId);
+    const pStmt = this.db.prepare('INSERT INTO user_permissions (user_id, tab_report) VALUES (?, "WRITE")').bind(id);
+    return await this.db.batch([tStmt, pStmt]);
   }
 
   async deleteTeacher(id: string) {
@@ -317,6 +329,37 @@ export class AdminService {
   async updateTeacher(id: string, name: string, pin: string, classId: string) {
     return await this.db.prepare('UPDATE teachers SET name = ?, pin = ?, class_id = ? WHERE id = ?')
       .bind(name, pin, classId, id).run();
+  }
+
+  async updateTeacherPermissions(userId: string, data: {
+    tab_dashboard?: string,
+    tab_students?: string,
+    tab_calendar?: string,
+    tab_report?: string,
+    tab_locks?: string,
+    tab_finance?: string,
+    tab_staff?: string
+  }) {
+    const fields = [];
+    const values = [];
+    const tabs = ['tab_dashboard', 'tab_students', 'tab_calendar', 'tab_report', 'tab_locks', 'tab_finance', 'tab_staff'];
+    
+    tabs.forEach(tab => {
+      if (data[tab] !== undefined) {
+        fields.push(`${tab} = ?`);
+        values.push(data[tab]);
+      }
+    });
+    
+    if (fields.length === 0) return null;
+    
+    values.push(userId);
+    const query = `UPDATE user_permissions SET ${fields.join(', ')} WHERE user_id = ?`;
+    
+    // Đảm bảo có dòng trong user_permissions trước
+    await this.db.prepare('INSERT OR IGNORE INTO user_permissions (user_id) VALUES (?)').bind(userId).run();
+    
+    return await this.db.prepare(query).bind(...values).run();
   }
 
   // --- Settings ---
@@ -355,8 +398,19 @@ export class AuthService {
   constructor(private db: D1Database) {}
 
   async authenticateTeacher(id: string, pin: string) {
-    const teacher = await this.db.prepare('SELECT * FROM teachers WHERE pin = ? AND id = ?')
-      .bind(pin, id).first<{ id: string, name: string, class_id: string, is_first_login: number }>();
+    const teacher = await this.db.prepare(`
+      SELECT t.*, 
+             COALESCE(p.tab_dashboard, 'NONE') as tab_dashboard,
+             COALESCE(p.tab_students, 'NONE') as tab_students,
+             COALESCE(p.tab_calendar, 'NONE') as tab_calendar,
+             COALESCE(p.tab_report, 'WRITE') as tab_report,
+             COALESCE(p.tab_locks, 'NONE') as tab_locks,
+             COALESCE(p.tab_finance, 'NONE') as tab_finance,
+             COALESCE(p.tab_staff, 'NONE') as tab_staff
+      FROM teachers t
+      LEFT JOIN user_permissions p ON t.id = p.user_id
+      WHERE t.pin = ? AND t.id = ?
+    `).bind(pin, id).first<any>();
     
     if (!teacher) return null;
 

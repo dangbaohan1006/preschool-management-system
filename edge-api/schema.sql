@@ -70,6 +70,18 @@ CREATE TABLE IF NOT EXISTS teachers (
     FOREIGN KEY (class_id) REFERENCES classes(id)
 );
 
+CREATE TABLE IF NOT EXISTS user_permissions (
+    user_id TEXT PRIMARY KEY,
+    tab_dashboard TEXT DEFAULT 'NONE' CHECK(tab_dashboard IN ('NONE', 'READ', 'WRITE')),
+    tab_students TEXT DEFAULT 'NONE' CHECK(tab_students IN ('NONE', 'READ', 'WRITE')),
+    tab_calendar TEXT DEFAULT 'NONE' CHECK(tab_calendar IN ('NONE', 'READ', 'WRITE')),
+    tab_report TEXT DEFAULT 'NONE' CHECK(tab_report IN ('NONE', 'READ', 'WRITE')),
+    tab_locks TEXT DEFAULT 'NONE' CHECK(tab_locks IN ('NONE', 'READ', 'WRITE')),
+    tab_finance TEXT DEFAULT 'NONE' CHECK(tab_finance IN ('NONE', 'READ', 'WRITE')),
+    tab_staff TEXT DEFAULT 'NONE' CHECK(tab_staff IN ('NONE', 'READ', 'WRITE')),
+    FOREIGN KEY (user_id) REFERENCES teachers(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS class_transfers (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     student_id TEXT NOT NULL,

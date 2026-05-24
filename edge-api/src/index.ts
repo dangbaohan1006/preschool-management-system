@@ -314,6 +314,13 @@ app.put('/api/admin/teachers/:id', async (c) => {
   return c.json({ success: true });
 });
 
+app.post('/api/admin/staff/permissions', async (c) => {
+  const { user_id, permissions } = await c.req.json();
+  const { admin } = getServices(c.env.DB);
+  await admin.updateTeacherPermissions(user_id, permissions);
+  return c.json({ success: true });
+});
+
 // 3.5 Holidays Management
 app.get('/api/admin/holidays', async (c) => {
   const month = c.req.query('month');

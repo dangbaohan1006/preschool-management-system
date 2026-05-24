@@ -1178,6 +1178,37 @@
                             </div>
                         </div>
 
+                        <!-- Cấu hình Phân quyền Hệ thống Card -->
+                        <div class="card-layered overflow-hidden flex flex-col bg-white border border-[#eee] mt-6">
+                            <div class="p-4 border-b border-[#eee] bg-slate-50 flex justify-between items-center">
+                                <div class="relative z-10">
+                                    <h3 class="font-black text-xs headline text-[#006C18]">Cấu hình Phân quyền Hệ thống</h3>
+                                    <p class="text-[#D3C9BD] text-[9px] font-black uppercase tracking-widest mt-1">Phân quyền chi tiết cho từng giáo viên theo 7 tab chức năng</p>
+                                </div>
+                                <button onclick="loadTeacherData()"
+                                    class="p-2 border border-slate-200 rounded-md hover:bg-slate-100 transition-all text-sm">🔄</button>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-[10px] border-collapse min-w-[800px]">
+                                    <thead class="bg-slate-50 sticky top-0 font-black uppercase text-[#D3C9BD] tracking-widest border-b border-[#eee]">
+                                        <tr>
+                                            <th class="p-3">Giáo viên</th>
+                                            <th class="p-3 text-center">Tổng quan</th>
+                                            <th class="p-3 text-center">Lớp & Học sinh</th>
+                                            <th class="p-3 text-center">Lịch học</th>
+                                            <th class="p-3 text-center">Báo cáo</th>
+                                            <th class="p-3 text-center">Khóa sổ</th>
+                                            <th class="p-3 text-center">Kế toán & Phí</th>
+                                            <th class="p-3 text-center">Nhân sự</th>
+                                            <th class="p-3 text-right">Lưu</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="permissions-table-body" class="divide-y divide-[#eee] text-[#006C18] font-bold">
+                                        <!-- Will be rendered dynamically in loadTeacherData() -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
 
                     </div>
                 </div>
@@ -1936,6 +1967,16 @@
 
         // Tab Switching Logic
         function switchTab(tab) {
+            const access = getPermission(tab);
+            if (access === 'NONE') {
+                showToast("Tài khoản của bạn không có quyền truy cập tab này!", "error");
+                const firstAllowed = renderSidebarPermissions();
+                if (firstAllowed && firstAllowed !== tab) {
+                    switchTab(firstAllowed);
+                }
+                return;
+            }
+
             // Hide all views
             ['dashboard', 'manage', 'calendar', 'report', 'locks', 'staff', 'finance'].forEach(v => {
                 const view = document.getElementById(`view-${v}`);
@@ -2012,6 +2053,9 @@
             if (tab === 'finance') {
                 loadFinanceData();
             }
+            
+            // Apply restrictions dynamically on tab change
+            applyTabActionRestrictions(tab);
         }
 
 
@@ -2143,6 +2187,295 @@
             location.reload();
         }
 
+        // --- Role-Based Access Control (RBAC) Permissions Engine ---
+        function getPermission(tab) {
+            if (!currentUser) return 'NONE';
+            if (currentUser.role === 'admin') return 'WRITE';
+            const mapping = {
+                dashboard: 'tab_dashboard',
+                manage: 'tab_students',
+                calendar: 'tab_calendar',
+                report: 'tab_report',
+                locks: 'tab_locks',
+                finance: 'tab_finance',
+                staff: 'tab_staff'
+            };
+            const colName = mapping[tab] || `tab_${tab}`;
+            return currentUser[colName] || 'NONE';
+        }
+
+        function renderSidebarPermissions() {
+            const tabs = ['dashboard', 'manage', 'calendar', 'report', 'locks', 'finance', 'staff'];
+            let firstAllowed = null;
+            tabs.forEach(t => {
+                const btn = document.getElementById(`btn-${t}`);
+                if (!btn) return;
+                const access = getPermission(t);
+                if (access === 'NONE') {
+                    btn.classList.add('hidden');
+                } else {
+                    btn.classList.remove('hidden');
+                    if (!firstAllowed) firstAllowed = t;
+                }
+            });
+            return firstAllowed;
+        }
+
+        function toggleReadModeWarning(containerId, isRead) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            let warningBanner = container.querySelector('.read-mode-warning-banner');
+            if (isRead) {
+                if (!warningBanner) {
+                    warningBanner = document.createElement('div');
+                    warningBanner.className = 'read-mode-warning-banner p-3 mb-4 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs leading-relaxed font-bold flex items-center gap-2 animate-in slide-in-from-top-1';
+                    warningBanner.innerHTML = `
+                        <span>⚠️</span>
+                        <span><strong>Chế độ chỉ xem:</strong> Tài khoản của bạn chỉ có quyền xem dữ liệu trên tab này. Các thao tác thêm, sửa, xóa hoặc thay đổi cấu hình đã bị vô hiệu hóa.</span>
+                    `;
+                    container.insertBefore(warningBanner, container.firstChild);
+                }
+            } else {
+                if (warningBanner) warningBanner.remove();
+            }
+        }
+
+        function applyTabActionRestrictions(tab) {
+            if (tab === 'manage') applyManageTabRestrictions();
+            if (tab === 'finance') applyFinanceTabRestrictions();
+            if (tab === 'locks') applyLocksTabRestrictions();
+            if (tab === 'staff') applyStaffTabRestrictions();
+            if (tab === 'calendar') applyCalendarTabRestrictions();
+        }
+
+        function applyManageTabRestrictions() {
+            const access = getPermission('manage');
+            const isRead = access === 'READ';
+            
+            document.querySelectorAll('button[onclick*="modal-add-class"]').forEach(b => b.classList.toggle('hidden', isRead));
+            document.querySelectorAll('button[onclick="openAddStudentModal()"]').forEach(b => b.classList.toggle('hidden', isRead));
+            document.querySelectorAll('button[onclick="showClassManager()"]').forEach(b => b.classList.toggle('hidden', isRead));
+            
+            document.querySelectorAll('#student-table-body button').forEach(b => b.classList.toggle('hidden', isRead));
+            
+            const bulkToolbar = document.getElementById('bulk-toolbar');
+            if (isRead && bulkToolbar) bulkToolbar.classList.add('hidden');
+            
+            toggleReadModeWarning('view-manage', isRead);
+        }
+
+        function applyFinanceTabRestrictions() {
+            const access = getPermission('finance');
+            const isRead = access === 'READ';
+            
+            document.querySelectorAll('button[onclick*="batchGenerateBills"]').forEach(b => b.classList.toggle('hidden', isRead));
+            document.querySelectorAll('button[onclick*="modal-fee-categories"]').forEach(b => b.classList.toggle('hidden', isRead));
+            document.querySelectorAll('button[onclick*="modal-bill-settings"]').forEach(b => b.classList.toggle('hidden', isRead));
+            document.querySelectorAll('button[onclick*="modal-finance-system"]').forEach(b => b.classList.toggle('hidden', isRead));
+            
+            document.querySelectorAll('#billing-table-body button').forEach(b => {
+                const clickAttr = b.getAttribute('onclick') || '';
+                if (clickAttr.includes('openDiscountModal') || clickAttr.includes('togglePaymentStatus')) {
+                    b.classList.toggle('hidden', isRead);
+                }
+            });
+            
+            document.querySelectorAll('#billing-table-body input[type="checkbox"]').forEach(i => {
+                i.disabled = isRead;
+                if (isRead) i.parentElement.classList.add('pointer-events-none', 'opacity-50');
+            });
+            
+            toggleReadModeWarning('view-finance', isRead);
+        }
+
+        function applyLocksTabRestrictions() {
+            const access = getPermission('locks');
+            const isRead = access === 'READ';
+            
+            const lockBtn = document.querySelector('button[onclick*="lockAttendanceDate"]');
+            if (lockBtn) lockBtn.classList.toggle('hidden', isRead);
+            
+            const lockDateInput = document.getElementById('lock-date');
+            if (lockDateInput) {
+                lockDateInput.disabled = isRead;
+                if (isRead) lockDateInput.classList.add('bg-slate-50', 'cursor-not-allowed');
+            }
+            const lockReasonInput = document.getElementById('lock-reason');
+            if (lockReasonInput) {
+                lockReasonInput.disabled = isRead;
+                if (isRead) lockReasonInput.classList.add('bg-slate-50', 'cursor-not-allowed');
+            }
+            
+            document.querySelectorAll('#locked-dates-list button').forEach(b => b.classList.toggle('hidden', isRead));
+            
+            toggleReadModeWarning('view-locks', isRead);
+        }
+
+        function applyStaffTabRestrictions() {
+            const access = getPermission('staff');
+            const isRead = access === 'READ';
+            
+            const saveBtn = document.getElementById('btn-save-teacher');
+            if (saveBtn) saveBtn.classList.toggle('hidden', isRead);
+            
+            const idInput = document.getElementById('teacher-id');
+            if (idInput) idInput.disabled = isRead;
+            const nameInput = document.getElementById('teacher-name');
+            if (nameInput) nameInput.disabled = isRead;
+            const pinInput = document.getElementById('teacher-pin');
+            if (pinInput) pinInput.disabled = isRead;
+            const classSelect = document.getElementById('teacher-class');
+            if (classSelect) classSelect.disabled = isRead;
+            
+            document.querySelectorAll('#teacher-list button').forEach(b => {
+                const onclickAttr = b.getAttribute('onclick') || '';
+                if (onclickAttr.includes('editTeacher') || onclickAttr.includes('deleteTeacher')) {
+                    b.classList.add('hidden');
+                }
+            });
+            
+            document.querySelectorAll('#permissions-table-body select').forEach(s => s.disabled = isRead);
+            document.querySelectorAll('#permissions-table-body button').forEach(b => b.classList.toggle('hidden', isRead));
+            
+            toggleReadModeWarning('view-staff', isRead);
+        }
+
+        function applyCalendarTabRestrictions() {
+            const access = getPermission('calendar');
+            const isRead = access === 'READ';
+            toggleReadModeWarning('view-calendar', isRead);
+        }
+
+        function renderPermissionSelect(teacherId, tabName, currentValue) {
+            const colorClass = currentValue === 'WRITE' ? 'text-emerald-600 font-black bg-emerald-50' : 
+                               (currentValue === 'READ' ? 'text-amber-600 font-bold bg-amber-50' : 'text-rose-600 bg-rose-50');
+            return `
+                <select id="perm-${teacherId}-${tabName}" 
+                        onchange="this.className = 'w-full text-[9px] font-black rounded p-1 outline-none ' + (this.value === 'WRITE' ? 'text-emerald-600 font-black bg-emerald-50' : (this.value === 'READ' ? 'text-amber-600 font-bold bg-amber-50' : 'text-rose-600 bg-rose-50'))"
+                        class="w-full text-[9px] font-black rounded p-1 outline-none ${colorClass}">
+                    <option value="NONE" class="text-rose-600 bg-white" ${currentValue === 'NONE' ? 'selected' : ''}>NONE</option>
+                    <option value="READ" class="text-amber-600 bg-white" ${currentValue === 'READ' ? 'selected' : ''}>READ</option>
+                    <option value="WRITE" class="text-emerald-600 bg-white" ${currentValue === 'WRITE' ? 'selected' : ''}>WRITE</option>
+                </select>
+            `;
+        }
+
+        async function saveTeacherPermissions(teacherId) {
+            const payload = {
+                tab_dashboard: document.getElementById(`perm-${teacherId}-dashboard`).value,
+                tab_students: document.getElementById(`perm-${teacherId}-students`).value,
+                tab_calendar: document.getElementById(`perm-${teacherId}-calendar`).value,
+                tab_report: document.getElementById(`perm-${teacherId}-report`).value,
+                tab_locks: document.getElementById(`perm-${teacherId}-locks`).value,
+                tab_finance: document.getElementById(`perm-${teacherId}-finance`).value,
+                tab_staff: document.getElementById(`perm-${teacherId}-staff`).value
+            };
+            
+            showLoading('Đang lưu cấu hình phân quyền...');
+            try {
+                const res = await fetch(`${API_BASE}/admin/staff/permissions`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-api-key': SECRET },
+                    body: JSON.stringify({ user_id: teacherId, permissions: payload })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`Đã lưu cấu hình phân quyền thành công cho Giáo viên ID: ${teacherId}!`, 'success');
+                    if (currentUser && currentUser.role === 'teacher' && currentUser.id === teacherId) {
+                        currentUser = { ...currentUser, ...payload };
+                        localStorage.setItem('preschool_session', JSON.stringify(currentUser));
+                        renderSidebarPermissions();
+                    }
+                    loadTeacherData();
+                } else {
+                    alert('Lỗi: ' + (data.error || 'Thao tác thất bại'));
+                }
+            } catch (e) {
+                alert('Lỗi kết nối máy chủ!');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function openQuickPermissions(teacherId, teacherName, dashboard, students, calendar, report, locks, finance, staff) {
+            document.getElementById('quick-perm-teacher-id').value = teacherId;
+            document.getElementById('quick-perm-title').innerText = `🛡️ PHÂN QUYỀN: ${teacherName.toUpperCase()}`;
+            
+            const tabs = [
+                { id: 'dashboard', name: 'Tổng quan' },
+                { id: 'students', name: 'Quản lý lớp & Học sinh' },
+                { id: 'calendar', name: 'Lịch học & Ngày lễ' },
+                { id: 'report', name: 'Báo cáo tháng' },
+                { id: 'locks', name: 'Khóa sổ điểm danh' },
+                { id: 'finance', name: 'Kế toán & Phí' },
+                { id: 'staff', name: 'Nhân sự & Nhật ký' }
+            ];
+            
+            const perms = { dashboard, students, calendar, report, locks, finance, staff };
+            
+            const container = document.getElementById('quick-perm-list');
+            container.innerHTML = tabs.map(t => {
+                const val = perms[t.id] || 'NONE';
+                const colorClass = val === 'WRITE' ? 'text-emerald-600 font-black bg-emerald-50 border-emerald-200' : 
+                                   (val === 'READ' ? 'text-amber-600 font-bold bg-amber-50 border-amber-200' : 'text-rose-600 bg-rose-50 border-rose-200');
+                
+                return `
+                    <div class="flex items-center justify-between p-2.5 border border-slate-100 rounded-xl hover:bg-slate-50 transition-all">
+                        <span class="text-xs font-bold text-slate-700">${t.name}</span>
+                        <select id="quick-perm-select-${t.id}"
+                                onchange="this.className = 'w-32 text-xs font-black rounded-lg p-2 border outline-none ' + (this.value === 'WRITE' ? 'text-emerald-600 font-black bg-emerald-50 border-emerald-200' : (this.value === 'READ' ? 'text-amber-600 font-bold bg-amber-50 border-amber-200' : 'text-rose-600 bg-rose-50 border-rose-200'))"
+                                class="w-32 text-xs font-black rounded-lg p-2 border outline-none ${colorClass}">
+                            <option value="NONE" class="text-rose-600 bg-white" ${val === 'NONE' ? 'selected' : ''}>NONE</option>
+                            <option value="READ" class="text-amber-600 bg-white" ${val === 'READ' ? 'selected' : ''}>READ</option>
+                            <option value="WRITE" class="text-emerald-600 bg-white" ${val === 'WRITE' ? 'selected' : ''}>WRITE</option>
+                        </select>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('modal-quick-permissions').classList.remove('hidden');
+        }
+
+        async function submitQuickPermissions() {
+            const teacherId = document.getElementById('quick-perm-teacher-id').value;
+            const payload = {
+                tab_dashboard: document.getElementById('quick-perm-select-dashboard').value,
+                tab_students: document.getElementById('quick-perm-select-students').value,
+                tab_calendar: document.getElementById('quick-perm-select-calendar').value,
+                tab_report: document.getElementById('quick-perm-select-report').value,
+                tab_locks: document.getElementById('quick-perm-select-locks').value,
+                tab_finance: document.getElementById('quick-perm-select-finance').value,
+                tab_staff: document.getElementById('quick-perm-select-staff').value
+            };
+            
+            showLoading('Đang lưu cấu hình phân quyền...');
+            try {
+                const res = await fetch(`${API_BASE}/admin/staff/permissions`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-api-key': SECRET },
+                    body: JSON.stringify({ user_id: teacherId, permissions: payload })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`Đã lưu cấu hình phân quyền thành công!`, 'success');
+                    document.getElementById('modal-quick-permissions').classList.add('hidden');
+                    if (currentUser && currentUser.role === 'teacher' && currentUser.id === teacherId) {
+                        currentUser = { ...currentUser, ...payload };
+                        localStorage.setItem('preschool_session', JSON.stringify(currentUser));
+                        renderSidebarPermissions();
+                    }
+                    loadTeacherData();
+                } else {
+                    alert('Lỗi: ' + (data.error || 'Thao tác thất bại'));
+                }
+            } catch (e) {
+                alert('Lỗi kết nối máy chủ!');
+            } finally {
+                hideLoading();
+            }
+        }
+
         async function enterDashboard() {
             const now = new Date();
             const firstDay = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
@@ -2212,30 +2545,52 @@
                 document.getElementById('modal-change-pass').classList.remove('hidden');
             }
 
-            if (currentUser.role === 'teacher') {
-                const teacherItems = ['report'];
-                document.getElementById('btn-dashboard').classList.add('hidden');
-                document.getElementById('btn-manage').classList.add('hidden');
-                document.getElementById('btn-staff').classList.add('hidden');
-
+            // Apply RBAC permissions dynamically
+            const firstAllowed = renderSidebarPermissions();
+            
+            // Restrict Class dropdown selections for teachers
+            if (currentUser.role === 'teacher' && currentUser.class_id) {
+                // For Report tab class selector
                 const rSelect = document.getElementById('report-class');
-                rSelect.innerHTML = `<option value="${currentUser.class_id}">${currentUser.class_name}</option>`;
-                rSelect.disabled = true;
-                switchTab('report');
+                if (rSelect) {
+                    rSelect.innerHTML = `<option value="${currentUser.class_id}">${currentUser.class_name}</option>`;
+                    rSelect.disabled = true;
+                }
+                
+                // For Student list class selector
+                const mSelect = document.getElementById('filter-class');
+                if (mSelect) {
+                    mSelect.innerHTML = `<option value="${currentUser.class_id}">${currentUser.class_name}</option>`;
+                    mSelect.disabled = true;
+                }
+                
+                // For Finance class selector
+                const fSelect = document.getElementById('finance-class-filter');
+                if (fSelect) {
+                    fSelect.innerHTML = `<option value="${currentUser.class_id}">${currentUser.class_name}</option>`;
+                    fSelect.disabled = true;
+                }
             } else {
-                document.getElementById('btn-dashboard').classList.remove('hidden');
-                document.getElementById('btn-manage').classList.remove('hidden');
-                document.getElementById('btn-staff').classList.remove('hidden');
-                document.getElementById('btn-finance').classList.remove('hidden');
+                // Ensure they are enabled for full admins
+                const rSelect = document.getElementById('report-class');
+                if (rSelect) rSelect.disabled = false;
+                const mSelect = document.getElementById('filter-class');
+                if (mSelect) mSelect.disabled = false;
+                const fSelect = document.getElementById('finance-class-filter');
+                if (fSelect) fSelect.disabled = false;
+            }
 
-                // Đảm bảo UI đã render xong trước khi nhảy tab
+            if (firstAllowed) {
                 setTimeout(() => {
-                    console.log("[INIT] Admin enter dashboard, triggering data load...");
-                    switchTab('dashboard');
-                    // Gọi trực tiếp để chắc chắn nếu switchTab bị skip
-                    loadLiveSummary();
-                    loadDashboard();
+                    console.log(`[INIT] Switching to first allowed tab: ${firstAllowed}`);
+                    switchTab(firstAllowed);
+                    if (firstAllowed === 'dashboard') {
+                        loadLiveSummary();
+                        loadDashboard();
+                    }
                 }, 100);
+            } else {
+                showToast("Tài khoản của bạn không có bất kỳ quyền truy cập nào trên hệ thống!", "error");
             }
         }
 
@@ -2784,6 +3139,9 @@
                         </td>
                     </tr>
                 `).join('') || '<tr><td colspan="6" class="p-10 text-center text-slate-300 uppercase font-black text-xs italic">Không tìm thấy dữ liệu hóa đơn...</td></tr>';
+                
+                // Re-apply role-based access restrictions
+                applyFinanceTabRestrictions();
             } catch (e) { }
         }
 
@@ -3586,6 +3944,9 @@
                     </tr>
                 `;
                 }).join('');
+                
+                // Re-apply role-based access restrictions
+                applyManageTabRestrictions();
             } catch (e) {
                 console.error("Lỗi tải dữ liệu:", e);
             }
@@ -4768,6 +5129,8 @@
                         <div class="flex items-center gap-2">
                             <button onclick="document.getElementById('creds-${t.id}').classList.toggle('hidden')" 
                                 class="p-1.5 bg-slate-100 hover:bg-slate-200 rounded text-[10px] transition-all" title="Xem tài khoản">🔑</button>
+                            <button onclick="openQuickPermissions('${t.id}', '${t.name.replace(/'/g, "\\'")}', '${t.tab_dashboard}', '${t.tab_students}', '${t.tab_calendar}', '${t.tab_report}', '${t.tab_locks}', '${t.tab_finance}', '${t.tab_staff}')" 
+                                class="text-emerald-600 font-black text-[9px] uppercase hover:underline" title="Phân quyền nhanh">Quyền</button>
                             <button onclick="editTeacher('${t.id}', '${t.name}', '${t.pin}', '${t.class_id}')" 
                                 class="text-blue-500 font-black text-[9px] uppercase hover:underline">Sửa</button>
                             <button onclick="deleteTeacher('${t.id}')" 
@@ -4799,6 +5162,32 @@
                         </td>
                     </tr>
                 `).join('');
+
+                // Render Inline permissions card table
+                const permTbody = document.getElementById('permissions-table-body');
+                if (permTbody) {
+                    permTbody.innerHTML = teachers.map(t => `
+                        <tr class="hover:bg-slate-50 border-b border-slate-50">
+                            <td class="p-3">
+                                <div class="font-bold text-slate-800">${t.name}</div>
+                                <div class="text-[8px] text-slate-400 font-bold">ID: ${t.id}</div>
+                            </td>
+                            <td class="p-2 text-center">${renderPermissionSelect(t.id, 'dashboard', t.tab_dashboard)}</td>
+                            <td class="p-2 text-center">${renderPermissionSelect(t.id, 'students', t.tab_students)}</td>
+                            <td class="p-2 text-center">${renderPermissionSelect(t.id, 'calendar', t.tab_calendar)}</td>
+                            <td class="p-2 text-center">${renderPermissionSelect(t.id, 'report', t.tab_report)}</td>
+                            <td class="p-2 text-center">${renderPermissionSelect(t.id, 'locks', t.tab_locks)}</td>
+                            <td class="p-2 text-center">${renderPermissionSelect(t.id, 'finance', t.tab_finance)}</td>
+                            <td class="p-2 text-center">${renderPermissionSelect(t.id, 'staff', t.tab_staff)}</td>
+                            <td class="p-3 text-right">
+                                <button onclick="saveTeacherPermissions('${t.id}')"
+                                    class="px-2.5 py-1 rounded bg-[#006C18] text-white hover:bg-emerald-700 text-[9px] font-black uppercase tracking-widest shadow-sm transition-all active:scale-95">Lưu</button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+
+                applyStaffTabRestrictions();
 
                 // 3. Class Transfers
                 loadTransferData();
@@ -5672,6 +6061,9 @@
                 const holidays = data.results || [];
                 renderCalendar(holidays);
                 renderHolidayList(holidays);
+                
+                // Re-apply role-based access restrictions
+                applyCalendarTabRestrictions();
             } catch (e) {
                 console.error('Lỗi tải lịch:', e);
             }
@@ -5752,6 +6144,22 @@
         }
 
         async function toggleHoliday(date, isCurrentlyHoliday) {
+            const access = getPermission('calendar');
+            const isRead = access === 'READ';
+            
+            if (isRead) {
+                if (!isCurrentlyHoliday) {
+                    showToast("Tài khoản của bạn chỉ có quyền xem lịch học, không thể thiết lập ngày nghỉ!", "warning");
+                    return;
+                }
+                setTimeout(() => {
+                    const editBtn = document.querySelector('#modal-view-holiday button[onclick*="openEditHoliday"]');
+                    const deleteBtn = document.querySelector('#modal-view-holiday button[onclick*="submitDeleteHoliday"]');
+                    if (editBtn) editBtn.classList.toggle('hidden', isRead);
+                    if (deleteBtn) deleteBtn.classList.toggle('hidden', isRead);
+                }, 50);
+            }
+
             if (!isCurrentlyHoliday) {
                 document.getElementById('add-holiday-title').innerText = '🗓️ Thiết lập ngày nghỉ';
                 document.getElementById('holiday-date-input').value = date;
@@ -5885,6 +6293,9 @@
                         </button>
                     </div>
                 `).join('');
+                
+                // Re-apply role-based access restrictions
+                applyLocksTabRestrictions();
             } catch (e) {
                 console.error('Error loading locks:', e);
                 document.getElementById('locked-dates-list').innerHTML = 
@@ -6384,6 +6795,30 @@
                 <button onclick="addStudent()"
                     class="w-full bg-[#006C18] text-white py-4 mt-2 rounded-xl font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-100 transition-all hover:scale-[1.02] active:scale-[0.98]">
                     Lưu học sinh mới
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Quick Permissions -->
+    <div id="modal-quick-permissions" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-6 modal-overlay">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in duration-300 border-t-4 border-[#006C18]">
+            <div class="p-5 bg-emerald-50 flex justify-between items-center border-b border-emerald-100">
+                <h3 id="quick-perm-title" class="text-sm font-black text-[#006C18] headline uppercase tracking-widest">🛡️ PHÂN QUYỀN HỆ THỐNG</h3>
+                <button onclick="document.getElementById('modal-quick-permissions').classList.add('hidden')"
+                    class="w-8 h-8 flex items-center justify-center rounded-full bg-emerald-200/50 text-[#006C18] hover:bg-emerald-200 transition-all font-bold">✕</button>
+            </div>
+            <div class="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+                <input type="hidden" id="quick-perm-teacher-id">
+                <div class="p-3 bg-emerald-50 text-[#006C18] border border-emerald-200 rounded-lg text-xs leading-relaxed font-bold">
+                    Cấu hình quyền truy cập nhanh cho giáo viên trên các tab chức năng.
+                </div>
+                <div id="quick-perm-list" class="space-y-3">
+                    <!-- Dynamic List of Tabs -->
+                </div>
+                <button onclick="submitQuickPermissions()"
+                    class="w-full bg-[#006C18] text-white py-4 mt-2 rounded-xl font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-100 transition-all hover:scale-[1.02] active:scale-[0.98]">
+                    Lưu phân quyền ngay
                 </button>
             </div>
         </div>

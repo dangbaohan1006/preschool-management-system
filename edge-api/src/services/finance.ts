@@ -149,8 +149,25 @@ export class FinanceService {
         const holidaysRes = await this.db.prepare('SELECT holiday_date FROM dim_holidays WHERE holiday_date LIKE ?').bind(`${data.period_month}%`).all<{ holiday_date: string }>();
         const holidaySet = new Set((holidaysRes.results || []).map(h => h.holiday_date));
 
+        // Logic tính toán ngày chuẩn cá nhân hóa cho trẻ nhập học giữa tháng / nghỉ học giữa chừng
+        let startDay = 1;
+        if (student.entry_date && student.entry_date.substring(0, 7) === data.period_month) {
+            const entryParts = student.entry_date.split('-');
+            if (entryParts.length === 3) {
+                startDay = Math.max(1, parseInt(entryParts[2]));
+            }
+        }
+
+        let endDay = daysInMonth;
+        if (student.dropout_date && student.dropout_date.substring(0, 7) === data.period_month) {
+            const dropoutParts = student.dropout_date.split('-');
+            if (dropoutParts.length === 3) {
+                endDay = Math.min(daysInMonth, parseInt(dropoutParts[2]));
+            }
+        }
+
         let stdDays = 0;
-        for (let d = 1; d <= daysInMonth; d++) {
+        for (let d = startDay; d <= endDay; d++) {
             const dateObj = new Date(year, monthNum - 1, d);
             const dayOfWeek = dateObj.getDay(); 
             const dateString = `${year}-${String(monthNum).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
