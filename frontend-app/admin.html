@@ -5568,10 +5568,18 @@
                     
                     loadTeacherData();
                 } else {
-                    const err = await res.json();
-                    alert('Lỗi: ' + (err.error || 'Thao tác thất bại'));
+                    let errMsg = 'Thao tác thất bại';
+                    try {
+                        const err = await res.json();
+                        errMsg = err.error || errMsg;
+                    } catch (jsonErr) {
+                        try { errMsg = await res.text() || errMsg; } catch (textErr) {}
+                    }
+                    alert('Lỗi: ' + errMsg);
                 }
-            } catch (e) { alert('Lỗi kết nối!'); }
+            } catch (e) {
+                alert('Lỗi kết nối! Chi tiết: ' + e.message);
+            }
         }
 
         function editTeacher(id, name, pin, class_id) {
