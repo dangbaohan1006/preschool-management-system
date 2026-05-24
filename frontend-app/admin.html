@@ -2388,7 +2388,7 @@
                 });
                 const data = await res.json();
                 if (data.success) {
-                    const role = data.class_id === 'MANAGEMENT' ? 'admin' : 'teacher';
+                    const role = 'teacher';
                     currentUser = { role, ...data };
                     localStorage.setItem('preschool_session', JSON.stringify(currentUser));
                     enterDashboard();
@@ -2772,7 +2772,7 @@
             const firstAllowed = renderSidebarPermissions();
             
             // Restrict Class dropdown selections for teachers
-            if (currentUser.role === 'teacher' && currentUser.class_id) {
+            if (currentUser.role === 'teacher' && currentUser.class_id && currentUser.class_id !== 'MANAGEMENT') {
                 // For Report tab class selector
                 const rSelect = document.getElementById('report-class');
                 if (rSelect) {
