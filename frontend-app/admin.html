@@ -5542,7 +5542,7 @@
             
             if (bankId && bankAccount) {
                 const encodedName = encodeURIComponent(bankAccountName || 'TRUONG MAM NON THANH DANH');
-                qrImg.src = `https://img.vietqr.io/image/${bankId}-${bankAccount}-compact2.jpg?accountName=${encodedName}`;
+                qrImg.src = `https://img.vietqr.io/image/${bankId}-${bankAccount}-qr_only.jpg?accountName=${encodedName}`;
                 qrInfo.innerText = `${bankId} - ${bankAccount}`;
                 qrInfo.classList.remove('text-slate-500');
                 qrInfo.classList.add('text-emerald-600');
@@ -5869,7 +5869,7 @@
             const bankBranch = appSettings.find(s => s.key === 'bank_branch')?.value || 'Ngân hàng Sacombank - CN Gò Dầu';
             
             const encodedName = encodeURIComponent(bankAccountName);
-            const qrUrl = `https://img.vietqr.io/image/${bankId}-${bankAccount}-compact2.jpg?amount=${total}&addInfo=${info}&accountName=${encodedName}`;
+            const qrUrl = `https://img.vietqr.io/image/${bankId}-${bankAccount}-qr_only.jpg?amount=${total}&addInfo=${info}&accountName=${encodedName}`;
 
             const renderRows = (list, sectionId) => {
                 return list.map((it, i) => `
