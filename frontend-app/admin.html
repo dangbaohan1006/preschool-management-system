@@ -1182,37 +1182,6 @@
                             </div>
                         </div>
 
-                        <!-- Cấu hình Phân quyền Hệ thống Card -->
-                        <div class="card-layered overflow-hidden flex flex-col bg-white border border-[#eee] mt-6">
-                            <div class="p-4 border-b border-[#eee] bg-slate-50 flex justify-between items-center">
-                                <div class="relative z-10">
-                                    <h3 class="font-black text-xs headline text-[#006C18]">Cấu hình Phân quyền Hệ thống</h3>
-                                    <p class="text-[#D3C9BD] text-[9px] font-black uppercase tracking-widest mt-1">Phân quyền chi tiết cho từng giáo viên theo 7 tab chức năng</p>
-                                </div>
-                                <button onclick="loadTeacherData()"
-                                    class="p-2 border border-slate-200 rounded-md hover:bg-slate-100 transition-all text-sm">🔄</button>
-                            </div>
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-left text-[10px] border-collapse min-w-[800px]">
-                                    <thead class="bg-slate-50 sticky top-0 font-black uppercase text-[#D3C9BD] tracking-widest border-b border-[#eee]">
-                                        <tr>
-                                            <th class="p-3">Giáo viên</th>
-                                            <th class="p-3 text-center">Tổng quan</th>
-                                            <th class="p-3 text-center">Lớp & Học sinh</th>
-                                            <th class="p-3 text-center">Lịch học</th>
-                                            <th class="p-3 text-center">Báo cáo</th>
-                                            <th class="p-3 text-center">Khóa sổ</th>
-                                            <th class="p-3 text-center">Kế toán & Phí</th>
-                                            <th class="p-3 text-center">Nhân sự</th>
-                                            <th class="p-3 text-right">Lưu</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="permissions-table-body" class="divide-y divide-[#eee] text-[#006C18] font-bold">
-                                        <!-- Will be rendered dynamically in loadTeacherData() -->
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
 
                     </div>
                 </div>
@@ -1220,109 +1189,159 @@
 
             <!-- About View -->
             <div id="view-about" class="hidden space-y-6 mt-2">
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
-                    <!-- Column 1: Info (md:col-span-5) -->
-                    <div class="md:col-span-5 card-layered p-6 flex flex-col items-center text-center bg-white border border-[#eee]">
-                        <div class="w-24 h-24 mb-4 rounded-2xl overflow-hidden shadow-md flex items-center justify-center bg-slate-50 border border-slate-100">
-                            <img src="assets/images/TDS_LOGO.png" class="w-full h-full object-contain p-2" onerror="this.src='https://placehold.co/100x100?text=TDS'"/>
-                        </div>
-                        <h3 class="text-lg font-black text-[#006C18] uppercase tracking-wider">Trường Mầm non Thành Danh</h3>
-                        <p class="text-slate-400 text-xs font-bold mt-1">Hệ thống Quản lý Giáo dục Mầm non</p>
-                        
-                        <div class="w-full my-4 border-t border-dashed border-slate-200"></div>
-                        
-                        <div class="w-full space-y-3 text-left text-xs">
-                            <div class="flex justify-between">
-                                <span class="text-slate-400 font-medium">Phiên bản:</span>
-                                <span class="font-bold text-[#006C18] bg-emerald-50 px-2 py-0.5 rounded-full">v2.5.0-RBAC</span>
+                <!-- Sub Tab Headers -->
+                <div class="flex border-b border-[#eee] mb-4">
+                    <button id="btn-about-sub-general" onclick="switchAboutSubTab('general')"
+                        class="px-5 py-2.5 font-black text-[11px] uppercase tracking-widest border-b-2 border-[#006C18] text-[#006C18] transition-all flex items-center gap-2">
+                        ⚙️ Cấu hình & Thanh toán
+                    </button>
+                    <button id="btn-about-sub-permissions" onclick="switchAboutSubTab('permissions')"
+                        class="px-5 py-2.5 font-black text-[11px] uppercase tracking-widest border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-all flex items-center gap-2">
+                        🔑 Phân quyền hệ thống
+                    </button>
+                </div>
+
+                <!-- Sub Tab 1: General & Bank Config -->
+                <div id="about-sub-general" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+                        <!-- Column 1: Info (md:col-span-5) -->
+                        <div class="md:col-span-5 card-layered p-6 flex flex-col items-center text-center bg-white border border-[#eee]">
+                            <div class="w-24 h-24 mb-4 rounded-2xl overflow-hidden shadow-md flex items-center justify-center bg-slate-50 border border-slate-100">
+                                <img src="assets/images/TDS_LOGO.png" class="w-full h-full object-contain p-2" onerror="this.src='https://placehold.co/100x100?text=TDS'"/>
                             </div>
-                            <div class="flex justify-between">
-                                <span class="text-slate-400 font-medium">Ngày phát hành:</span>
-                                <span class="font-bold text-slate-700">24/05/2026</span>
+                            <h3 class="text-lg font-black text-[#006C18] uppercase tracking-wider">Trường Mầm non Thành Danh</h3>
+                            <p class="text-slate-400 text-xs font-bold mt-1">Hệ thống Quản lý Giáo dục Mầm non</p>
+                            
+                            <div class="w-full my-4 border-t border-dashed border-slate-200"></div>
+                            
+                            <div class="w-full space-y-3 text-left text-xs">
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400 font-medium">Phiên bản:</span>
+                                    <span class="font-bold text-[#006C18] bg-emerald-50 px-2 py-0.5 rounded-full">v2.5.0-RBAC</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400 font-medium">Ngày phát hành:</span>
+                                    <span class="font-bold text-slate-700">24/05/2026</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400 font-medium">Kiến trúc:</span>
+                                    <span class="font-bold text-slate-700">Role-Based Access Control</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400 font-medium">Công nghệ lõi:</span>
+                                    <span class="font-bold text-slate-700 text-right">Hono API, SQLite D1, Cloudflare Workers</span>
+                                </div>
                             </div>
-                            <div class="flex justify-between">
-                                <span class="text-slate-400 font-medium">Kiến trúc:</span>
-                                <span class="font-bold text-slate-700">Role-Based Access Control</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-slate-400 font-medium">Công nghệ lõi:</span>
-                                <span class="font-bold text-slate-700 text-right">Hono API, SQLite D1, Cloudflare Workers</span>
+
+                            <div class="w-full my-4 border-t border-dashed border-slate-200"></div>
+                            
+                            <p class="text-[11px] text-slate-400 leading-relaxed">
+                                Phần mềm được phát triển nhằm tối ưu hóa công tác quản lý, theo dõi học phí tự động và quản lý điểm danh tại trường Mầm non Thành Danh.
+                            </p>
+                            
+                            <div class="mt-auto pt-6 text-[10px] text-slate-400">
+                                © 2026 Mầm non Thành Danh. Bảo lưu mọi quyền.
                             </div>
                         </div>
 
-                        <div class="w-full my-4 border-t border-dashed border-slate-200"></div>
-                        
-                        <p class="text-[11px] text-slate-400 leading-relaxed">
-                            Phần mềm được phát triển nhằm tối ưu hóa công tác quản lý, theo dõi học phí tự động và quản lý điểm danh tại trường Mầm non Thành Danh.
-                        </p>
-                        
-                        <div class="mt-auto pt-6 text-[10px] text-slate-400">
-                            © 2026 Mầm non Thành Danh. Bảo lưu mọi quyền.
+                        <!-- Column 2: Bank Account config (md:col-span-7) -->
+                        <div class="md:col-span-7 card-layered p-6 bg-white border border-[#eee] flex flex-col">
+                            <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+                                <span class="text-2xl">💳</span>
+                                <div>
+                                    <h3 class="text-sm font-black text-[#006C18] uppercase tracking-wider">Cấu hình nhận học phí</h3>
+                                    <p class="text-xs text-slate-400">Thiết lập tài khoản ngân hàng và VietQR tạo tự động</p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1">
+                                <!-- Left form: inputs (lg:col-span-7) -->
+                                <div class="lg:col-span-7 space-y-4">
+                                    <div class="flex flex-col gap-1.5">
+                                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Mã Ngân hàng (VietQR ID)</label>
+                                        <input type="text" id="set-bank-id" placeholder="Ví dụ: Sacombank, MB, VCB, BIDV..." oninput="updateQRPreview()"
+                                            class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-[#006C18] focus:ring-1 focus:ring-[#006C18] font-bold">
+                                    </div>
+
+                                    <div class="flex flex-col gap-1.5">
+                                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Số tài khoản (STK)</label>
+                                        <input type="text" id="set-bank-account" placeholder="Nhập số tài khoản..." oninput="updateQRPreview()"
+                                            class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-[#006C18] focus:ring-1 focus:ring-[#006C18] font-bold">
+                                    </div>
+
+                                    <div class="flex flex-col gap-1.5">
+                                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tên chủ tài khoản</label>
+                                        <input type="text" id="set-bank-account-name" placeholder="Ví dụ: NGUYEN VAN A" oninput="updateQRPreview()"
+                                            class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-[#006C18] focus:ring-1 focus:ring-[#006C18] uppercase font-black">
+                                    </div>
+
+                                    <div class="flex flex-col gap-1.5">
+                                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Chi nhánh / Tên hiển thị</label>
+                                        <input type="text" id="set-bank-branch" placeholder="Ví dụ: Chi nhánh Gò Dầu..." oninput="updateQRPreview()"
+                                            class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-[#006C18] focus:ring-1 focus:ring-[#006C18]">
+                                    </div>
+
+                                    <div id="bank-settings-save-block" class="pt-4 border-t border-slate-100 space-y-4">
+                                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                            <div class="flex flex-col gap-0.5">
+                                                <span class="text-xs font-bold text-slate-700">Mã PIN xác nhận</span>
+                                                <span class="text-[9px] text-slate-400 font-medium">Nhập mã PIN Admin để lưu thay đổi</span>
+                                            </div>
+                                            <input type="password" id="set-about-admin-pin" placeholder="••••••"
+                                                class="w-24 border border-slate-200 rounded px-2 py-1 text-center outline-none focus:border-[#006C18] text-rose-600 tracking-[0.2em] font-black text-xs">
+                                        </div>
+                                        <button onclick="saveSettings('about')"
+                                            class="w-full bg-[#006C18] hover:bg-[#005212] text-white py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all shadow-sm">
+                                            Cập nhật tài khoản thanh toán
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Right form: QR Code Preview (lg:col-span-5) -->
+                                <div class="lg:col-span-5 flex flex-col items-center justify-center border border-dashed border-slate-200 rounded-xl p-4 bg-slate-50/50">
+                                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Mã QR Thanh Toán (VietQR)</span>
+                                    <div class="w-40 h-40 bg-white border border-slate-200 rounded-2xl p-3 flex items-center justify-center relative overflow-hidden shadow-md group hover:shadow-lg transition-all duration-300">
+                                        <img id="settings-qr-preview" src="https://placehold.co/150x150?text=VietQR" class="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105" />
+                                    </div>
+                                    <span id="settings-qr-info" class="text-[10px] text-slate-500 font-bold mt-3 text-center uppercase tracking-wider">Chưa có thông tin</span>
+                                    <p class="text-[9px] text-slate-400 font-medium mt-2 text-center leading-normal">Mã QR này được tự động tạo dựa trên thông tin ngân hàng đã cấu hình.</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Column 2: Bank Account config (md:col-span-7) -->
-                    <div class="md:col-span-7 card-layered p-6 bg-white border border-[#eee] flex flex-col">
-                        <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-                            <span class="text-2xl">💳</span>
-                            <div>
-                                <h3 class="text-sm font-black text-[#006C18] uppercase tracking-wider">Cấu hình nhận học phí</h3>
-                                <p class="text-xs text-slate-400">Thiết lập tài khoản ngân hàng và VietQR tạo tự động</p>
+                <!-- Sub Tab 2: System Permissions -->
+                <div id="about-sub-permissions" class="hidden space-y-6">
+                    <!-- Cấu hình Phân quyền Hệ thống Card -->
+                    <div class="card-layered overflow-hidden flex flex-col bg-white border border-[#eee]">
+                        <div class="p-4 border-b border-[#eee] bg-slate-50 flex justify-between items-center">
+                            <div class="relative z-10">
+                                <h3 class="font-black text-xs headline text-[#006C18]">Cấu hình Phân quyền Hệ thống</h3>
+                                <p class="text-[#D3C9BD] text-[9px] font-black uppercase tracking-widest mt-1">Phân quyền chi tiết cho từng giáo viên theo 7 tab chức năng</p>
                             </div>
+                            <button onclick="loadTeacherData()"
+                                class="p-2 border border-slate-200 rounded-md hover:bg-slate-100 transition-all text-sm">🔄</button>
                         </div>
-
-                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1">
-                            <!-- Left form: inputs (lg:col-span-7) -->
-                            <div class="lg:col-span-7 space-y-4">
-                                <div class="flex flex-col gap-1.5">
-                                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Mã Ngân hàng (VietQR ID)</label>
-                                    <input type="text" id="set-bank-id" placeholder="Ví dụ: Sacombank, MB, VCB, BIDV..." oninput="updateQRPreview()"
-                                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-[#006C18] focus:ring-1 focus:ring-[#006C18] font-bold">
-                                </div>
-
-                                <div class="flex flex-col gap-1.5">
-                                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Số tài khoản (STK)</label>
-                                    <input type="text" id="set-bank-account" placeholder="Nhập số tài khoản..." oninput="updateQRPreview()"
-                                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-[#006C18] focus:ring-1 focus:ring-[#006C18] font-bold">
-                                </div>
-
-                                <div class="flex flex-col gap-1.5">
-                                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tên chủ tài khoản</label>
-                                    <input type="text" id="set-bank-account-name" placeholder="Ví dụ: NGUYEN VAN A" oninput="updateQRPreview()"
-                                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-[#006C18] focus:ring-1 focus:ring-[#006C18] uppercase font-black">
-                                </div>
-
-                                <div class="flex flex-col gap-1.5">
-                                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Chi nhánh / Tên hiển thị</label>
-                                    <input type="text" id="set-bank-branch" placeholder="Ví dụ: Chi nhánh Gò Dầu..." oninput="updateQRPreview()"
-                                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-[#006C18] focus:ring-1 focus:ring-[#006C18]">
-                                </div>
-
-                                <div id="bank-settings-save-block" class="pt-4 border-t border-slate-100 space-y-4">
-                                    <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
-                                        <div class="flex flex-col gap-0.5">
-                                            <span class="text-xs font-bold text-slate-700">Mã PIN xác nhận</span>
-                                            <span class="text-[9px] text-slate-400 font-medium">Nhập mã PIN Admin để lưu thay đổi</span>
-                                        </div>
-                                        <input type="password" id="set-about-admin-pin" placeholder="••••••"
-                                            class="w-24 border border-slate-200 rounded px-2 py-1 text-center outline-none focus:border-[#006C18] text-rose-600 tracking-[0.2em] font-black text-xs">
-                                    </div>
-                                    <button onclick="saveSettings('about')"
-                                        class="w-full bg-[#006C18] hover:bg-[#005212] text-white py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all shadow-sm">
-                                        Cập nhật tài khoản thanh toán
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <!-- Right form: QR Code Preview (lg:col-span-5) -->
-                            <div class="lg:col-span-5 flex flex-col items-center justify-center border border-dashed border-slate-200 rounded-xl p-4 bg-slate-50/50">
-                                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Mã QR Thanh Toán (VietQR)</span>
-                                <div class="w-40 h-40 bg-white border border-slate-200 rounded-2xl p-3 flex items-center justify-center relative overflow-hidden shadow-md group hover:shadow-lg transition-all duration-300">
-                                    <img id="settings-qr-preview" src="https://placehold.co/150x150?text=VietQR" class="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105" />
-                                </div>
-                                <span id="settings-qr-info" class="text-[10px] text-slate-500 font-bold mt-3 text-center uppercase tracking-wider">Chưa có thông tin</span>
-                                <p class="text-[9px] text-slate-400 font-medium mt-2 text-center leading-normal">Mã QR này được tự động tạo dựa trên thông tin ngân hàng đã cấu hình.</p>
-                            </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-[10px] border-collapse min-w-[800px]">
+                                <thead class="bg-slate-50 sticky top-0 font-black uppercase text-[#D3C9BD] tracking-widest border-b border-[#eee]">
+                                    <tr>
+                                        <th class="p-3">Giáo viên</th>
+                                        <th class="p-3 text-center">Tổng quan</th>
+                                        <th class="p-3 text-center">Lớp & Học sinh</th>
+                                        <th class="p-3 text-center">Lịch học</th>
+                                        <th class="p-3 text-center">Báo cáo</th>
+                                        <th class="p-3 text-center">Khóa sổ</th>
+                                        <th class="p-3 text-center">Kế toán & Phí</th>
+                                        <th class="p-3 text-center">Nhân sự</th>
+                                        <th class="p-3 text-right">Lưu</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="permissions-table-body" class="divide-y divide-[#eee] text-[#006C18] font-bold">
+                                    <!-- Will be rendered dynamically in loadTeacherData() -->
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -2191,9 +2210,39 @@
             if (tab === 'finance') {
                 loadFinanceData();
             }
+            if (tab === 'about') {
+                const panelPerm = document.getElementById('about-sub-permissions');
+                if (panelPerm && !panelPerm.classList.contains('hidden')) {
+                    loadTeacherData();
+                }
+            }
             
             // Apply restrictions dynamically on tab change
             applyTabActionRestrictions(tab);
+        }
+
+        function switchAboutSubTab(subTab) {
+            const btnGeneral = document.getElementById('btn-about-sub-general');
+            const btnPerm = document.getElementById('btn-about-sub-permissions');
+            const panelGeneral = document.getElementById('about-sub-general');
+            const panelPerm = document.getElementById('about-sub-permissions');
+            
+            if (!btnGeneral || !btnPerm || !panelGeneral || !panelPerm) return;
+            
+            if (subTab === 'general') {
+                btnGeneral.className = "px-5 py-2.5 font-black text-[11px] uppercase tracking-widest border-b-2 border-[#006C18] text-[#006C18] transition-all flex items-center gap-2";
+                btnPerm.className = "px-5 py-2.5 font-black text-[11px] uppercase tracking-widest border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-all flex items-center gap-2";
+                panelGeneral.classList.remove('hidden');
+                panelPerm.classList.add('hidden');
+            } else {
+                btnGeneral.className = "px-5 py-2.5 font-black text-[11px] uppercase tracking-widest border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-all flex items-center gap-2";
+                btnPerm.className = "px-5 py-2.5 font-black text-[11px] uppercase tracking-widest border-b-2 border-[#006C18] text-[#006C18] transition-all flex items-center gap-2";
+                panelGeneral.classList.add('hidden');
+                panelPerm.classList.remove('hidden');
+                
+                // Load teacher data so permissions table is always fresh when sub-tab opens
+                loadTeacherData();
+            }
         }
 
 
