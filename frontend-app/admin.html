@@ -1434,7 +1434,7 @@
                             <div class="border border-emerald-200 bg-emerald-50/10 rounded-xl p-5 space-y-4 shadow-sm animate-in fade-in duration-200" id="finance-daily-summary-section">
                                 <div class="flex justify-between items-center">
                                     <h4 class="text-xs font-black uppercase tracking-wider text-emerald-700 flex items-center gap-2">
-                                        <span>📊</span> Bảng tổng hợp thực thu theo ngày & theo lớp (Tháng <span id="daily-summary-month-label">--</span>)
+                                        <span>📊</span> Bảng tổng hợp thu (Tháng <span id="daily-summary-month-label">--</span>)
                                     </h4>
                                     <button onclick="toggleDailySummaryTable()" class="text-emerald-600 hover:text-emerald-700 text-[10px] font-black uppercase tracking-wider">
                                         [ Thu gọn / Mở rộng ]
@@ -1444,7 +1444,6 @@
                                     <table class="w-full text-left text-[10px] border-collapse">
                                         <thead class="bg-slate-50 text-[9px] font-black uppercase text-slate-400 tracking-widest border-b border-[#eee]">
                                             <tr>
-                                                <th class="p-3">Ngày thu</th>
                                                 <th class="p-3">Lớp học</th>
                                                 <th class="p-3 text-center">💵 Tiền mặt</th>
                                                 <th class="p-3 text-center">💳 Chuyển khoản</th>
@@ -3193,6 +3192,60 @@
             }
         }
 
+        function showClassCollectionDetail(className) {
+            const modal = document.getElementById('modal-class-collection-detail');
+            if (!modal) return;
+            
+            modal.classList.remove('hidden');
+            document.getElementById('collection-class-title').innerText = className;
+            
+            const detailBody = document.getElementById('collection-detail-table-body');
+            if (!detailBody) return;
+
+            // Filter bills belonging to this class name
+            const classBills = currentBills.filter(b => b.class_name === className);
+
+            if (classBills.length === 0) {
+                detailBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 italic">Không có dữ liệu hóa đơn cho lớp này...</td></tr>`;
+                return;
+            }
+
+            // Sort by student name
+            classBills.sort((a, b) => a.student_name.localeCompare(b.student_name, 'vi'));
+
+            // Render rows
+            detailBody.innerHTML = classBills.map((b, idx) => {
+                const isPaid = b.payment_status === 'PAID';
+                
+                let statusBadge = '<span class="px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[8px] font-black uppercase tracking-wider">Chưa thu</span>';
+                let methodText = '---';
+                let dateText = '<span class="text-slate-300 font-normal">Chưa đóng</span>';
+
+                if (isPaid) {
+                    statusBadge = '<span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[8px] font-black uppercase tracking-wider">Đã thu</span>';
+                    methodText = b.payment_method === 'TRANSFER' ? '💳 Chuyển khoản' : '💵 Tiền mặt';
+                    
+                    if (b.payment_date) {
+                        const [y, m, d] = b.payment_date.split('-');
+                        dateText = `${d}/${m}/${y}`;
+                    } else {
+                        dateText = new Date().toLocaleDateString('vi-VN');
+                    }
+                }
+
+                return `
+                    <tr class="hover:bg-slate-50 border-b border-slate-100 transition-colors">
+                        <td class="p-3 text-center text-slate-500">${idx + 1}</td>
+                        <td class="p-3 font-black text-slate-800">${b.student_name}</td>
+                        <td class="p-3 text-center">${statusBadge}</td>
+                        <td class="p-3 text-center">${methodText}</td>
+                        <td class="p-3 text-center text-slate-600 font-bold">${dateText}</td>
+                        <td class="p-3 text-right text-emerald-600 font-black">${new Intl.NumberFormat('vi-VN').format(b.total_amount)}đ</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
         function renderClassFinancialSummary(bills, month) {
             const rawStart = document.getElementById('finance-start')?.value;
             const rawEnd = document.getElementById('finance-end')?.value;
@@ -3348,10 +3401,11 @@
             document.getElementById('daily-summary-month-label').innerText = month.split('-')[1] + '/' + month.split('-')[0];
             const dailySumBody = document.getElementById('daily-summary-table-body');
             if (dailySumBody) {
-                const sortedDates = Object.keys(dailySummaries).sort((a, b) => b.localeCompare(a));
+                // List all classes loaded in system except MANAGEMENT
+                const classesToList = currentClasses.filter(c => c.id !== 'MANAGEMENT').sort((a, b) => a.name.localeCompare(b.name, 'vi'));
                 
-                if (sortedDates.length === 0) {
-                    dailySumBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400 italic">Chưa có khoản thu nào được thực hiện trong khoảng thời gian đã chọn...</td></tr>`;
+                if (classesToList.length === 0) {
+                    dailySumBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400 italic">Chưa có lớp học nào trên hệ thống...</td></tr>`;
                     return;
                 }
 
@@ -3359,32 +3413,31 @@
                 let totalDailyCash = 0;
                 let totalDailyTransfer = 0;
 
-                sortedDates.forEach(date => {
-                    const classesForDate = Object.keys(dailySummaries[date]).sort();
-                    const [y, m, d] = date.split('-');
-                    const formattedDate = `${d}/${m}/${y}`;
+                classesToList.forEach(c => {
+                    // Find actual collected amount for this class inside summaries
+                    const classSummary = summaries[c.name] || { cash: 0, transfer: 0 };
+                    const rowTotal = classSummary.cash + classSummary.transfer;
+                    
+                    totalDailyCash += classSummary.cash;
+                    totalDailyTransfer += classSummary.transfer;
 
-                    classesForDate.forEach((cname, index) => {
-                        const amt = dailySummaries[date][cname];
-                        const rowTotal = amt.cash + amt.transfer;
-                        totalDailyCash += amt.cash;
-                        totalDailyTransfer += amt.transfer;
-
-                        dailyHtml += `
-                            <tr class="hover:bg-slate-50 border-b border-slate-100 transition-colors">
-                                ${index === 0 ? `<td class="p-3 font-black text-slate-800" rowspan="${classesForDate.length}">${formattedDate}</td>` : ''}
-                                <td class="p-3 text-slate-700">🏫 ${cname}</td>
-                                <td class="p-3 text-center text-slate-600 font-bold">${new Intl.NumberFormat('vi-VN').format(amt.cash)}đ</td>
-                                <td class="p-3 text-center text-slate-600 font-bold">${new Intl.NumberFormat('vi-VN').format(amt.transfer)}đ</td>
-                                <td class="p-3 text-center text-emerald-600 font-extrabold">${new Intl.NumberFormat('vi-VN').format(rowTotal)}đ</td>
-                            </tr>
-                        `;
-                    });
+                    dailyHtml += `
+                        <tr onclick="showClassCollectionDetail('${c.name}')" class="hover:bg-emerald-50/50 cursor-pointer border-b border-slate-100 transition-colors group" title="Click để xem chi tiết danh sách thu tiền của lớp ${c.name}">
+                            <td class="p-3 font-black text-slate-800 flex items-center gap-1.5 group-hover:text-emerald-700 transition-colors">
+                                🏫 ${c.name}
+                                <span class="text-[8px] bg-emerald-100 text-emerald-700 px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity font-bold">🔍 Chi tiết thu</span>
+                            </td>
+                            <td class="p-3 text-center text-slate-600 font-bold">${new Intl.NumberFormat('vi-VN').format(classSummary.cash)}đ</td>
+                            <td class="p-3 text-center text-slate-600 font-bold">${new Intl.NumberFormat('vi-VN').format(classSummary.transfer)}đ</td>
+                            <td class="p-3 text-center text-emerald-600 font-extrabold">${new Intl.NumberFormat('vi-VN').format(rowTotal)}đ</td>
+                        </tr>
+                    `;
                 });
 
+                // Grand total row at the end
                 dailyHtml += `
                     <tr class="bg-emerald-50/50 font-black border-t-2 border-emerald-200 animate-in slide-in-from-bottom-1">
-                        <td class="p-3 text-emerald-800 font-bold" colspan="2">
+                        <td class="p-3 text-emerald-800 font-bold">
                             <div>TỔNG THỰC THU TOÀN TRƯỜNG</div>
                             <div class="text-[9px] font-bold text-slate-500 mt-1 uppercase tracking-wider">
                                 📊 Cần phải thu: ${new Intl.NumberFormat('vi-VN').format(grandTotal)}đ | 📉 Công nợ: ${new Intl.NumberFormat('vi-VN').format(grandPending)}đ
@@ -7226,6 +7279,40 @@
                 <input type="hidden" id="payment-total">
                 <button onclick="submitPayment()"
                     class="w-full bg-emerald-600 text-white py-3 rounded-md font-black text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-100 transform active:scale-95 transition-all">Xác nhận đã thu tiền</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Class Collection Detail -->
+    <div id="modal-class-collection-detail"
+        class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] hidden flex items-center justify-center p-6 modal-overlay no-print">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in duration-300 border-t-4 border-emerald-600 flex flex-col max-h-[85vh]">
+            <div class="p-5 bg-emerald-50 flex justify-between items-center border-b border-emerald-100 shrink-0">
+                <div>
+                    <h3 class="text-sm font-black text-emerald-700 headline uppercase tracking-widest">📋 Chi tiết danh sách thu tiền</h3>
+                    <p class="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-wider">Lớp: <span id="collection-class-title" class="text-emerald-600">--</span></p>
+                </div>
+                <button onclick="closeModal('modal-class-collection-detail')"
+                    class="w-8 h-8 flex items-center justify-center rounded-full bg-emerald-200/50 text-emerald-600 hover:bg-emerald-200 transition-all font-bold">✕</button>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1 space-y-4">
+                <div class="overflow-x-auto border border-slate-100 rounded-xl bg-white shadow-sm">
+                    <table class="w-full text-left text-[10px] border-collapse">
+                        <thead class="bg-slate-50 text-[9px] font-black uppercase text-slate-400 tracking-widest border-b border-[#eee]">
+                            <tr>
+                                <th class="p-3 text-center w-12">STT</th>
+                                <th class="p-3">Họ và tên bé</th>
+                                <th class="p-3 text-center">Trạng thái</th>
+                                <th class="p-3 text-center">Hình thức</th>
+                                <th class="p-3 text-center">Ngày thu</th>
+                                <th class="p-3 text-right">Học phí phải thu</th>
+                            </tr>
+                        </thead>
+                        <tbody id="collection-detail-table-body" class="divide-y divide-slate-100 font-bold text-slate-700">
+                            <!-- Dynamically generated rows -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
