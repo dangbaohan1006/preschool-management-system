@@ -2388,7 +2388,8 @@
                 });
                 const data = await res.json();
                 if (data.success) {
-                    currentUser = { role: 'teacher', ...data };
+                    const role = data.class_id === 'MANAGEMENT' ? 'admin' : 'teacher';
+                    currentUser = { role, ...data };
                     localStorage.setItem('preschool_session', JSON.stringify(currentUser));
                     enterDashboard();
                 } else {
