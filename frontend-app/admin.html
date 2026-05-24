@@ -3194,6 +3194,19 @@
         }
 
         function renderClassFinancialSummary(bills, month) {
+            const rawStart = document.getElementById('finance-start')?.value;
+            const rawEnd = document.getElementById('finance-end')?.value;
+
+            const convertToISO = (str) => {
+                if (!str) return '';
+                const parts = str.split('/');
+                if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+                return str;
+            };
+
+            const startDate = convertToISO(rawStart);
+            const endDate = convertToISO(rawEnd);
+
             document.getElementById('summary-month-label').innerText = month.split('-')[1] + '/' + month.split('-')[0];
             const sumBody = document.getElementById('summary-table-body');
             if (!sumBody) return;
@@ -3215,12 +3228,31 @@
                 }
                 summaries[cname].total += b.total_amount || 0;
                 summaries[cname].refund += b.refund_amount || 0;
-                if (b.payment_status === 'PAID') {
+
+                const payDate = b.payment_date || '';
+                const isPaid = b.payment_status === 'PAID';
+                const isWithinRange = !startDate || !endDate || (payDate >= startDate && payDate <= endDate);
+
+                if (isPaid && isWithinRange) {
                     summaries[cname].collected += b.total_amount || 0;
                     if (b.payment_method === 'TRANSFER') {
                         summaries[cname].transfer += b.total_amount || 0;
                     } else {
                         summaries[cname].cash += b.total_amount || 0;
+                    }
+
+                    // Group by date and class name for the daily summary
+                    const groupDate = payDate || new Date().toISOString().substring(0, 10);
+                    if (!dailySummaries[groupDate]) {
+                        dailySummaries[groupDate] = {};
+                    }
+                    if (!dailySummaries[groupDate][cname]) {
+                        dailySummaries[groupDate][cname] = { cash: 0, transfer: 0 };
+                    }
+                    if (b.payment_method === 'TRANSFER') {
+                        dailySummaries[groupDate][cname].transfer += b.total_amount || 0;
+                    } else {
+                        dailySummaries[groupDate][cname].cash += b.total_amount || 0;
                     }
                 } else {
                     summaries[cname].pending += b.total_amount || 0;
@@ -3228,26 +3260,13 @@
 
                 grandTotal += b.total_amount || 0;
                 grandRefund += b.refund_amount || 0;
-                if (b.payment_status === 'PAID') {
+
+                if (isPaid && isWithinRange) {
                     grandCollected += b.total_amount || 0;
                     if (b.payment_method === 'TRANSFER') {
                         grandCollectedTransfer += b.total_amount || 0;
                     } else {
                         grandCollectedCash += b.total_amount || 0;
-                    }
-
-                    // Group by date and class name
-                    const payDate = b.payment_date || new Date().toISOString().substring(0, 10);
-                    if (!dailySummaries[payDate]) {
-                        dailySummaries[payDate] = {};
-                    }
-                    if (!dailySummaries[payDate][cname]) {
-                        dailySummaries[payDate][cname] = { cash: 0, transfer: 0 };
-                    }
-                    if (b.payment_method === 'TRANSFER') {
-                        dailySummaries[payDate][cname].transfer += b.total_amount || 0;
-                    } else {
-                        dailySummaries[payDate][cname].cash += b.total_amount || 0;
                     }
                 } else {
                     grandPending += b.total_amount || 0;
@@ -3332,7 +3351,7 @@
                 const sortedDates = Object.keys(dailySummaries).sort((a, b) => b.localeCompare(a));
                 
                 if (sortedDates.length === 0) {
-                    dailySumBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400 italic">Chưa có khoản thu nào được thực hiện trong tháng...</td></tr>`;
+                    dailySumBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400 italic">Chưa có khoản thu nào được thực hiện trong khoảng thời gian đã chọn...</td></tr>`;
                     return;
                 }
 
@@ -3364,8 +3383,13 @@
                 });
 
                 dailyHtml += `
-                    <tr class="bg-emerald-50/50 font-black border-t-2 border-emerald-200">
-                        <td class="p-3 text-emerald-800 font-bold" colspan="2">TỔNG THỰC THU TOÀN TRƯỜNG</td>
+                    <tr class="bg-emerald-50/50 font-black border-t-2 border-emerald-200 animate-in slide-in-from-bottom-1">
+                        <td class="p-3 text-emerald-800 font-bold" colspan="2">
+                            <div>TỔNG THỰC THU TOÀN TRƯỜNG</div>
+                            <div class="text-[9px] font-bold text-slate-500 mt-1 uppercase tracking-wider">
+                                📊 Cần phải thu: ${new Intl.NumberFormat('vi-VN').format(grandTotal)}đ | 📉 Công nợ: ${new Intl.NumberFormat('vi-VN').format(grandPending)}đ
+                            </div>
+                        </td>
                         <td class="p-3 text-center text-slate-800">${new Intl.NumberFormat('vi-VN').format(totalDailyCash)}đ</td>
                         <td class="p-3 text-center text-slate-800">${new Intl.NumberFormat('vi-VN').format(totalDailyTransfer)}đ</td>
                         <td class="p-3 text-center text-emerald-700 font-black text-xs">${new Intl.NumberFormat('vi-VN').format(totalDailyCash + totalDailyTransfer)}đ</td>
