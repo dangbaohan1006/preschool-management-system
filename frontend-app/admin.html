@@ -1144,6 +1144,11 @@
                                 class="w-full border border-slate-200 rounded-md p-3 text-xs font-bold outline-none focus:border-[#006C18]">
                             <input type="text" id="teacher-pin" placeholder="Mật khẩu"
                                 class="w-full border border-slate-200 rounded-md p-3 text-xs font-bold outline-none focus:border-[#006C18]">
+                            <select id="teacher-role" onchange="toggleTeacherRole()"
+                                class="w-full border border-slate-200 rounded-md p-3 text-xs font-bold outline-none focus:border-[#006C18]">
+                                <option value="TEACHER">Giáo viên</option>
+                                <option value="MANAGER">Cấp quản lý (BQL)</option>
+                            </select>
                             <select id="teacher-class"
                                 class="w-full border border-slate-200 rounded-md p-3 text-xs font-bold outline-none"></select>
                         </div>
@@ -1279,6 +1284,12 @@
                                         <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Chi nhánh / Tên hiển thị</label>
                                         <input type="text" id="set-bank-branch" placeholder="Ví dụ: Chi nhánh Gò Dầu..." oninput="updateQRPreview()"
                                             class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-[#006C18] focus:ring-1 focus:ring-[#006C18]">
+                                    </div>
+
+                                    <div class="flex flex-col gap-1.5">
+                                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Mật khẩu đăng nhập Admin</label>
+                                        <input type="password" id="set-about-admin-password" placeholder="Nhập mật khẩu Admin mới..."
+                                            class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-[#006C18] focus:ring-1 focus:ring-[#006C18] font-bold">
                                     </div>
 
                                     <div id="bank-settings-save-block" class="pt-4 border-t border-slate-100 space-y-4">
@@ -1997,6 +2008,11 @@
                                     class="w-48 border-b-2 border-slate-100 text-right outline-none focus:border-[#006C18]"
                                     value="">
                             </div>
+                            <div class="flex justify-between items-center text-[11px] font-bold pt-2 border-t border-slate-100 mt-2">
+                                <span>Mật khẩu đăng nhập Admin</span>
+                                <input type="password" id="set-admin-password" placeholder="Nhập mật khẩu mới..."
+                                    class="w-40 border-b-2 border-slate-100 text-right outline-none focus:border-[#006C18] font-bold">
+                            </div>
                             <div
                                 class="flex justify-between items-center text-[11px] font-bold pt-2 border-t border-slate-100 mt-2">
                                 <span>Mã PIN Xác nhận (Admin)</span>
@@ -2341,10 +2357,26 @@
             // --- GHOST SUBMIT: Xóa sạch dấu hiệu trước khi gửi ---
             pInput.value = '';
 
-            if (u === 'admin' && p === '123456') {
-                currentUser = { role: 'admin', name: 'Quản trị viên' };
-                localStorage.setItem('preschool_session', JSON.stringify(currentUser));
-                enterDashboard();
+            if (u === 'admin') {
+                try {
+                    const res = await fetch(`${API_BASE}/auth/admin`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'x-api-key': SECRET },
+                        body: JSON.stringify({ password: p })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        currentUser = { role: 'admin', name: 'Quản trị viên' };
+                        localStorage.setItem('preschool_session', JSON.stringify(currentUser));
+                        enterDashboard();
+                    } else {
+                        alert('Mật khẩu quản trị viên không chính xác!');
+                        pInput.value = p; // Khôi phục nếu sai
+                    }
+                } catch (e) {
+                    alert('Lỗi kết nối máy chủ!');
+                    pInput.value = p; // Khôi phục nếu lỗi mạng
+                }
                 return;
             }
 
@@ -3990,7 +4022,7 @@
                     const currentVal = el.value;
                     const isOptional = ['filter-class', 'dash-filter-class', 'bill-filter-class'].includes(id);
                     el.innerHTML = (isOptional ? '<option value="">Toàn trường</option>' : '') +
-                        classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                        classes.filter(c => c.id !== 'MANAGEMENT').map(c => `<option value="${c.id}">${c.name}</option>`).join('');
                     if (currentVal && Array.from(el.options).some(o => o.value === currentVal)) el.value = currentVal;
                 });
 
@@ -5289,6 +5321,16 @@
         }
 
         // Staff & Logs Handlers
+        function toggleTeacherRole() {
+            const role = document.getElementById('teacher-role').value;
+            const classSelect = document.getElementById('teacher-class');
+            if (role === 'MANAGER') {
+                classSelect.classList.add('hidden');
+            } else {
+                classSelect.classList.remove('hidden');
+            }
+        }
+
         async function loadTeacherData() {
             try {
                 // 1. Teachers
@@ -5297,7 +5339,7 @@
                 const list = document.getElementById('teacher-list');
                 list.innerHTML = teachers.map(t => {
                     const cls = currentClasses.find(c => c.id === t.class_id);
-                    const className = cls ? cls.name : (t.class_id || 'Chưa phân lớp');
+                    const className = t.class_id === 'MANAGEMENT' ? 'Ban quản lý' : (cls ? cls.name : (t.class_id || 'Chưa phân lớp'));
                     
                     return `
                     <div class="p-3 flex justify-between items-center text-xs border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
@@ -5496,10 +5538,11 @@
             const id = document.getElementById('teacher-id').value.trim();
             const name = document.getElementById('teacher-name').value.trim();
             const pin = document.getElementById('teacher-pin').value.trim();
-            const class_id = document.getElementById('teacher-class').value;
+            const role = document.getElementById('teacher-role').value;
+            const class_id = role === 'MANAGER' ? 'MANAGEMENT' : document.getElementById('teacher-class').value;
             const isEdit = document.getElementById('edit-teacher-mode').value === 'true';
 
-            if (!id || !name || !pin || !class_id) return alert('Vui lòng nhập đầy đủ thông tin');
+            if (!id || !name || !pin || (role === 'TEACHER' && !class_id)) return alert('Vui lòng nhập đầy đủ thông tin');
 
             try {
                 const url = isEdit ? `${API_BASE}/admin/teachers/${id}` : `${API_BASE}/admin/teachers`;
@@ -5519,6 +5562,8 @@
                     document.getElementById('teacher-id').value = '';
                     document.getElementById('teacher-name').value = '';
                     document.getElementById('teacher-pin').value = '';
+                    document.getElementById('teacher-role').value = 'TEACHER';
+                    toggleTeacherRole();
                     document.getElementById('btn-save-teacher').innerText = 'Lưu tài khoản';
                     
                     loadTeacherData();
@@ -5535,7 +5580,15 @@
             document.getElementById('teacher-id').disabled = true;
             document.getElementById('teacher-name').value = name;
             document.getElementById('teacher-pin').value = pin;
-            document.getElementById('teacher-class').value = class_id;
+            
+            const role = class_id === 'MANAGEMENT' ? 'MANAGER' : 'TEACHER';
+            document.getElementById('teacher-role').value = role;
+            toggleTeacherRole();
+            
+            if (role === 'TEACHER') {
+                document.getElementById('teacher-class').value = class_id;
+            }
+            
             document.getElementById('btn-save-teacher').innerText = 'Cập nhật tài khoản';
             
             // Scroll to form
@@ -5612,6 +5665,7 @@
                 const stdDays = appSettings.find(s => s.key === 'billing_std_days')?.value || '22';
                 const hangingMonths = appSettings.find(s => s.key === 'hanging_duration_months')?.value || '2';
                 const adminPin = appSettings.find(s => s.key === 'admin_pin')?.value || '123456';
+                const adminPassword = appSettings.find(s => s.key === 'admin_password')?.value || '123456';
                 const bankId = appSettings.find(s => s.key === 'bank_id')?.value || 'Sacombank';
                 const bankAccount = appSettings.find(s => s.key === 'bank_account_number')?.value || '050092408296';
                 const bankAccountName = appSettings.find(s => s.key === 'bank_account_name')?.value || 'TRUONG MAM NON THANH DANH';
@@ -5639,6 +5693,9 @@
                 const elBankBranch = document.getElementById('set-bank-branch');
                 if (elBankBranch) elBankBranch.value = bankBranch;
 
+                const elAboutPass = document.getElementById('set-about-admin-password');
+                if (elAboutPass) elAboutPass.value = adminPassword;
+
                 // Update Finance System Settings fields
                 const elFinBankId = document.getElementById('set-finance-bank-id');
                 if (elFinBankId) elFinBankId.value = bankId;
@@ -5651,6 +5708,9 @@
 
                 const elFinBankBranch = document.getElementById('set-finance-bank-branch');
                 if (elFinBankBranch) elFinBankBranch.value = bankBranch;
+
+                const elFinPass = document.getElementById('set-admin-password');
+                if (elFinPass) elFinPass.value = adminPassword;
 
                 // Clear PIN entries to be secure
                 const elAboutPinInput = document.getElementById('set-about-admin-pin');
@@ -5667,7 +5727,7 @@
             const stdDays = document.getElementById('set-std-days').value;
             const hangingMonths = document.getElementById('set-hanging-months').value;
             
-            let adminPin, bankId, bankAccount, bankAccountName, bankBranch;
+            let adminPin, bankId, bankAccount, bankAccountName, bankBranch, adminPassword;
             
             if (source === 'about') {
                 adminPin = document.getElementById('set-about-admin-pin').value;
@@ -5675,16 +5735,23 @@
                 bankAccount = document.getElementById('set-bank-account').value;
                 bankAccountName = document.getElementById('set-bank-account-name').value;
                 bankBranch = document.getElementById('set-bank-branch').value;
+                adminPassword = document.getElementById('set-about-admin-password').value;
             } else {
                 adminPin = document.getElementById('set-admin-pin').value;
                 bankId = document.getElementById('set-finance-bank-id').value;
                 bankAccount = document.getElementById('set-finance-bank-account').value;
                 bankAccountName = document.getElementById('set-finance-bank-account-name').value;
                 bankBranch = document.getElementById('set-finance-bank-branch').value;
+                adminPassword = document.getElementById('set-admin-password').value;
             }
 
             if (!adminPin) {
                 alert('Lỗi: Vui lòng nhập Mã PIN xác nhận!');
+                return;
+            }
+
+            if (!adminPassword) {
+                alert('Lỗi: Vui lòng nhập Mật khẩu đăng nhập Admin!');
                 return;
             }
 
@@ -5697,6 +5764,7 @@
                             { key: 'billing_std_days', value: stdDays },
                             { key: 'hanging_duration_months', value: hangingMonths },
                             { key: 'admin_pin', value: adminPin },
+                            { key: 'admin_password', value: adminPassword },
                             { key: 'bank_id', value: bankId },
                             { key: 'bank_account_number', value: bankAccount },
                             { key: 'bank_account_name', value: bankAccountName },
