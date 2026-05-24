@@ -1271,44 +1271,57 @@
                             </div>
                         </div>
 
-                        <div class="space-y-4 flex-1">
-                            <div class="flex flex-col gap-1.5">
-                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Mã Ngân hàng (VietQR ID)</label>
-                                <input type="text" id="set-bank-id" placeholder="Ví dụ: Sacombank, MB, VCB, BIDV..."
-                                    class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-[#006C18] focus:ring-1 focus:ring-[#006C18] font-bold">
-                            </div>
-
-                            <div class="flex flex-col gap-1.5">
-                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Số tài khoản (STK)</label>
-                                <input type="text" id="set-bank-account" placeholder="Nhập số tài khoản..."
-                                    class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-[#006C18] focus:ring-1 focus:ring-[#006C18] font-bold">
-                            </div>
-
-                            <div class="flex flex-col gap-1.5">
-                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tên chủ tài khoản</label>
-                                <input type="text" id="set-bank-account-name" placeholder="Ví dụ: NGUYEN VAN A"
-                                    class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-[#006C18] focus:ring-1 focus:ring-[#006C18] uppercase font-black">
-                            </div>
-
-                            <div class="flex flex-col gap-1.5">
-                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Chi nhánh / Tên hiển thị</label>
-                                <input type="text" id="set-bank-branch" placeholder="Ví dụ: Chi nhánh Gò Dầu..."
-                                    class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-[#006C18] focus:ring-1 focus:ring-[#006C18]">
-                            </div>
-
-                            <div id="bank-settings-save-block" class="pt-4 border-t border-slate-100 space-y-4">
-                                <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
-                                    <div class="flex flex-col gap-0.5">
-                                        <span class="text-xs font-bold text-slate-700">Mã PIN xác nhận</span>
-                                        <span class="text-[9px] text-slate-400 font-medium">Nhập mã PIN Admin để lưu thay đổi</span>
-                                    </div>
-                                    <input type="password" id="set-about-admin-pin" placeholder="••••••"
-                                        class="w-24 border border-slate-200 rounded px-2 py-1 text-center outline-none focus:border-[#006C18] text-rose-600 tracking-[0.2em] font-black text-xs">
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1">
+                            <!-- Left form: inputs (lg:col-span-7) -->
+                            <div class="lg:col-span-7 space-y-4">
+                                <div class="flex flex-col gap-1.5">
+                                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Mã Ngân hàng (VietQR ID)</label>
+                                    <input type="text" id="set-bank-id" placeholder="Ví dụ: Sacombank, MB, VCB, BIDV..." oninput="updateQRPreview()"
+                                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-[#006C18] focus:ring-1 focus:ring-[#006C18] font-bold">
                                 </div>
-                                <button onclick="saveSettings()"
-                                    class="w-full bg-[#006C18] hover:bg-[#005212] text-white py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all shadow-sm">
-                                    Cập nhật tài khoản thanh toán
-                                </button>
+
+                                <div class="flex flex-col gap-1.5">
+                                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Số tài khoản (STK)</label>
+                                    <input type="text" id="set-bank-account" placeholder="Nhập số tài khoản..." oninput="updateQRPreview()"
+                                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-[#006C18] focus:ring-1 focus:ring-[#006C18] font-bold">
+                                </div>
+
+                                <div class="flex flex-col gap-1.5">
+                                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tên chủ tài khoản</label>
+                                    <input type="text" id="set-bank-account-name" placeholder="Ví dụ: NGUYEN VAN A" oninput="updateQRPreview()"
+                                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-[#006C18] focus:ring-1 focus:ring-[#006C18] uppercase font-black">
+                                </div>
+
+                                <div class="flex flex-col gap-1.5">
+                                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Chi nhánh / Tên hiển thị</label>
+                                    <input type="text" id="set-bank-branch" placeholder="Ví dụ: Chi nhánh Gò Dầu..." oninput="updateQRPreview()"
+                                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-[#006C18] focus:ring-1 focus:ring-[#006C18]">
+                                </div>
+
+                                <div id="bank-settings-save-block" class="pt-4 border-t border-slate-100 space-y-4">
+                                    <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                        <div class="flex flex-col gap-0.5">
+                                            <span class="text-xs font-bold text-slate-700">Mã PIN xác nhận</span>
+                                            <span class="text-[9px] text-slate-400 font-medium">Nhập mã PIN Admin để lưu thay đổi</span>
+                                        </div>
+                                        <input type="password" id="set-about-admin-pin" placeholder="••••••"
+                                            class="w-24 border border-slate-200 rounded px-2 py-1 text-center outline-none focus:border-[#006C18] text-rose-600 tracking-[0.2em] font-black text-xs">
+                                    </div>
+                                    <button onclick="saveSettings('about')"
+                                        class="w-full bg-[#006C18] hover:bg-[#005212] text-white py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all shadow-sm">
+                                        Cập nhật tài khoản thanh toán
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Right form: QR Code Preview (lg:col-span-5) -->
+                            <div class="lg:col-span-5 flex flex-col items-center justify-center border border-dashed border-slate-200 rounded-xl p-4 bg-slate-50/50">
+                                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Mã QR Thanh Toán (VietQR)</span>
+                                <div class="w-40 h-40 bg-white border border-slate-200 rounded-2xl p-3 flex items-center justify-center relative overflow-hidden shadow-md group hover:shadow-lg transition-all duration-300">
+                                    <img id="settings-qr-preview" src="https://placehold.co/150x150?text=VietQR" class="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105" />
+                                </div>
+                                <span id="settings-qr-info" class="text-[10px] text-slate-500 font-bold mt-3 text-center uppercase tracking-wider">Chưa có thông tin</span>
+                                <p class="text-[9px] text-slate-400 font-medium mt-2 text-center leading-normal">Mã QR này được tự động tạo dựa trên thông tin ngân hàng đã cấu hình.</p>
                             </div>
                         </div>
                     </div>
@@ -1943,25 +1956,25 @@
                             <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest pt-2 border-t border-slate-100 mt-2">Tài khoản Ngân hàng (VietQR)</h4>
                             <div class="flex justify-between items-center text-[11px] font-bold">
                                 <span>Mã Ngân hàng (VietQR ID)</span>
-                                <input type="text" id="set-bank-id" placeholder="Sacombank, MB, VCB..."
+                                <input type="text" id="set-finance-bank-id" placeholder="Sacombank, MB, VCB..."
                                     class="w-32 border-b-2 border-slate-100 text-right outline-none focus:border-[#006C18] font-bold"
                                     value="">
                             </div>
                             <div class="flex justify-between items-center text-[11px] font-bold">
                                 <span>Số tài khoản (STK)</span>
-                                <input type="text" id="set-bank-account" placeholder="Số tài khoản..."
+                                <input type="text" id="set-finance-bank-account" placeholder="Số tài khoản..."
                                     class="w-32 border-b-2 border-slate-100 text-right outline-none focus:border-[#006C18] font-bold"
                                     value="">
                             </div>
                             <div class="flex justify-between items-center text-[11px] font-bold">
                                 <span>Tên chủ tài khoản</span>
-                                <input type="text" id="set-bank-account-name" placeholder="Chủ tài khoản..."
+                                <input type="text" id="set-finance-bank-account-name" placeholder="Chủ tài khoản..."
                                     class="w-48 border-b-2 border-slate-100 text-right outline-none focus:border-[#006C18] uppercase font-black"
                                     value="">
                             </div>
                             <div class="flex justify-between items-center text-[11px] font-bold">
                                 <span>Chi nhánh / Tên hiển thị</span>
-                                <input type="text" id="set-bank-branch" placeholder="Tên hiển thị..."
+                                <input type="text" id="set-finance-bank-branch" placeholder="Tên hiển thị..."
                                     class="w-48 border-b-2 border-slate-100 text-right outline-none focus:border-[#006C18]"
                                     value="">
                             </div>
@@ -1971,7 +1984,7 @@
                                 <input type="password" id="set-admin-pin" placeholder="123456"
                                     class="w-20 border-b-2 border-slate-100 text-center outline-none focus:border-[#006C18] text-rose-600 tracking-[0.2em] font-black">
                             </div>
-                            <button onclick="saveSettings()"
+                            <button onclick="saveSettings('finance')"
                                 class="w-full bg-[#006C18] text-white py-2 rounded-lg font-bold text-[10px] uppercase mt-2">Lưu
                                 cấu hình</button>
                         </div>
@@ -5516,6 +5529,30 @@
             loadTeacherData();
         }
 
+        function updateQRPreview() {
+            const bankId = document.getElementById('set-bank-id')?.value?.trim() || '';
+            const bankAccount = document.getElementById('set-bank-account')?.value?.trim() || '';
+            const bankAccountName = document.getElementById('set-bank-account-name')?.value?.trim() || '';
+            
+            const qrImg = document.getElementById('settings-qr-preview');
+            const qrInfo = document.getElementById('settings-qr-info');
+            
+            if (!qrImg || !qrInfo) return;
+            
+            if (bankId && bankAccount) {
+                const encodedName = encodeURIComponent(bankAccountName || 'TRUONG MAM NON THANH DANH');
+                qrImg.src = `https://img.vietqr.io/image/${bankId}-${bankAccount}-compact2.jpg?accountName=${encodedName}`;
+                qrInfo.innerText = `${bankId} - ${bankAccount}`;
+                qrInfo.classList.remove('text-slate-500');
+                qrInfo.classList.add('text-emerald-600');
+            } else {
+                qrImg.src = 'https://placehold.co/150x150?text=VietQR';
+                qrInfo.innerText = 'Chưa đủ thông tin';
+                qrInfo.classList.remove('text-emerald-600');
+                qrInfo.classList.add('text-slate-500');
+            }
+        }
+
         async function loadSettings() {
             try {
                 const res = await fetch(`${API_BASE}/admin/settings`, { headers: { 'x-api-key': SECRET } });
@@ -5539,6 +5576,7 @@
                 const elPin = document.getElementById('set-admin-pin');
                 if (elPin) elPin.value = adminPin;
 
+                // Update About Software Settings fields
                 const elBankId = document.getElementById('set-bank-id');
                 if (elBankId) elBankId.value = bankId;
 
@@ -5550,17 +5588,56 @@
 
                 const elBankBranch = document.getElementById('set-bank-branch');
                 if (elBankBranch) elBankBranch.value = bankBranch;
+
+                // Update Finance System Settings fields
+                const elFinBankId = document.getElementById('set-finance-bank-id');
+                if (elFinBankId) elFinBankId.value = bankId;
+
+                const elFinBankAccount = document.getElementById('set-finance-bank-account');
+                if (elFinBankAccount) elFinBankAccount.value = bankAccount;
+
+                const elFinBankAccountName = document.getElementById('set-finance-bank-account-name');
+                if (elFinBankAccountName) elFinBankAccountName.value = bankAccountName;
+
+                const elFinBankBranch = document.getElementById('set-finance-bank-branch');
+                if (elFinBankBranch) elFinBankBranch.value = bankBranch;
+
+                // Clear PIN entries to be secure
+                const elAboutPinInput = document.getElementById('set-about-admin-pin');
+                if (elAboutPinInput) elAboutPinInput.value = '';
+                const elFinPinInput = document.getElementById('set-admin-pin');
+                if (elFinPinInput) elFinPinInput.value = '';
+
+                // Update live QR Code Preview
+                updateQRPreview();
             } catch (e) { console.error("Lỗi tải cấu hình:", e); }
         }
 
-        async function saveSettings() {
+        async function saveSettings(source = 'about') {
             const stdDays = document.getElementById('set-std-days').value;
             const hangingMonths = document.getElementById('set-hanging-months').value;
-            const adminPin = document.getElementById('set-admin-pin').value;
-            const bankId = document.getElementById('set-bank-id').value;
-            const bankAccount = document.getElementById('set-bank-account').value;
-            const bankAccountName = document.getElementById('set-bank-account-name').value;
-            const bankBranch = document.getElementById('set-bank-branch').value;
+            
+            let adminPin, bankId, bankAccount, bankAccountName, bankBranch;
+            
+            if (source === 'about') {
+                adminPin = document.getElementById('set-about-admin-pin').value;
+                bankId = document.getElementById('set-bank-id').value;
+                bankAccount = document.getElementById('set-bank-account').value;
+                bankAccountName = document.getElementById('set-bank-account-name').value;
+                bankBranch = document.getElementById('set-bank-branch').value;
+            } else {
+                adminPin = document.getElementById('set-admin-pin').value;
+                bankId = document.getElementById('set-finance-bank-id').value;
+                bankAccount = document.getElementById('set-finance-bank-account').value;
+                bankAccountName = document.getElementById('set-finance-bank-account-name').value;
+                bankBranch = document.getElementById('set-finance-bank-branch').value;
+            }
+
+            if (!adminPin) {
+                alert('Vui lòng nhập Mã PIN xác nhận!');
+                return;
+            }
+
             try {
                 const res = await fetch(`${API_BASE}/admin/settings`, {
                     method: 'POST',
@@ -5580,6 +5657,8 @@
                 if ((await res.json()).success) {
                     alert('Đã lưu cấu hình hệ thống thành công!');
                     loadSettings();
+                } else {
+                    alert('Lưu cấu hình thất bại! Vui lòng kiểm tra mã PIN.');
                 }
             } catch (e) { alert('Lỗi kết nối máy chủ!'); }
         }
@@ -5917,18 +5996,18 @@
 
                     <div class="mt-1.5 text-[10pt] leading-tight">
                         <div class="flex gap-6 mb-3 items-center">
-                            <div class="w-3/5 border-2 border-black rounded-lg p-1.5 flex justify-between items-center bg-gray-100">
+                            <div class="w-2/3 border-2 border-black rounded-lg p-2 flex justify-between items-center bg-gray-100">
                                 <div class="leading-tight">
                                     <p class="font-bold text-[10.5pt]">Tên TK: <span class="uppercase">${bankAccountName}</span></p>
                                     <p class="font-bold text-[10.5pt]">Số TK: <span class="text-black">${bankAccount}</span></p>
                                     <p class="font-bold text-[10pt]">Tại: ${bankBranch}</p>
                                 </div>
-                                <div class="w-14 h-14 border-2 border-black bg-white flex items-center justify-center p-0.5 ml-1 shrink-0">
+                                <div class="w-20 h-20 border border-black bg-white flex items-center justify-center p-0.5 ml-2 shrink-0">
                                     <img src="${qrUrl}" class="w-full h-full object-contain" />
                                 </div>
                             </div>
 
-                            <div class="w-2/5 text-[9pt] italic leading-tight text-right">
+                            <div class="w-1/3 text-[9pt] italic leading-tight text-right">
                                 <p class="font-bold mb-0.5">Đề nghị đóng phí TM tại trường hoặc CK từ ngày 01 đến 10 hàng tháng.</p>
                                 <p>Nội dung CK: <span class="font-bold">${studentName} - ${className} - đóng phí...</span></p>
                             </div>
