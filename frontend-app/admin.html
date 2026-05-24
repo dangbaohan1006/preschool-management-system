@@ -2550,7 +2550,7 @@
             document.querySelectorAll('#teacher-list button').forEach(b => {
                 const onclickAttr = b.getAttribute('onclick') || '';
                 if (onclickAttr.includes('editTeacher') || onclickAttr.includes('deleteTeacher')) {
-                    b.classList.add('hidden');
+                    b.classList.toggle('hidden', isRead);
                 }
             });
             
