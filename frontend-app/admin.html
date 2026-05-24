@@ -5635,7 +5635,7 @@
             }
 
             if (!adminPin) {
-                alert('Vui lòng nhập Mã PIN xác nhận!');
+                alert('Lỗi: Vui lòng nhập Mã PIN xác nhận!');
                 return;
             }
 
@@ -5659,7 +5659,7 @@
                     alert('Đã lưu cấu hình hệ thống thành công!');
                     loadSettings();
                 } else {
-                    alert('Lưu cấu hình thất bại! Vui lòng kiểm tra mã PIN.');
+                    alert('Lỗi: Lưu cấu hình thất bại! Vui lòng kiểm tra mã PIN.');
                 }
             } catch (e) { alert('Lỗi kết nối máy chủ!'); }
         }
