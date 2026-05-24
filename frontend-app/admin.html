@@ -442,7 +442,7 @@
             </button>
             <button onclick="switchTab('locks')" id="btn-locks"
                 class="nav-item w-full flex items-center gap-3 p-3 rounded-md font-bold text-xs transition-all">
-                🔐 Khóa sổ điểm danh
+                Khóa sổ điểm danh
             </button>
             <button onclick="switchTab('finance')" id="btn-finance"
                 class="nav-item w-full flex items-center gap-3 p-3 rounded-md font-bold text-xs transition-all">
@@ -454,7 +454,7 @@
             </button>
             <button onclick="switchTab('about')" id="btn-about"
                 class="nav-item w-full flex items-center gap-3 p-3 rounded-md font-bold text-xs transition-all">
-                💻 Về phần mềm
+                Về phần mềm
             </button>
         </nav>
 
@@ -2115,7 +2115,7 @@
             }
 
             // Hide all views
-            ['dashboard', 'manage', 'calendar', 'report', 'locks', 'staff', 'finance'].forEach(v => {
+            ['dashboard', 'manage', 'calendar', 'report', 'locks', 'staff', 'finance', 'about'].forEach(v => {
                 const view = document.getElementById(`view-${v}`);
                 const btn = document.getElementById(`btn-${v}`);
                 if (view) view.classList.add('hidden');
@@ -2142,7 +2142,8 @@
                 report: ['Báo cáo chi tiết', 'Tổng hợp kết quả theo tháng'],
                 locks: ['Khóa sổ điểm danh', 'Quản lý khóa điểm danh hàng ngày'],
                 staff: ['Nhân sự & Nhật ký', 'Quản lý tài khoản giáo viên và truy soát lịch sử'],
-                finance: ['Quản lý tài chính & Biểu phí', 'Cấu hình hoàn tiền và hóa đơn học sinh']
+                finance: ['Quản lý tài chính & Biểu phí', 'Cấu hình hoàn tiền và hóa đơn học sinh'],
+                about: ['Về phần mềm', 'Cấu hình thông tin nhận học phí & Giới thiệu phần mềm']
             };
             if (titles[tab]) {
                 document.getElementById('current-tab-title').innerText = titles[tab][0];
