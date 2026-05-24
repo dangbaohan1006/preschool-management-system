@@ -1841,6 +1841,31 @@
                                     class="w-16 border-b-2 border-slate-100 text-center outline-none focus:border-[#006C18]"
                                     value="2">
                             </div>
+                            <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest pt-2 border-t border-slate-100 mt-2">Tài khoản Ngân hàng (VietQR)</h4>
+                            <div class="flex justify-between items-center text-[11px] font-bold">
+                                <span>Mã Ngân hàng (VietQR ID)</span>
+                                <input type="text" id="set-bank-id" placeholder="Sacombank, MB, VCB..."
+                                    class="w-32 border-b-2 border-slate-100 text-right outline-none focus:border-[#006C18] font-bold"
+                                    value="">
+                            </div>
+                            <div class="flex justify-between items-center text-[11px] font-bold">
+                                <span>Số tài khoản (STK)</span>
+                                <input type="text" id="set-bank-account" placeholder="Số tài khoản..."
+                                    class="w-32 border-b-2 border-slate-100 text-right outline-none focus:border-[#006C18] font-bold"
+                                    value="">
+                            </div>
+                            <div class="flex justify-between items-center text-[11px] font-bold">
+                                <span>Tên chủ tài khoản</span>
+                                <input type="text" id="set-bank-account-name" placeholder="Chủ tài khoản..."
+                                    class="w-48 border-b-2 border-slate-100 text-right outline-none focus:border-[#006C18] uppercase font-black"
+                                    value="">
+                            </div>
+                            <div class="flex justify-between items-center text-[11px] font-bold">
+                                <span>Chi nhánh / Tên hiển thị</span>
+                                <input type="text" id="set-bank-branch" placeholder="Tên hiển thị..."
+                                    class="w-48 border-b-2 border-slate-100 text-right outline-none focus:border-[#006C18]"
+                                    value="">
+                            </div>
                             <div
                                 class="flex justify-between items-center text-[11px] font-bold pt-2 border-t border-slate-100 mt-2">
                                 <span>Mã PIN Xác nhận (Admin)</span>
@@ -2477,6 +2502,9 @@
         }
 
         async function enterDashboard() {
+            // Load system settings cache (includes standard days, bank info, admin pin, etc.)
+            loadSettings();
+
             const now = new Date();
             const firstDay = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
             const lastDayDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -5398,6 +5426,10 @@
                 const stdDays = appSettings.find(s => s.key === 'billing_std_days')?.value || '22';
                 const hangingMonths = appSettings.find(s => s.key === 'hanging_duration_months')?.value || '2';
                 const adminPin = appSettings.find(s => s.key === 'admin_pin')?.value || '123456';
+                const bankId = appSettings.find(s => s.key === 'bank_id')?.value || 'Sacombank';
+                const bankAccount = appSettings.find(s => s.key === 'bank_account_number')?.value || '050092408296';
+                const bankAccountName = appSettings.find(s => s.key === 'bank_account_name')?.value || 'TRUONG MAM NON THANH DANH';
+                const bankBranch = appSettings.find(s => s.key === 'bank_branch')?.value || 'Ngân hàng Sacombank - CN Gò Dầu';
 
                 const elStd = document.getElementById('set-std-days');
                 if (elStd) elStd.value = stdDays;
@@ -5407,6 +5439,18 @@
 
                 const elPin = document.getElementById('set-admin-pin');
                 if (elPin) elPin.value = adminPin;
+
+                const elBankId = document.getElementById('set-bank-id');
+                if (elBankId) elBankId.value = bankId;
+
+                const elBankAccount = document.getElementById('set-bank-account');
+                if (elBankAccount) elBankAccount.value = bankAccount;
+
+                const elBankAccountName = document.getElementById('set-bank-account-name');
+                if (elBankAccountName) elBankAccountName.value = bankAccountName;
+
+                const elBankBranch = document.getElementById('set-bank-branch');
+                if (elBankBranch) elBankBranch.value = bankBranch;
             } catch (e) { console.error("Lỗi tải cấu hình:", e); }
         }
 
@@ -5414,6 +5458,10 @@
             const stdDays = document.getElementById('set-std-days').value;
             const hangingMonths = document.getElementById('set-hanging-months').value;
             const adminPin = document.getElementById('set-admin-pin').value;
+            const bankId = document.getElementById('set-bank-id').value;
+            const bankAccount = document.getElementById('set-bank-account').value;
+            const bankAccountName = document.getElementById('set-bank-account-name').value;
+            const bankBranch = document.getElementById('set-bank-branch').value;
             try {
                 const res = await fetch(`${API_BASE}/admin/settings`, {
                     method: 'POST',
@@ -5422,7 +5470,11 @@
                         entries: [
                             { key: 'billing_std_days', value: stdDays },
                             { key: 'hanging_duration_months', value: hangingMonths },
-                            { key: 'admin_pin', value: adminPin }
+                            { key: 'admin_pin', value: adminPin },
+                            { key: 'bank_id', value: bankId },
+                            { key: 'bank_account_number', value: bankAccount },
+                            { key: 'bank_account_name', value: bankAccountName },
+                            { key: 'bank_branch', value: bankBranch }
                         ]
                     })
                 });
@@ -5631,7 +5683,14 @@
             const currentMonth = getFinanceMonth().split('-')[1];
             const currentYear = getFinanceMonth().split('-')[0];
             const info = encodeURIComponent(`${studentName} ${className} T${currentMonth}`);
-            const qrUrl = `https://img.vietqr.io/image/Sacombank-050092408296-compact2.jpg?amount=${total}&addInfo=${info}&accountName=TRUONG%20MAM%20NON%20THANH%20DANH`;
+            
+            const bankId = appSettings.find(s => s.key === 'bank_id')?.value || 'Sacombank';
+            const bankAccount = appSettings.find(s => s.key === 'bank_account_number')?.value || '050092408296';
+            const bankAccountName = appSettings.find(s => s.key === 'bank_account_name')?.value || 'TRUONG MAM NON THANH DANH';
+            const bankBranch = appSettings.find(s => s.key === 'bank_branch')?.value || 'Ngân hàng Sacombank - CN Gò Dầu';
+            
+            const encodedName = encodeURIComponent(bankAccountName);
+            const qrUrl = `https://img.vietqr.io/image/${bankId}-${bankAccount}-compact2.jpg?amount=${total}&addInfo=${info}&accountName=${encodedName}`;
 
             const renderRows = (list, sectionId) => {
                 return list.map((it, i) => `
@@ -5761,9 +5820,9 @@
                         <div class="flex gap-6 mb-3 items-center">
                             <div class="w-3/5 border-2 border-black rounded-lg p-1.5 flex justify-between items-center bg-gray-100">
                                 <div class="leading-tight">
-                                    <p class="font-bold text-[10.5pt]">Tên TK: <span class="uppercase">Trường Mầm Non Thành Danh</span></p>
-                                    <p class="font-bold text-[10.5pt]">Số TK: <span class="text-black">050092408296</span></p>
-                                    <p class="font-bold text-[10pt]">Tại: Ngân hàng Sacombank - CN Gò Dầu</p>
+                                    <p class="font-bold text-[10.5pt]">Tên TK: <span class="uppercase">${bankAccountName}</span></p>
+                                    <p class="font-bold text-[10.5pt]">Số TK: <span class="text-black">${bankAccount}</span></p>
+                                    <p class="font-bold text-[10pt]">Tại: ${bankBranch}</p>
                                 </div>
                                 <div class="w-14 h-14 border-2 border-black bg-white flex items-center justify-center p-0.5 ml-1 shrink-0">
                                     <img src="${qrUrl}" class="w-full h-full object-contain" />
