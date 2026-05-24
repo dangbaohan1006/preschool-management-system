@@ -1,0 +1,8 @@
+name = "preschool-edge-api"
+main = "src/index.ts"
+compatibility_date = "2024-03-31"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "preschool-buffer"
+database_id = "56ba304d-6156-465e-9fd3-577c3d37136b"

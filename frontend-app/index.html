@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Điểm danh - Trường mầm non Thành Danh</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@300;400;500;600;700;800;900&family=Be+Vietnam+Pro:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #FF8000;
+            --nav-key: #006C18;
+            --base: #FFFFFF;
+            --accent: #E2725B;
+            --neutral-soft: #D3C9BD;
+            --card-sep: #FAEBCC;
+            
+            --radius-md: 4px;
+            --radius-lg: 8px;
+            --radius-xl: 12px;
+            
+            --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Utility to prevent unwanted line breaks on small screens */
+        .truncate {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow-x: hidden;
+            position: relative;
+            -webkit-text-size-adjust: 100%;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body { 
+            font-family: 'Be Vietnam Pro', sans-serif; 
+            background: #f8fafc; 
+            color: var(--nav-key);
+            line-height: 1.5;
+        }
+
+        /* Essential Reset */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        h1, h2, h3, .headline { 
+            font-family: 'Mulish', sans-serif; 
+            font-weight: 800; 
+        }
+
+        .card-layered {
+            background: #ffffff;
+            box-shadow: var(--shadow-soft);
+            border-radius: var(--radius-lg);
+            border: 1px solid #eee;
+        }
+
+        .btn-bouncy:active {
+            transform: scale(0.98);
+        }
+
+        img, video, canvas, iframe {
+            max-width: 100%;
+            height: auto;
+        }
+
+
+
+        /* Mobile First Default Styles (Mobile) */
+        thead { display: none; }
+        #student-table-body tr { 
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.75rem; 
+            background: #fff; 
+            border-radius: var(--radius-lg); 
+            padding: 0.75rem;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid #eee;
+        }
+        td { 
+            display: block; 
+            padding: 0.15rem 0 !important; 
+            text-align: left !important;
+        }
+        td:nth-child(1) { display: none; }
+        td:nth-child(2) { flex: 1; min-width: 0; } /* Student info */
+        td:nth-child(4) { flex-shrink: 0; margin-left: 0.5rem; } /* Buttons */
+        td:nth-child(5) { width: 100%; margin-top: 0.5rem; } /* Notes */
+        td:nth-child(4) div { justify-content: flex-start !important; }
+
+        /* Tablet/Desktop Enhancements */
+        @media (min-width: 768px) {
+            thead { display: table-header-group; }
+            #student-table-body tr { 
+                display: table-row; 
+                margin-bottom: 0;
+                background: transparent;
+                padding: 0;
+                box-shadow: none;
+                border: none;
+            }
+            td { 
+                display: table-cell; 
+                padding: 1rem !important;
+                text-align: left !important;
+            }
+            td:nth-child(1) { display: table-cell; }
+            td:nth-child(4) div { justify-content: center !important; }
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: var(--neutral-soft); border-radius: 99px; }
+
+        input:focus, select:focus {
+            border-color: var(--nav-key) !important;
+            outline: none;
+        }
+
+        .modal-overlay {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+        }
+
+        /* --- Custom System Popups --- */
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 9999;
+        }
+
+        .toast {
+            width: calc(100% - 32px);
+            max-width: 400px;
+            background: white;
+            border-radius: 12px;
+            padding: 14px 18px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            transform: translateX(120%);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border-left: 5px solid #ddd;
+            pointer-events: auto;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success { border-left-color: #006C18; }
+        .toast.error { border-left-color: #E2725B; }
+        .toast.warning { border-left-color: #FF8000; }
+
+        .toast-icon { font-size: 20px; }
+
+        .toast-content { flex: 1; }
+
+        .toast-title {
+            font-weight: 800;
+            font-size: 11px;
+            color: #006C18;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .toast-message {
+            font-size: 10px;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .sys-modal-card {
+            background: white;
+            width: 100%;
+            max-width: 380px;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+            border-top: 6px solid var(--primary);
+            animation: modalSlideUp 0.3s ease-out;
+        }
+
+        @keyframes modalSlideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @media (max-width: 480px) {
+            .xs\:hidden { display: none !important; }
+            .xs\:block { display: block !important; }
+        }
+        @media (min-width: 481px) {
+            .xs\:hidden { display: block !important; }
+            .xs\:block { display: block !important; }
+        }
+        @media (max-width: 768px) {
+            .mobile-hide { display: none !important; }
+            #history-table-body td {
+                padding: 0.75rem 1rem !important;
+            }
+            #history-table-body tr {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 0.5rem;
+                border: 1px solid #f1f5f9;
+                padding: 0.65rem;
+            }
+            #history-table-body td:nth-child(1) { display: none; }
+            #history-table-body td:nth-child(2) { flex: 1; min-width: 0; } /* Student info */
+            #history-table-body td:nth-child(3) { flex-shrink: 0; margin-left: 0.5rem; } /* Buttons */
+            #history-table-body td:nth-child(4) { width: 100%; margin-top: 0.4rem; } /* Notes */
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/vn.js"></script>
+</head>
+<body class="min-h-screen">
+    <div class="flex flex-col w-full overflow-x-hidden relative min-h-screen pb-20">
+        <!-- Header -->
+        <header class="w-full bg-white sticky top-0 z-50 px-2 py-2 md:p-3 border-b border-slate-200 shrink-0">
+            <div class="w-full max-w-7xl mx-auto flex items-center justify-between gap-1.5 px-1 md:px-0">
+                <div class="flex items-center gap-1.5 shrink-0 min-w-0">
+                    <div class="w-7 h-7 md:w-10 md:h-10 flex items-center justify-center overflow-hidden shrink-0">
+                        <img src="assets/images/TDS_LOGO.png" class="w-full h-full object-contain" />
+                    </div>
+                    <div class="xs:block">
+                        <p class="text-[8px] md:text-[9px] text-[#FF8000] font-black tracking-widest uppercase leading-tight">Hệ thống<br class="xs:hidden"> Điểm danh</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1.5 md:gap-4 shrink-0">
+                    <button id="logout-btn" class="hidden flex items-center gap-1 bg-red-50 hover:bg-red-100 text-red-600 px-1.5 py-1 md:px-3 md:py-1.5 rounded-lg text-[9px] md:text-xs font-black transition-all border border-red-100">
+                        <span>🚪 THOÁT</span>
+                    </button>
+                    <div class="text-right shrink-0">
+                        <div id="current-date" class="text-[9px] md:text-xs font-black text-[#006C18]">--/--/----</div>
+                        <div class="text-[7px] md:text-[9px] text-[#D3C9BD] font-bold uppercase tracking-widest">Teacher App</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main id="main-content" class="w-full max-w-7xl mx-auto p-3 md:p-6 space-y-4 md:space-y-6 flex-1">
+            <!-- Selector Section -->
+            <section class="card-layered p-3 md:p-4 grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 items-end bg-slate-50">
+                <div class="space-y-1">
+                    <div class="w-full">
+                        <button id="history-btn" class="w-full flex items-center justify-center gap-2 bg-[#006C18]/10 hover:bg-[#006C18]/20 text-[#006C18] px-3 py-2 rounded-md text-sm font-black transition-all mb-3">
+                            <span>🕒 XEM LỊCH SỬ</span>
+                        </button>
+                    </div>
+                    <label class="text-[10px] font-black text-[#006C18] uppercase tracking-widest ml-1">Lớp học</label>
+                    <select id="class-select" class="w-full bg-white border border-slate-200 rounded-md p-2.5 md:p-3 text-sm font-bold text-[#006C18] outline-none cursor-pointer">
+                        <!-- Dynamic -->
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-black text-[#006C18] uppercase tracking-widest ml-1">Ngày ghi nhận</label>
+                    <input type="text" id="date-input" class="w-full bg-white border border-slate-200 rounded-md p-2.5 md:p-3 text-sm font-bold text-[#006C18] outline-none cursor-pointer" placeholder="Chọn ngày" readonly>
+                </div>
+            </section>
+
+            <!-- Student List Header -->
+            <div class="flex items-center justify-between px-1">
+                <div class="flex items-center gap-2 md:gap-3">
+                    <h2 class="text-lg md:text-xl font-black text-[#006C18] tracking-tight headline">Danh sách bé</h2>
+                    <span class="bg-[#FF8000] text-white text-[8px] md:text-[9px] font-black px-1.5 md:px-2 py-0.5 rounded-md uppercase tracking-widest"><span id="student-count">0</span> bé</span>
+                </div>
+            </div>
+
+            <!-- Student List Container -->
+            <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden w-full">
+                <table class="w-full text-left border-collapse">
+                    <thead class="hidden md:table-header-group">
+                        <tr class="bg-slate-50 text-[10px] uppercase tracking-widest text-[#D3C9BD] font-black border-b border-slate-200">
+                            <th class="p-4 w-12 text-center">STT</th>
+                            <th class="p-4">Học sinh</th>
+                            <th class="p-4 text-center w-24">Năm sinh</th>
+                            <th class="p-4 text-center w-48">Điểm danh</th>
+                            <th class="p-4">Lý do vắng / Ghi chú</th>
+                        </tr>
+                    </thead>
+                    <tbody id="student-table-body" class="divide-y divide-slate-100">
+                        <!-- Dynamic -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+
+        <!-- Login Screen -->
+        <div id="pin-screen" class="fixed inset-0 z-[60] bg-white flex items-center justify-center p-6 bg-slate-50">
+            <div class="card-layered w-full max-w-sm p-8 text-center space-y-8 bg-white border-t-4 border-[#006C18]">
+                <div class="space-y-2">
+                    <div class="w-20 h-20 mx-auto flex items-center justify-center overflow-hidden mb-4">
+                        <img src="assets/images/TDS_LOGO.png" class="w-full h-full object-contain" />
+                    </div>
+                    <h2 class="text-xl font-black text-[#006C18] uppercase headline">Teacher Portal</h2>
+                    <p class="text-[#FF8000] font-black text-[9px] uppercase tracking-[0.2em]">Hệ thống Điểm danh mầm non</p>
+                </div>
+                <div id="teacher-login-form-container" class="space-y-4">
+                    <input type="text" id="f-entry-x" placeholder="Tên đăng nhập" class="w-full bg-slate-50 border border-slate-200 rounded-md p-4 text-center text-lg font-bold text-[#006C18] outline-none focus:border-[#006C18]" autocomplete="off">
+                    <input type="password" id="f-entry-y" placeholder="Mật khẩu" class="w-full bg-slate-50 border border-slate-200 rounded-md p-4 text-center text-lg font-bold text-[#006C18] outline-none focus:border-[#006C18]" autocomplete="off">
+                    <button type="button" id="pin-submit" class="w-full bg-[#006C18] text-white py-4 rounded-md font-bold text-sm uppercase tracking-widest shadow-lg active:scale-95 transition-all">
+                        Đăng nhập
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Action -->
+        <div id="submit-btn-container" class="fixed bottom-4 md:bottom-6 left-0 right-0 px-4 flex justify-center pointer-events-none z-40">
+            <button id="submit-btn" class="pointer-events-auto w-full max-w-sm bg-[#FF8000] hover:bg-orange-600 text-white font-black py-4 md:py-5 rounded-lg shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 md:gap-4 text-xs md:text-sm uppercase tracking-widest">
+                <span>Xác nhận thông tin</span>
+                <div class="w-6 h-6 rounded-md bg-white/20 flex items-center justify-center text-xs shrink-0">✓</div>
+            </button>
+        </div>
+
+        <!-- Modals -->
+        <div id="modal-change-pass" class="hidden fixed inset-0 z-[100] modal-overlay flex items-center justify-center p-6">
+            <div class="bg-white rounded-lg p-8 max-w-sm w-full shadow-2xl space-y-4 text-center border-t-4 border-[#FF8000]">
+                <div class="text-4xl text-orange-500">🔒</div>
+                <div class="space-y-1">
+                    <h3 class="text-lg font-black text-[#006C18] headline">Thay đổi mật khẩu</h3>
+                    <p class="text-[#D3C9BD] text-[9px] font-black uppercase tracking-widest">Vui lòng đặt mật khẩu mới cho lần đầu đăng nhập</p>
+                </div>
+                <input type="password" id="new-p-input" placeholder="Mật khẩu mới" class="w-full bg-slate-50 border border-slate-200 rounded-md p-4 text-center text-sm font-bold outline-none focus:border-[#006C18]">
+                <button onclick="submitNewPassword()" class="w-full bg-[#FF8000] text-white py-4 rounded-md font-bold text-xs uppercase tracking-widest shadow-lg">Lưu mậT khẩu</button>
+                <button onclick="skipChangePass()" class="w-full text-slate-400 font-bold text-[9px] uppercase tracking-widest pt-2">Để sau</button>
+            </div>
+        </div>
+
+        <div id="success-modal" class="hidden fixed inset-0 z-[100] modal-overlay flex items-center justify-center p-6">
+            <div class="bg-white rounded-lg p-10 text-center space-y-6 max-w-sm w-full shadow-2xl border-t-4 border-green-600 opacity-0 transition-opacity duration-300" id="modal-content">
+                <div class="text-5xl">🍭</div>
+                <div class="space-y-2">
+                    <h3 class="text-xl font-black text-[#006C18] headline">Thành công!</h3>
+                    <p class="text-slate-500 font-bold text-xs">Dữ liệu điểm danh của lớp đã được gửi thành công.</p>
+                </div>
+                <button id="close-modal" class="w-full bg-slate-100 py-3 rounded-md font-bold text-slate-600 uppercase tracking-widest text-[10px]">Đóng</button>
+            </div>
+        </div>
+
+        <div id="toast-container" class="toast-container"></div>
+
+        <!-- System Confirm Modal -->
+        <div id="sys-confirm-modal" class="fixed inset-0 z-[10000] hidden">
+            <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+            <div class="fixed inset-0 flex items-center justify-center p-4">
+                <div class="sys-modal-card">
+                    <div class="w-14 h-14 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mx-auto mb-5 text-xl">❓</div>
+                    <h3 class="text-lg font-black text-[#006C18] headline mb-2 uppercase tracking-tight">Xác nhận thao tác</h3>
+                    <p id="sys-confirm-message" class="text-slate-500 text-xs font-bold leading-relaxed mb-6">Bạn có chắc chắn muốn thực hiện hành động này không?</p>
+                    <div class="flex gap-3">
+                        <button id="sys-confirm-cancel" class="flex-1 px-4 py-3 rounded-xl bg-slate-100 text-slate-600 font-black text-[9px] uppercase tracking-widest hover:bg-slate-200 transition-all">Hủy bỏ</button>
+                        <button id="sys-confirm-ok" class="flex-1 px-4 py-3 rounded-xl bg-[#006C18] text-white font-black text-[9px] uppercase tracking-widest shadow-lg shadow-green-100 active:scale-95 transition-all">Đồng ý</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Modal -->
+        <div id="history-modal" class="hidden fixed inset-0 z-[100] modal-overlay flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border-t-4 border-[#006C18]">
+                <div class="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-[#006C18] text-white rounded-xl flex items-center justify-center text-lg">🕒</div>
+                        <div>
+                            <h3 class="text-lg font-black text-[#006C18] headline uppercase">Lịch sử điểm danh</h3>
+                            <p class="text-[9px] text-slate-400 font-black uppercase tracking-widest">Xem và chỉnh sửa các ngày chưa chốt sổ</p>
+                        </div>
+                    </div>
+                    <button onclick="closeHistoryModal()" class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-400 hover:text-red-500 transition-all border border-slate-200">✕</button>
+                </div>
+                <div class="p-4 bg-white border-b border-slate-100 flex flex-wrap items-end gap-4">
+                    <div class="space-y-1">
+                        <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Chọn ngày</label>
+                        <input type="text" id="history-date-input" class="bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-sm font-bold text-[#006C18] outline-none cursor-pointer" placeholder="Chọn ngày" readonly>
+                    </div>
+                    <button onclick="loadHistory()" class="bg-[#006C18] text-white px-6 py-2.5 rounded-lg text-xs font-black uppercase tracking-widest shadow-lg shadow-green-100 active:scale-95 transition-all">Xem dữ liệu</button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-2 md:p-0 scrollbar-thin">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="sticky top-0 bg-slate-50 z-10">
+                            <tr class="text-[10px] uppercase tracking-widest text-[#D3C9BD] font-black border-b border-slate-200">
+                                <th class="p-4 w-12 text-center">STT</th>
+                                <th class="p-4">Học sinh</th>
+                                <th class="p-4 text-center w-48">Trạng thái</th>
+                                <th class="p-4">Ghi chú</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body" class="divide-y divide-slate-50">
+                            <tr><td colspan="4" class="p-12 text-center"><div class="text-slate-300 mb-2">📅</div><div class="text-xs font-bold text-slate-400 uppercase tracking-widest">Chọn ngày để xem lịch sử</div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+                    <button onclick="closeHistoryModal()" class="px-6 py-3 rounded-xl bg-white border border-slate-200 text-slate-400 font-black text-[10px] uppercase tracking-widest hover:bg-slate-100 transition-all">Đóng</button>
+                    <button id="history-update-btn" disabled onclick="updateHistory()" class="px-8 py-3 rounded-xl bg-[#FF8000] text-white font-black text-[10px] uppercase tracking-widest shadow-xl shadow-orange-100 active:scale-95 transition-all opacity-50 cursor-not-allowed">Cập nhật thay đổi</button>
+                </div>
+            </div>
+        </div>
+
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

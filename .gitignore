@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+
+# Cloudflare Wrangler Local Cache & Logs
+.wrangler/
+.wrangler.toml.local
+wrangler.toml.local
+wrangler-debug.log
+.dev.vars
+
+# Local Environment Variables & Secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.json.local
+
+# GCP service account credentials
+local-etl-engine/credentials/gcp_service_account.json
+
+# Local Databases, Temp Spreadsheets & Backups
+*.db
+*.db-journal
+*.db-wal
+*.sqlite
+*.csv
+*.xlsx
+*.xls
+!README.md
+!import_data.sql
+!restore_students.sql
+!sample_seed.sql
+
+# Scratchpad & OS files
+scratch/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
