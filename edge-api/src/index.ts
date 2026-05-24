@@ -445,9 +445,9 @@ app.post('/api/admin/finance/bills/:id/toggle-annual', async (c) => {
 
 app.post('/api/admin/finance/bills/:id/toggle-payment', async (c) => {
   const id = c.req.param('id');
-  const { payment_date } = await c.req.json().catch(() => ({}));
+  const { payment_date, payment_method } = await c.req.json().catch(() => ({}));
   const { finance } = getServices(c.env.DB);
-  await finance.toggleBillPaymentStatus(id, payment_date);
+  await finance.toggleBillPaymentStatus(id, payment_date, payment_method);
   return c.json({ success: true });
 });
 

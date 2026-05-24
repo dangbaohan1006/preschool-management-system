@@ -1430,6 +1430,34 @@
                                 </div>
                             </div>
 
+                            <!-- Daily Class Financial Summary Grid (Actual Collections) -->
+                            <div class="border border-emerald-200 bg-emerald-50/10 rounded-xl p-5 space-y-4 shadow-sm animate-in fade-in duration-200" id="finance-daily-summary-section">
+                                <div class="flex justify-between items-center">
+                                    <h4 class="text-xs font-black uppercase tracking-wider text-emerald-700 flex items-center gap-2">
+                                        <span>📊</span> Bảng tổng hợp thực thu theo ngày & theo lớp (Tháng <span id="daily-summary-month-label">--</span>)
+                                    </h4>
+                                    <button onclick="toggleDailySummaryTable()" class="text-emerald-600 hover:text-emerald-700 text-[10px] font-black uppercase tracking-wider">
+                                        [ Thu gọn / Mở rộng ]
+                                    </button>
+                                </div>
+                                <div id="daily-summary-table-container" class="overflow-x-auto border border-slate-200/60 rounded-xl bg-white shadow-sm transition-all duration-300">
+                                    <table class="w-full text-left text-[10px] border-collapse">
+                                        <thead class="bg-slate-50 text-[9px] font-black uppercase text-slate-400 tracking-widest border-b border-[#eee]">
+                                            <tr>
+                                                <th class="p-3">Ngày thu</th>
+                                                <th class="p-3">Lớp học</th>
+                                                <th class="p-3 text-center">💵 Tiền mặt</th>
+                                                <th class="p-3 text-center">💳 Chuyển khoản</th>
+                                                <th class="p-3 text-center font-black text-emerald-700">Tổng thực thu</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="daily-summary-table-body" class="divide-y divide-slate-100 font-bold text-slate-700">
+                                            <!-- Dynamically generated rows -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
                             <!-- Billing List -->
                             <div class="overflow-x-auto border border-slate-100 rounded-lg">
                                 <table class="w-full text-left text-[10px] border-collapse">
@@ -3158,6 +3186,13 @@
             }
         }
 
+        function toggleDailySummaryTable() {
+            const container = document.getElementById('daily-summary-table-container');
+            if (container) {
+                container.classList.toggle('hidden');
+            }
+        }
+
         function renderClassFinancialSummary(bills, month) {
             document.getElementById('summary-month-label').innerText = month.split('-')[1] + '/' + month.split('-')[0];
             const sumBody = document.getElementById('summary-table-body');
@@ -3168,16 +3203,25 @@
             let grandCollected = 0;
             let grandPending = 0;
             let grandRefund = 0;
+            let grandCollectedCash = 0;
+            let grandCollectedTransfer = 0;
+
+            const dailySummaries = {}; // { "YYYY-MM-DD": { "Class A": { cash: X, transfer: Y }, ... } }
 
             bills.forEach(b => {
                 const cname = b.class_name || 'Khác';
                 if (!summaries[cname]) {
-                    summaries[cname] = { total: 0, collected: 0, pending: 0, refund: 0 };
+                    summaries[cname] = { total: 0, collected: 0, pending: 0, refund: 0, cash: 0, transfer: 0 };
                 }
                 summaries[cname].total += b.total_amount || 0;
                 summaries[cname].refund += b.refund_amount || 0;
                 if (b.payment_status === 'PAID') {
                     summaries[cname].collected += b.total_amount || 0;
+                    if (b.payment_method === 'TRANSFER') {
+                        summaries[cname].transfer += b.total_amount || 0;
+                    } else {
+                        summaries[cname].cash += b.total_amount || 0;
+                    }
                 } else {
                     summaries[cname].pending += b.total_amount || 0;
                 }
@@ -3186,6 +3230,25 @@
                 grandRefund += b.refund_amount || 0;
                 if (b.payment_status === 'PAID') {
                     grandCollected += b.total_amount || 0;
+                    if (b.payment_method === 'TRANSFER') {
+                        grandCollectedTransfer += b.total_amount || 0;
+                    } else {
+                        grandCollectedCash += b.total_amount || 0;
+                    }
+
+                    // Group by date and class name
+                    const payDate = b.payment_date || new Date().toISOString().substring(0, 10);
+                    if (!dailySummaries[payDate]) {
+                        dailySummaries[payDate] = {};
+                    }
+                    if (!dailySummaries[payDate][cname]) {
+                        dailySummaries[payDate][cname] = { cash: 0, transfer: 0 };
+                    }
+                    if (b.payment_method === 'TRANSFER') {
+                        dailySummaries[payDate][cname].transfer += b.total_amount || 0;
+                    } else {
+                        dailySummaries[payDate][cname].cash += b.total_amount || 0;
+                    }
                 } else {
                     grandPending += b.total_amount || 0;
                 }
@@ -3213,7 +3276,12 @@
                             <span class="text-[8px] bg-emerald-100 text-emerald-700 px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity font-bold">🔍 Chi tiết</span>
                         </td>
                         <td class="p-3 text-center text-slate-600 font-bold">${new Intl.NumberFormat('vi-VN').format(s.total)}đ</td>
-                        <td class="p-3 text-center text-emerald-600 font-extrabold">${new Intl.NumberFormat('vi-VN').format(s.collected)}đ</td>
+                        <td class="p-3 text-center text-emerald-600 font-extrabold">
+                            <div>${new Intl.NumberFormat('vi-VN').format(s.collected)}đ</div>
+                            <div class="text-[9px] font-bold text-slate-400 mt-0.5">
+                                💵 ${new Intl.NumberFormat('vi-VN').format(s.cash)} | 💳 ${new Intl.NumberFormat('vi-VN').format(s.transfer)}
+                            </div>
+                        </td>
                         <td class="p-3 text-center text-orange-600 font-extrabold">${new Intl.NumberFormat('vi-VN').format(s.pending)}đ</td>
                         <td class="p-3 text-center text-rose-500 font-bold">-${new Intl.NumberFormat('vi-VN').format(s.refund)}đ</td>
                         <td class="p-3 text-center w-40">
@@ -3237,7 +3305,12 @@
                 <tr class="bg-slate-50/80 font-black border-t-2 border-slate-200">
                     <td class="p-3 text-[#006C18]">TỔNG CỘNG HỆ THỐNG</td>
                     <td class="p-3 text-center text-slate-800">${new Intl.NumberFormat('vi-VN').format(grandTotal)}đ</td>
-                    <td class="p-3 text-center text-emerald-700">${new Intl.NumberFormat('vi-VN').format(grandCollected)}đ</td>
+                    <td class="p-3 text-center text-emerald-700">
+                        <div>${new Intl.NumberFormat('vi-VN').format(grandCollected)}đ</div>
+                        <div class="text-[9px] font-bold text-slate-500 mt-0.5">
+                            💵 ${new Intl.NumberFormat('vi-VN').format(grandCollectedCash)} | 💳 ${new Intl.NumberFormat('vi-VN').format(grandCollectedTransfer)}
+                        </div>
+                    </td>
                     <td class="p-3 text-center text-orange-700">${new Intl.NumberFormat('vi-VN').format(grandPending)}đ</td>
                     <td class="p-3 text-center text-rose-600">-${new Intl.NumberFormat('vi-VN').format(grandRefund)}đ</td>
                     <td class="p-3 text-center font-bold">
@@ -3252,6 +3325,55 @@
             `;
 
             sumBody.innerHTML = html;
+
+            document.getElementById('daily-summary-month-label').innerText = month.split('-')[1] + '/' + month.split('-')[0];
+            const dailySumBody = document.getElementById('daily-summary-table-body');
+            if (dailySumBody) {
+                const sortedDates = Object.keys(dailySummaries).sort((a, b) => b.localeCompare(a));
+                
+                if (sortedDates.length === 0) {
+                    dailySumBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400 italic">Chưa có khoản thu nào được thực hiện trong tháng...</td></tr>`;
+                    return;
+                }
+
+                let dailyHtml = '';
+                let totalDailyCash = 0;
+                let totalDailyTransfer = 0;
+
+                sortedDates.forEach(date => {
+                    const classesForDate = Object.keys(dailySummaries[date]).sort();
+                    const [y, m, d] = date.split('-');
+                    const formattedDate = `${d}/${m}/${y}`;
+
+                    classesForDate.forEach((cname, index) => {
+                        const amt = dailySummaries[date][cname];
+                        const rowTotal = amt.cash + amt.transfer;
+                        totalDailyCash += amt.cash;
+                        totalDailyTransfer += amt.transfer;
+
+                        dailyHtml += `
+                            <tr class="hover:bg-slate-50 border-b border-slate-100 transition-colors">
+                                ${index === 0 ? `<td class="p-3 font-black text-slate-800" rowspan="${classesForDate.length}">${formattedDate}</td>` : ''}
+                                <td class="p-3 text-slate-700">🏫 ${cname}</td>
+                                <td class="p-3 text-center text-slate-600 font-bold">${new Intl.NumberFormat('vi-VN').format(amt.cash)}đ</td>
+                                <td class="p-3 text-center text-slate-600 font-bold">${new Intl.NumberFormat('vi-VN').format(amt.transfer)}đ</td>
+                                <td class="p-3 text-center text-emerald-600 font-extrabold">${new Intl.NumberFormat('vi-VN').format(rowTotal)}đ</td>
+                            </tr>
+                        `;
+                    });
+                });
+
+                dailyHtml += `
+                    <tr class="bg-emerald-50/50 font-black border-t-2 border-emerald-200">
+                        <td class="p-3 text-emerald-800 font-bold" colspan="2">TỔNG THỰC THU TOÀN TRƯỜNG</td>
+                        <td class="p-3 text-center text-slate-800">${new Intl.NumberFormat('vi-VN').format(totalDailyCash)}đ</td>
+                        <td class="p-3 text-center text-slate-800">${new Intl.NumberFormat('vi-VN').format(totalDailyTransfer)}đ</td>
+                        <td class="p-3 text-center text-emerald-700 font-black text-xs">${new Intl.NumberFormat('vi-VN').format(totalDailyCash + totalDailyTransfer)}đ</td>
+                    </tr>
+                `;
+
+                dailySumBody.innerHTML = dailyHtml;
+            }
         }
 
         let currentBills = [];
@@ -3491,11 +3613,15 @@
             const sid = document.getElementById('payment-sid').value;
             const totalAmount = document.getElementById('payment-total').value;
 
+            // Get payment method
+            const methodEl = document.querySelector('input[name="payment-method-radio"]:checked');
+            const payment_method = methodEl ? methodEl.value : 'CASH';
+
             try {
                 const res = await fetch(`${API_BASE}/admin/finance/bills/${id}/toggle-payment`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'x-api-key': SECRET },
-                    body: JSON.stringify({ payment_date })
+                    body: JSON.stringify({ payment_date, payment_method })
                 });
                 if (res.ok) {
                     showToast(`Đã thu học phí bé ${studentName}`);
@@ -3504,12 +3630,12 @@
                     loadDashboard(); // Refresh cash flow on dashboard
                     
                     // Mở modal cấu hình in phiếu thu sau khi thu thành công
-                    openReceiptConfigModal(id, studentName, className, sid, totalAmount);
+                    openReceiptConfigModal(id, studentName, className, sid, totalAmount, payment_method);
                 }
             } catch (e) { alert('Lỗi đồng bộ thanh toán!'); }
         }
 
-        async function openReceiptConfigModal(billId, studentName, className, sid, totalAmount) {
+        async function openReceiptConfigModal(billId, studentName, className, sid, totalAmount, paymentMethod = 'CASH') {
             const student = currentStudentsStore.find(s => s.id === sid) || {};
             const monthStr = getFinanceMonth();
             const [year, month] = monthStr.split('-');
@@ -3527,6 +3653,13 @@
             document.getElementById('receipt-header-company').value = 'CÔNG TY TNHH TM DV ĐAN THY';
             document.getElementById('receipt-header-address').value = '53-55 KP Rạch Sơn, TT. Gò Dầu, H. Gò Dầu, Tây Ninh';
 
+            // Select correct payment method radio button in print modal
+            if (paymentMethod === 'TRANSFER') {
+                document.getElementById('receipt-method-transfer').checked = true;
+            } else {
+                document.getElementById('receipt-method-cash').checked = true;
+            }
+
             document.getElementById('modal-receipt-config').classList.remove('hidden');
         }
 
@@ -3542,13 +3675,18 @@
             const sid = document.getElementById('receipt-sid').value;
             const totalAmount = parseFloat(document.getElementById('receipt-amount').value);
 
+            // Get payment method selected in config modal
+            const printMethodEl = document.querySelector('input[name="receipt-method-radio"]:checked');
+            const paymentMethod = printMethodEl ? printMethodEl.value : 'CASH';
+
             const config = {
                 payer: document.getElementById('receipt-payer').value,
                 reason: document.getElementById('receipt-reason').value,
                 address: document.getElementById('receipt-address').value,
                 unit: document.getElementById('receipt-header-unit').value,
                 company: document.getElementById('receipt-header-company').value,
-                unitAddress: document.getElementById('receipt-header-address').value
+                unitAddress: document.getElementById('receipt-header-address').value,
+                paymentMethod: paymentMethod
             };
 
             closeModal('modal-receipt-config');
@@ -6285,7 +6423,9 @@
                         </div>
                         <div class="flex items-end">
                             <span class="font-bold mr-2 whitespace-nowrap">Số tiền:</span>
-                            <span class="font-black text-[11pt] flex-1 border-b border-dotted border-black px-2">${new Intl.NumberFormat('vi-VN').format(totalAmount)} VNĐ</span>
+                            <span class="font-black text-[11pt] border-b border-dotted border-black px-2 w-48">${new Intl.NumberFormat('vi-VN').format(totalAmount)} VNĐ</span>
+                            <span class="font-bold ml-4 mr-2 whitespace-nowrap">Hình thức thanh toán:</span>
+                            <span class="font-bold flex-1 border-b border-dotted border-black px-2">${config.paymentMethod === 'TRANSFER' ? 'Chuyển khoản (CK)' : 'Tiền mặt (TM)'}</span>
                         </div>
                         <div class="flex">
                             <span class="font-bold mr-2 whitespace-nowrap">Viết bằng chữ:</span>
@@ -6916,6 +7056,19 @@
                             class="w-full border border-slate-200 rounded-md p-2.5 text-xs outline-none focus:border-emerald-500 font-bold">
                     </div>
                     <div class="space-y-1 col-span-2">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hình thức thanh toán</label>
+                        <div class="grid grid-cols-2 gap-2 p-1 bg-slate-50 border border-slate-100 rounded-xl">
+                            <label class="flex items-center justify-center gap-2 p-2 rounded-lg cursor-pointer text-xs font-bold text-slate-700 bg-white shadow-sm border border-slate-200 transition-all hover:bg-slate-50 select-none">
+                                <input type="radio" name="receipt-method-radio" id="receipt-method-cash" value="CASH" checked class="accent-emerald-600">
+                                <span>💵 Tiền mặt</span>
+                            </label>
+                            <label class="flex items-center justify-center gap-2 p-2 rounded-lg cursor-pointer text-xs font-bold text-slate-700 bg-white shadow-sm border border-slate-200 transition-all hover:bg-slate-50 select-none">
+                                <input type="radio" name="receipt-method-radio" id="receipt-method-transfer" value="TRANSFER" class="accent-emerald-600">
+                                <span>💳 Chuyển khoản</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="space-y-1 col-span-2">
                         <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Lý do nộp</label>
                         <input type="text" id="receipt-reason"
                             class="w-full border border-slate-200 rounded-md p-2.5 text-xs outline-none focus:border-emerald-500">
@@ -7028,6 +7181,19 @@
                     <label class="text-[9px] font-black text-slate-400 uppercase">Ngày thu thực tế</label>
                     <input type="date" id="payment-date-input"
                         class="w-full border border-slate-200 rounded-md p-3 text-xs font-black outline-none focus:border-emerald-500">
+                </div>
+                <div class="space-y-1 text-left">
+                    <label class="text-[9px] font-black text-slate-400 uppercase">Hình thức thanh toán</label>
+                    <div class="grid grid-cols-2 gap-2 p-1 bg-slate-50 border border-slate-100 rounded-xl">
+                        <label class="flex items-center justify-center gap-2 p-2.5 rounded-lg cursor-pointer text-xs font-bold text-slate-700 bg-white shadow-sm border border-slate-200 transition-all hover:bg-slate-50 select-none">
+                            <input type="radio" name="payment-method-radio" value="CASH" checked class="accent-emerald-600">
+                            <span>💵 Tiền mặt</span>
+                        </label>
+                        <label class="flex items-center justify-center gap-2 p-2.5 rounded-lg cursor-pointer text-xs font-bold text-slate-700 bg-white shadow-sm border border-slate-200 transition-all hover:bg-slate-50 select-none">
+                            <input type="radio" name="payment-method-radio" value="TRANSFER" class="accent-emerald-600">
+                            <span>💳 Chuyển khoản</span>
+                        </label>
+                    </div>
                 </div>
                 <input type="hidden" id="payment-bill-id">
                 <input type="hidden" id="payment-student-name">

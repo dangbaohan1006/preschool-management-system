@@ -364,11 +364,12 @@ export class FinanceService {
         return await this.db.batch([paymentStmt, updateBillStmt]);
     }
 
-    async toggleBillPaymentStatus(billingId: string, paymentDate?: string) {
+    async toggleBillPaymentStatus(billingId: string, paymentDate?: string, paymentMethod?: string) {
         const bill = await this.db.prepare('SELECT payment_status FROM fact_monthly_billing WHERE id = ?').bind(billingId).first<any>();
         if (!bill) throw new Error('Bill not found');
         const nextStatus = bill.payment_status === 'PAID' ? 'UNPAID' : 'PAID';
         const finalDate = nextStatus === 'PAID' ? (paymentDate || new Date().toISOString().split('T')[0]) : null;
-        return await this.db.prepare('UPDATE fact_monthly_billing SET payment_status = ?, payment_date = ? WHERE id = ?').bind(nextStatus, finalDate, billingId).run();
+        const finalMethod = nextStatus === 'PAID' ? (paymentMethod || 'CASH') : 'CASH';
+        return await this.db.prepare('UPDATE fact_monthly_billing SET payment_status = ?, payment_date = ?, payment_method = ? WHERE id = ?').bind(nextStatus, finalDate, finalMethod, billingId).run();
     }
 }

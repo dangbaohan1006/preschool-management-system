@@ -153,6 +153,8 @@ CREATE TABLE IF NOT EXISTS fact_monthly_billing (
     total_amount REAL NOT NULL DEFAULT 0,
     payment_status TEXT DEFAULT 'UNPAID',
     include_annual INTEGER DEFAULT 0,
+    payment_date TEXT,
+    payment_method TEXT DEFAULT 'CASH',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (student_id) REFERENCES students(id),
     FOREIGN KEY (period_month) REFERENCES dim_financial_periods(period_month)
