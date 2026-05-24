@@ -213,6 +213,11 @@ CREATE INDEX IF NOT EXISTS idx_attendance_locks_date ON attendance_locks(locked_
 -- 6. INITIAL SETTINGS
 INSERT OR IGNORE INTO app_settings (key, value) VALUES ('billing_std_days', '22');
 INSERT OR IGNORE INTO app_settings (key, value) VALUES ('billing_formula', '([Học phí] + [Phí bán trú] + [Phí CSVC]) + [Tiền ăn] * ({{STANDARD_DAYS}} - {{ABSENT_DAYS}})');
+INSERT OR IGNORE INTO app_settings (key, value) VALUES ('admin_password', '123456');
+INSERT OR IGNORE INTO app_settings (key, value) VALUES ('admin_pin', '123456');
+
+-- Seed System Classes
+INSERT OR IGNORE INTO classes (id, name, type) VALUES ('MANAGEMENT', 'Ban quản lý', 'SYSTEM');
 
 -- Seed System Categories
 INSERT OR IGNORE INTO dim_fee_categories (id, name, default_amount, group_id, type) 

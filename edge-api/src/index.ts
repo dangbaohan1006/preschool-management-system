@@ -481,6 +481,18 @@ app.post('/api/auth/teacher/password', async (c) => {
   return c.json({ success: true });
 });
 
+app.post('/api/auth/admin', async (c) => {
+  const { password } = await c.req.json();
+  const { admin } = getServices(c.env.DB);
+  const { results } = await admin.getSettings();
+  const adminPassword = (results || []).find((s: any) => s.key === 'admin_password')?.value || '123456';
+  
+  if (password !== adminPassword) {
+    return c.json({ error: 'Mật khẩu quản trị viên không chính xác!' }, 401);
+  }
+  return c.json({ success: true, role: 'admin', name: 'Quản trị viên' });
+});
+
 // 5. System Settings
 app.get('/api/admin/settings', async (c) => {
   const { admin } = getServices(c.env.DB);
