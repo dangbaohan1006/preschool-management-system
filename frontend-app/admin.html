@@ -5982,6 +5982,9 @@
                 } else {
                     alert('Lỗi: Cập nhật mật khẩu thất bại!');
                 }
+            } catch (e) {
+                hideLoading();
+                alert('Lỗi kết nối máy chủ!');
             }
         }
 
