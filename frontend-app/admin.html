@@ -7311,14 +7311,29 @@
         }
 
         /* 🖨️ Printing Logic */
+        async function preloadImagesAndPrint(container) {
+            const images = container.querySelectorAll('img');
+            if (images.length > 0) {
+                const promises = Array.from(images).map(img => {
+                    if (img.complete) return Promise.resolve();
+                    return new Promise(resolve => {
+                        img.onload = resolve;
+                        img.onerror = resolve; // resolve anyway on error to prevent hanging
+                    });
+                });
+                await Promise.all(promises);
+            }
+            // A short delay of 100ms allows layout rendering and CSS transitions to fully settle before opening dialog
+            setTimeout(() => window.print(), 100);
+        }
+
         async function printInvoice(billId, studentName, className, sid) {
             try {
                 const printContainer = document.getElementById('print-area');
-                printContainer.innerHTML = '';
+                printContainer.innerHTML = '<div class="text-center p-20 font-bold">Đang tải thông tin hóa đơn...</div>';
                 const invoiceHtml = await generateInvoiceHtml(billId, studentName, className, sid);
                 printContainer.innerHTML = invoiceHtml;
-                // Thêm độ trễ để đảm bảo CSS và hình ảnh được render đầy đủ trước khi mở hộp thoại in
-                setTimeout(() => window.print(), 500);
+                await preloadImagesAndPrint(printContainer);
             } catch (e) {
                 console.error(e);
                 alert('Lỗi tải dữ liệu in ấn!');
@@ -7352,16 +7367,19 @@
 
                 if (billsToPrint.length === 0) return alert('Không tìm thấy thông tin hóa đơn!');
                 const printContainer = document.getElementById('print-area');
-                printContainer.innerHTML = '<div class="text-center p-20 font-bold">Đang chuẩn bị danh sách in ấn...</div>';
+                printContainer.innerHTML = '<div class="text-center p-20 font-bold">Đang tải thông tin hóa đơn hàng loạt...</div>';
+                
+                // Fetch detail items in parallel!
+                const htmlPromises = billsToPrint.map(b => generateInvoiceHtml(b.id, b.student_name, b.class_name, b.student_id));
+                const htmlResults = await Promise.all(htmlPromises);
+                
                 let allInvoicesHtml = '';
                 for (let i = 0; i < billsToPrint.length; i++) {
-                    const b = billsToPrint[i];
                     const pageBreak = i < billsToPrint.length - 1 ? '<div style="page-break-after: always;"></div>' : '';
-                    allInvoicesHtml += await generateInvoiceHtml(b.id, b.student_name, b.class_name, b.student_id) + pageBreak;
+                    allInvoicesHtml += htmlResults[i] + pageBreak;
                 }
                 printContainer.innerHTML = allInvoicesHtml;
-                // Hàng loạt cần thời gian render lâu hơn
-                setTimeout(() => window.print(), 1000);
+                await preloadImagesAndPrint(printContainer);
             } catch (e) {
                 console.error(e);
                 alert('Lỗi tải danh sách in ấn hàng loạt!');
@@ -7641,11 +7659,10 @@
         async function printReceipt(billId, studentName, className, sid, totalAmount, config) {
             try {
                 const printContainer = document.getElementById('print-area');
-                printContainer.innerHTML = '';
+                printContainer.innerHTML = '<div class="text-center p-20 font-bold">Đang tải thông tin phiếu thu...</div>';
                 const receiptHtml = await generateReceiptHtml(billId, studentName, className, sid, totalAmount, config);
                 printContainer.innerHTML = receiptHtml;
-                // Thêm độ trễ để đảm bảo định dạng phiếu thu hiển thị chuẩn xác
-                setTimeout(() => window.print(), 500);
+                await preloadImagesAndPrint(printContainer);
             } catch (e) {
                 console.error(e);
                 alert('Lỗi tải dữ liệu in phiếu thu!');
