@@ -2576,25 +2576,33 @@
         function applyFinanceTabRestrictions() {
             const access = getPermission('finance');
             const isRead = access === 'READ';
+            const isAdmin = currentUser && currentUser.role === 'admin';
+            const restrictWrite = isRead || !isAdmin;
             
-            document.querySelectorAll('button[onclick*="batchGenerateBills"]').forEach(b => b.classList.toggle('hidden', isRead));
-            document.querySelectorAll('button[onclick*="modal-fee-categories"]').forEach(b => b.classList.toggle('hidden', isRead));
-            document.querySelectorAll('button[onclick*="modal-bill-settings"]').forEach(b => b.classList.toggle('hidden', isRead));
-            document.querySelectorAll('button[onclick*="modal-finance-system"]').forEach(b => b.classList.toggle('hidden', isRead));
+            document.querySelectorAll('button[onclick*="batchGenerateBills"]').forEach(b => b.classList.toggle('hidden', restrictWrite));
+            document.querySelectorAll('button[onclick*="modal-fee-categories"]').forEach(b => b.classList.toggle('hidden', restrictWrite));
+            document.querySelectorAll('button[onclick*="modal-bill-settings"]').forEach(b => b.classList.toggle('hidden', restrictWrite));
+            document.querySelectorAll('button[onclick*="modal-finance-system"]').forEach(b => b.classList.toggle('hidden', restrictWrite));
             
             document.querySelectorAll('#billing-table-body button').forEach(b => {
                 const clickAttr = b.getAttribute('onclick') || '';
                 if (clickAttr.includes('openDiscountModal') || clickAttr.includes('togglePaymentStatus')) {
-                    b.classList.toggle('hidden', isRead);
+                    b.classList.toggle('hidden', restrictWrite);
                 }
             });
             
             document.querySelectorAll('#billing-table-body input[type="checkbox"]').forEach(i => {
-                i.disabled = isRead;
-                if (isRead) i.parentElement.classList.add('pointer-events-none', 'opacity-50');
+                const isAnnualToggle = i.getAttribute('onchange')?.includes('toggleAnnualFee');
+                if (isAnnualToggle) {
+                    i.disabled = restrictWrite;
+                    if (restrictWrite) i.parentElement.classList.add('pointer-events-none', 'opacity-70');
+                } else {
+                    i.disabled = isRead;
+                    if (isRead) i.parentElement.classList.add('pointer-events-none', 'opacity-50');
+                }
             });
             
-            toggleReadModeWarning('view-finance', isRead);
+            toggleReadModeWarning('view-finance', restrictWrite);
         }
 
         function applyLocksTabRestrictions() {
@@ -3487,37 +3495,63 @@
 
                 renderClassFinancialSummary(bills, month);
 
-                tbody.innerHTML = bills.map(b => `
-                    <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="p-4 text-center">
-                            <input type="checkbox" class="bill-checkbox w-4 h-4 rounded border-slate-300 text-orange-500 focus:ring-orange-500" value="${b.id}" onchange="updateBillSelection()">
-                        </td>
-                        <td class="p-4 font-black">
-                            <div class="text-[11px] text-[#006C18]">${b.student_name}</div>
-                            <div class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">${b.class_name}</div>
-                        </td>
-                        <td class="p-4 text-center text-rose-500 font-bold text-[11px]">-${new Intl.NumberFormat('vi-VN').format(b.refund_amount)}đ</td>
-                        <td class="p-4 text-center">
-                            <label class="inline-flex items-center cursor-pointer">
-                                <input type="checkbox" ${b.include_annual ? 'checked' : ''} 
-                                    onchange="toggleAnnualFee('${b.id}', this)"
-                                    class="w-4 h-4 rounded border-slate-300 text-orange-500 focus:ring-orange-500">
-                                <span class="ml-2 text-[11px] uppercase font-black text-orange-500">${b.include_annual ? 'Đã bật' : 'Tắt'}</span>
-                            </label>
-                        </td>
-                        <td class="p-4 text-center text-[#006C18] font-bold text-[11px] bg-emerald-50/10">${new Intl.NumberFormat('vi-VN').format(b.total_amount)}đ</td>
-                        <td class="p-4 text-center text-amber-600 font-bold text-[11px]">${b.discount_percent || 0}%</td>
-                        <td class="p-4 text-right flex gap-3 justify-end items-center">
-                             <button onclick="openDiscountModal('${b.id}', '${b.student_name}', '${b.class_name}', '${b.student_id}')" class="px-4 py-1.5 rounded-xl text-[10px] font-black uppercase shadow-sm transition-all bg-amber-100 text-amber-600 hover:bg-amber-200" title="Chiết khấu học phí">✏️ Chiết khấu</button>
-                             <button onclick="printInvoice('${b.id}', '${b.student_name}', '${b.class_name}', '${b.student_id}')" class="px-4 py-1.5 rounded-xl text-[10px] font-black uppercase shadow-sm transition-all bg-blue-100 text-blue-600 hover:bg-blue-200" title="In thông báo">🖨️ In thông báo</button>
+                tbody.innerHTML = bills.map(b => {
+                    const isAdmin = currentUser && currentUser.role === 'admin';
+                    const isPaid = b.payment_status === 'PAID';
+                    
+                    let actionButtons = '';
+                    if (isAdmin) {
+                        actionButtons += `<button onclick="openDiscountModal('${b.id}', '${b.student_name}', '${b.class_name}', '${b.student_id}')" class="px-4 py-1.5 rounded-xl text-[10px] font-black uppercase shadow-sm transition-all bg-amber-100 text-amber-600 hover:bg-amber-200" title="Chiết khấu học phí">✏️ Chiết khấu</button>`;
+                    }
+                    actionButtons += `<button onclick="printInvoice('${b.id}', '${b.student_name}', '${b.class_name}', '${b.student_id}')" class="px-4 py-1.5 rounded-xl text-[10px] font-black uppercase shadow-sm transition-all bg-blue-100 text-blue-600 hover:bg-blue-200" title="In thông báo">🖨️ In thông báo</button>`;
+                    
+                    if (isPaid) {
+                        actionButtons += `<button onclick="openReceiptConfigModal('${b.id}', '${b.student_name}', '${b.class_name}', '${b.student_id}', ${b.total_amount}, '${b.payment_method || 'CASH'}')" class="px-4 py-1.5 rounded-xl text-[10px] font-black uppercase shadow-sm transition-all bg-emerald-100 text-emerald-600 hover:bg-emerald-200" title="In phiếu thu">🖨️ In phiếu thu</button>`;
+                    }
+                    
+                    if (isAdmin) {
+                        actionButtons += `
                              <button onclick="togglePaymentStatus('${b.id}', '${b.student_name}', '${b.class_name}', '${b.student_id}', '${b.payment_status}', ${b.total_amount})" 
                                 class="px-4 py-1.5 rounded-xl text-[10px] font-black uppercase shadow-sm transition-all
-                                ${b.payment_status === 'PAID' ? 'bg-emerald-100 text-emerald-600' : 'bg-emerald-600 text-white'}">
-                                ${b.payment_status === 'PAID' ? '✅ Đã thu tiền' : '💵 Thu tiền'}
+                                ${isPaid ? 'bg-rose-100 text-rose-600' : 'bg-emerald-600 text-white'}">
+                                ${isPaid ? '🔄 Hủy thu tiền' : '💵 Thu tiền'}
                              </button>
-                        </td>
-                    </tr>
-                `).join('') || '<tr><td colspan="6" class="p-10 text-center text-slate-300 uppercase font-black text-xs italic">Không tìm thấy dữ liệu hóa đơn...</td></tr>';
+                        `;
+                    } else {
+                        if (isPaid) {
+                            actionButtons += `<span class="inline-block px-4 py-1.5 rounded-xl text-[10px] font-black uppercase bg-emerald-50 text-emerald-600 border border-emerald-200">🟢 Đã thu tiền</span>`;
+                        } else {
+                            actionButtons += `<span class="inline-block px-4 py-1.5 rounded-xl text-[10px] font-black uppercase bg-slate-50 text-slate-400 border border-slate-200">🔴 Chưa thu tiền</span>`;
+                        }
+                    }
+
+                    return `
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="p-4 text-center">
+                                <input type="checkbox" class="bill-checkbox w-4 h-4 rounded border-slate-300 text-orange-500 focus:ring-orange-500" value="${b.id}" onchange="updateBillSelection()">
+                            </td>
+                            <td class="p-4 font-black">
+                                <div class="text-[11px] text-[#006C18]">${b.student_name}</div>
+                                <div class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">${b.class_name}</div>
+                            </td>
+                            <td class="p-4 text-center text-rose-500 font-bold text-[11px]">-${new Intl.NumberFormat('vi-VN').format(b.refund_amount)}đ</td>
+                            <td class="p-4 text-center">
+                                <label class="inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" ${b.include_annual ? 'checked' : ''} 
+                                        onchange="toggleAnnualFee('${b.id}', this)"
+                                        ${isAdmin ? '' : 'disabled'}
+                                        class="w-4 h-4 rounded border-slate-300 text-orange-500 focus:ring-orange-500 ${isAdmin ? '' : 'cursor-not-allowed opacity-70'}">
+                                    <span class="ml-2 text-[11px] uppercase font-black text-orange-500">${b.include_annual ? 'Đã bật' : 'Tắt'}</span>
+                                </label>
+                            </td>
+                            <td class="p-4 text-center text-[#006C18] font-bold text-[11px] bg-emerald-50/10">${new Intl.NumberFormat('vi-VN').format(b.total_amount)}đ</td>
+                            <td class="p-4 text-center text-amber-600 font-bold text-[11px]">${b.discount_percent || 0}%</td>
+                            <td class="p-4 text-right flex gap-3 justify-end items-center">
+                                 ${actionButtons}
+                            </td>
+                        </tr>
+                    `;
+                }).join('') || '<tr><td colspan="7" class="p-10 text-center text-slate-300 uppercase font-black text-xs italic">Không tìm thấy dữ liệu hóa đơn...</td></tr>';
                 
                 // Re-apply role-based access restrictions
                 applyFinanceTabRestrictions();
