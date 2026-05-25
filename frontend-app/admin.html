@@ -3841,9 +3841,10 @@
             // 1. Daily Chart (Bar)
             const ctxDaily = document.getElementById('chart-daily');
             if (ctxDaily) {
-                const labels = data.daily.map(d => d.class_name);
-                const present = data.daily.map(d => d.present_count);
-                const absent = data.daily.map(d => d.absent_count);
+                const filteredDaily = (data.daily || []).filter(d => d.class_name !== 'Ban quản lý' && d.class_name !== 'MANAGEMENT');
+                const labels = filteredDaily.map(d => d.class_name);
+                const present = filteredDaily.map(d => d.present_count);
+                const absent = filteredDaily.map(d => d.absent_count);
 
                 dashboardChartsStore['daily'] = new Chart(ctxDaily, {
                     type: 'bar',
@@ -3960,10 +3961,11 @@
             // 5. Movement (Bar)
             const ctxPen = document.getElementById('chart-penalty');
             if (ctxPen) {
-                const labels = data.movement.map(m => m.class_name);
-                const start = data.movement.map(m => m.start_count);
-                const end = data.movement.map(m => m.end_count);
-                const drop = data.movement.map(m => m.dropout_count);
+                const filteredMovement = (data.movement || []).filter(m => m.class_name !== 'Ban quản lý' && m.class_name !== 'MANAGEMENT');
+                const labels = filteredMovement.map(m => m.class_name);
+                const start = filteredMovement.map(m => m.start_count);
+                const end = filteredMovement.map(m => m.end_count);
+                const drop = filteredMovement.map(m => m.dropout_count);
 
                 dashboardChartsStore['penalty'] = new Chart(ctxPen, {
                     type: 'bar',
