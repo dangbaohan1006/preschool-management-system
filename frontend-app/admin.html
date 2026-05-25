@@ -1441,13 +1441,21 @@
                         <div class="p-4 flex-1 overflow-y-auto space-y-6">
                             <!-- Class Financial Summary Grid -->
                             <div class="border border-[#FAEBCC] bg-[#FAEBCC]/10 rounded-xl p-5 space-y-4" id="finance-class-summary-section">
-                                <div class="flex justify-between items-center">
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                     <h4 class="text-xs font-black uppercase tracking-wider text-[#006C18] flex items-center gap-2">
                                         <span>📊</span> Tổng hợp công nợ & thực thu theo lớp (Tháng <span id="summary-month-label">--</span>)
                                     </h4>
-                                    <button onclick="toggleSummaryTable()" class="text-[#FF8000] hover:text-[#E2725B] text-[10px] font-black uppercase tracking-wider">
-                                        [ Thu gọn / Mở rộng ]
-                                    </button>
+                                    <div class="flex items-center gap-3">
+                                        <button onclick="exportFinanceSummaryToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5 transition-all">
+                                            🟢 Excel
+                                        </button>
+                                        <button onclick="exportFinanceSummaryToPDF()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5 transition-all">
+                                            🔴 PDF
+                                        </button>
+                                        <button onclick="toggleSummaryTable()" class="text-[#FF8000] hover:text-[#E2725B] text-[10px] font-black uppercase tracking-wider ml-2">
+                                            [ Thu gọn / Mở rộng ]
+                                        </button>
+                                    </div>
                                 </div>
                                 <div id="summary-table-container" class="overflow-x-auto border border-slate-200/60 rounded-xl bg-white shadow-sm transition-all duration-300">
                                     <table class="w-full text-left text-[10px] border-collapse">
@@ -3327,8 +3335,20 @@
             `;
 
             sumBody.innerHTML = html;
+
+            currentFinancialSummary = {
+                summaries: summaries,
+                grandTotal: grandTotal,
+                grandCollected: grandCollected,
+                grandPending: grandPending,
+                grandRefund: grandRefund,
+                grandCollectedCash: grandCollectedCash,
+                grandCollectedTransfer: grandCollectedTransfer,
+                month: month
+            };
         }
 
+        let currentFinancialSummary = {};
         let currentBills = [];
 
         async function showClassAttendanceSummary(className) {
@@ -5962,10 +5982,273 @@
                 } else {
                     alert('Lỗi: Cập nhật mật khẩu thất bại!');
                 }
-            } catch (e) {
-                hideLoading();
-                alert('Lỗi kết nối máy chủ!');
             }
+        }
+
+        function exportFinanceSummaryToExcel() {
+            if (!currentFinancialSummary || !currentFinancialSummary.summaries) {
+                alert('Chưa có dữ liệu để xuất Excel!');
+                return;
+            }
+
+            const monthStr = currentFinancialSummary.month ? currentFinancialSummary.month.split('-')[1] + '/' + currentFinancialSummary.month.split('-')[0] : '';
+            
+            // 1. Dữ liệu phần tiêu đề & tổng quan
+            const summaryRows = [
+                [`TRƯỜNG MẦM NON THÀNH DANH`],
+                [`BẢNG TỔNG HỢP CÔNG NỢ & THỰC THU THEO LỚP - THÁNG ${monthStr}`],
+                [],
+                [`Tổng cần thu:`, `${currentFinancialSummary.grandTotal}đ`, ``, `Tổng thực thu:`, `${currentFinancialSummary.grandCollected}đ`],
+                [`Thực thu tiền mặt:`, `${currentFinancialSummary.grandCollectedCash}đ`, ``, `Thực thu chuyển khoản:`, `${currentFinancialSummary.grandCollectedTransfer}đ`],
+                [`Tổng nợ học phí:`, `${currentFinancialSummary.grandPending}đ`, ``, `Tổng hoàn trả vắng:`, `${currentFinancialSummary.grandRefund}đ`],
+                []
+            ];
+
+            // 2. Header của bảng dữ liệu
+            const header = [
+                "Tên lớp",
+                "Tổng học phí cần thu",
+                "Thực thu Tiền mặt",
+                "Thực thu Chuyển khoản",
+                "Đã thu (Tổng cộng)",
+                "Còn nợ (Công nợ)",
+                "Hoàn vắng",
+                "Tỷ lệ hoàn thành"
+            ];
+
+            // 3. Body của bảng dữ liệu
+            const sortedClasses = Object.keys(currentFinancialSummary.summaries).sort();
+            const tableData = sortedClasses.map(cname => {
+                const s = currentFinancialSummary.summaries[cname];
+                const pct = s.total > 0 ? Math.round(s.collected * 100 / s.total) : 0;
+                return [
+                    cname,
+                    s.total,
+                    s.cash,
+                    s.transfer,
+                    s.collected,
+                    s.pending,
+                    s.refund,
+                    `${pct}%`
+                ];
+            });
+
+            // Thêm dòng tổng cộng hệ thống cuối cùng
+            const totalPct = currentFinancialSummary.grandTotal > 0 ? Math.round(currentFinancialSummary.grandCollected * 100 / currentFinancialSummary.grandTotal) : 0;
+            tableData.push([
+                "TỔNG CỘNG HỆ THỐNG",
+                currentFinancialSummary.grandTotal,
+                currentFinancialSummary.grandCollectedCash,
+                currentFinancialSummary.grandCollectedTransfer,
+                currentFinancialSummary.grandCollected,
+                currentFinancialSummary.grandPending,
+                currentFinancialSummary.grandRefund,
+                `${totalPct}%`
+            ]);
+
+            // Tạo workbook và sheet
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet([...summaryRows, header, ...tableData]);
+
+            const headerRowIndex = summaryRows.length; // vị trí của header bảng (0-indexed)
+
+            // Định dạng font chung Times New Roman
+            const titleStyle = { font: { bold: true, sz: 16, name: "Times New Roman", color: { rgb: "006C18" } } };
+            const subTitleStyle = { font: { bold: true, sz: 12, name: "Times New Roman", color: { rgb: "000000" } } };
+            const summaryLabelStyle = { font: { bold: true, sz: 10, name: "Times New Roman", color: { rgb: "4B5563" } } };
+            const summaryValueStyle = { font: { bold: true, sz: 10, name: "Times New Roman", color: { rgb: "111827" } } };
+
+            const headerStyle = {
+                fill: { fgColor: { rgb: "006C18" } },
+                font: { color: { rgb: "FFFFFF" }, bold: true, name: "Times New Roman", sz: 11 },
+                alignment: { vertical: "center", horizontal: "center" },
+                border: {
+                    top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" }
+                }
+            };
+
+            const bodyStyle = {
+                font: { name: "Times New Roman", sz: 10 },
+                alignment: { vertical: "center", horizontal: "center" },
+                border: {
+                    top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" }
+                }
+            };
+
+            const leftAlignBodyStyle = {
+                ...bodyStyle,
+                alignment: { vertical: "center", horizontal: "left" }
+            };
+
+            const totalRowStyle = {
+                fill: { fgColor: { rgb: "F3F4F6" } },
+                font: { bold: true, name: "Times New Roman", sz: 11, color: { rgb: "006C18" } },
+                alignment: { vertical: "center", horizontal: "center" },
+                border: {
+                    top: { style: "medium" }, bottom: { style: "medium" }, left: { style: "thin" }, right: { style: "thin" }
+                }
+            };
+
+            const totalRowLeftStyle = {
+                ...totalRowStyle,
+                alignment: { vertical: "center", horizontal: "left" }
+            };
+
+            // Áp dụng Style cho từng ô
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            for (let R = range.s.r; R <= range.e.r; ++R) {
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+                    if (!ws[cellRef]) continue;
+
+                    if (R === 0) {
+                        ws[cellRef].s = titleStyle;
+                    } else if (R === 1) {
+                        ws[cellRef].s = subTitleStyle;
+                    } else if (R >= 3 && R <= 5) {
+                        ws[cellRef].s = (C === 0 || C === 3) ? summaryLabelStyle : summaryValueStyle;
+                    } else if (R === headerRowIndex) {
+                        ws[cellRef].s = headerStyle;
+                    } else if (R === range.e.r) {
+                        // Dòng tổng cộng cuối
+                        ws[cellRef].s = C === 0 ? totalRowLeftStyle : totalRowStyle;
+                    } else if (R > headerRowIndex) {
+                        ws[cellRef].s = C === 0 ? leftAlignBodyStyle : bodyStyle;
+                        
+                        // Định dạng tiền tệ cho các cột số
+                        if (C >= 1 && C <= 6) {
+                            ws[cellRef].z = '#,##0"đ"';
+                        }
+                    }
+                }
+            }
+
+            // Đặt độ rộng cột
+            ws['!cols'] = [
+                { wch: 15 }, { wch: 22 }, { wch: 20 }, { wch: 20 }, 
+                { wch: 20 }, { wch: 18 }, { wch: 15 }, { wch: 18 }
+            ];
+
+            const filename = `Tong_hop_cong_no_thuc_thu_thang_${monthStr.replace('/', '_')}.xlsx`;
+            XLSX.utils.book_append_sheet(wb, ws, "TongHopCongNo");
+            XLSX.writeFile(wb, filename);
+        }
+
+        function exportFinanceSummaryToPDF() {
+            if (!currentFinancialSummary || !currentFinancialSummary.summaries) {
+                alert('Chưa có dữ liệu để xuất PDF!');
+                return;
+            }
+
+            const monthStr = currentFinancialSummary.month ? currentFinancialSummary.month.split('-')[1] + '/' + currentFinancialSummary.month.split('-')[0] : '';
+
+            const element = document.createElement('div');
+            element.style.padding = '25px';
+            element.style.fontFamily = "'Times New Roman', Times, serif";
+            element.style.color = '#333';
+            element.style.width = '800px';
+
+            const sortedClasses = Object.keys(currentFinancialSummary.summaries).sort();
+            const formatCurr = (v) => new Intl.NumberFormat('vi-VN').format(v) + 'đ';
+
+            let tableRowsHtml = sortedClasses.map((cname, idx) => {
+                const s = currentFinancialSummary.summaries[cname];
+                const pct = s.total > 0 ? Math.round(s.collected * 100 / s.total) : 0;
+                return `
+                    <tr style="border-bottom: 1px solid #ddd; height: 35px; text-align: center;">
+                        <td style="padding: 8px; text-align: left; font-weight: bold; color: #111;">${cname}</td>
+                        <td style="padding: 8px;">${formatCurr(s.total)}</td>
+                        <td style="padding: 8px; color: #4b5563;">${formatCurr(s.cash)}</td>
+                        <td style="padding: 8px; color: #4b5563;">${formatCurr(s.transfer)}</td>
+                        <td style="padding: 8px; font-weight: bold; color: #006C18;">${formatCurr(s.collected)}</td>
+                        <td style="padding: 8px; color: #ea580c;">${formatCurr(s.pending)}</td>
+                        <td style="padding: 8px; color: #ef4444;">-${formatCurr(s.refund)}</td>
+                        <td style="padding: 8px; font-weight: bold;">${pct}%</td>
+                    </tr>
+                `;
+            }).join('');
+
+            const totalPct = currentFinancialSummary.grandTotal > 0 ? Math.round(currentFinancialSummary.grandCollected * 100 / currentFinancialSummary.grandTotal) : 0;
+            tableRowsHtml += `
+                <tr style="background-color: #f9fafb; font-weight: bold; border-top: 2px solid #006C18; height: 40px; text-align: center;">
+                    <td style="padding: 8px; text-align: left; color: #006C18;">TỔNG CỘNG HỆ THỐNG</td>
+                    <td style="padding: 8px;">${formatCurr(currentFinancialSummary.grandTotal)}</td>
+                    <td style="padding: 8px;">${formatCurr(currentFinancialSummary.grandCollectedCash)}</td>
+                    <td style="padding: 8px;">${formatCurr(currentFinancialSummary.grandCollectedTransfer)}</td>
+                    <td style="padding: 8px; color: #006C18; font-size: 11px;">${formatCurr(currentFinancialSummary.grandCollected)}</td>
+                    <td style="padding: 8px; color: #ea580c;">${formatCurr(currentFinancialSummary.grandPending)}</td>
+                    <td style="padding: 8px; color: #ef4444;">-${formatCurr(currentFinancialSummary.grandRefund)}</td>
+                    <td style="padding: 8px; color: #006C18;">${totalPct}%</td>
+                </tr>
+            `;
+
+            element.innerHTML = `
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h2 style="margin: 0; color: #006C18; font-size: 20px; font-weight: bold; text-transform: uppercase;">Trường Mầm non Thành Danh</h2>
+                    <h3 style="margin: 5px 0 0 0; color: #333; font-size: 14px; font-weight: bold; text-transform: uppercase;">Báo cáo tổng hợp công nợ & thực thu theo lớp</h3>
+                    <p style="margin: 2px 0 15px 0; font-style: italic; font-size: 12px; color: #666;">Tháng ${monthStr}</p>
+                </div>
+
+                <div style="background-color: #f3f4f6; border: 1px dashed #006C18; border-radius: 8px; padding: 15px; margin-bottom: 20px; font-size: 12px; line-height: 1.6;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <div style="width: 48%;">
+                            <p style="margin: 2px 0;"><strong>💰 Tổng cần thu:</strong> ${formatCurr(currentFinancialSummary.grandTotal)}</p>
+                            <p style="margin: 2px 0;"><strong>💵 Thực thu tiền mặt:</strong> ${formatCurr(currentFinancialSummary.grandCollectedCash)}</p>
+                        </div>
+                        <div style="width: 48%;">
+                            <p style="margin: 2px 0;"><strong>📈 Tổng thực thu:</strong> ${formatCurr(currentFinancialSummary.grandCollected)}</p>
+                            <p style="margin: 2px 0;"><strong>💳 Thực thu chuyển khoản:</strong> ${formatCurr(currentFinancialSummary.grandCollectedTransfer)}</p>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; border-top: 1px solid #e5e7eb; margin-top: 10px; padding-top: 10px;">
+                        <div style="width: 48%;">
+                            <p style="margin: 2px 0;"><strong>📉 Tổng nợ học phí:</strong> ${formatCurr(currentFinancialSummary.grandPending)}</p>
+                        </div>
+                        <div style="width: 48%;">
+                            <p style="margin: 2px 0;"><strong>🔄 Tổng hoàn vắng:</strong> -${formatCurr(currentFinancialSummary.grandRefund)}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; border: 1px solid #ddd;">
+                    <thead>
+                        <tr style="background-color: #006C18; color: #ffffff; text-align: center; height: 35px; font-weight: bold;">
+                            <th style="padding: 8px; text-align: left;">Tên lớp</th>
+                            <th style="padding: 8px;">Tổng cần thu</th>
+                            <th style="padding: 8px;">💵 Tiền mặt</th>
+                            <th style="padding: 8px;">💳 Chuyển khoản</th>
+                            <th style="padding: 8px;">Đã thu</th>
+                            <th style="padding: 8px;">Còn nợ</th>
+                            <th style="padding: 8px;">Hoàn vắng</th>
+                            <th style="padding: 8px;">Tỷ lệ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRowsHtml}
+                    </tbody>
+                </table>
+
+                <div style="margin-top: 40px; display: flex; justify-content: space-between; font-size: 12px; font-weight: bold;">
+                    <div style="width: 40%; text-align: center;">
+                        <p style="margin-bottom: 60px;">NGƯỜI LẬP BÁO CÁO</p>
+                        <p style="color: #666; font-weight: normal; font-style: italic;">(Ký và ghi rõ họ tên)</p>
+                    </div>
+                    <div style="width: 40%; text-align: center;">
+                        <p style="margin-bottom: 60px;">BAN GIÁM HIỆU PHÊ DUYỆT</p>
+                        <p style="color: #666; font-weight: normal; font-style: italic;">(Ký tên và đóng dấu)</p>
+                    </div>
+                </div>
+            `;
+
+            const opt = {
+                margin: 10,
+                filename: `Bao_cao_tong_hop_cong_no_thang_${monthStr.replace('/', '_')}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            };
+
+            html2pdf().set(opt).from(element).save();
         }
 
         let currentPrintJob = null;
