@@ -40,7 +40,7 @@ export class InsightService {
              SUM(CASE WHEN l.status = 'ABSENT' THEN 1 ELSE 0 END) as absent_count
       FROM classes c
       LEFT JOIN LatestLogs l ON c.id = l.class_id AND l.rn = 1
-      ${classId ? 'WHERE c.id = ?' : ''}
+      WHERE c.id != 'MANAGEMENT' ${classId ? 'AND c.id = ?' : ''}
       GROUP BY c.id
       ORDER BY c.name
     `;
@@ -57,7 +57,7 @@ export class InsightService {
              SUM(CASE WHEN c.type = 'BILINGUAL' AND l.status = 'PRESENT' THEN 1 ELSE 0 END) as bilingual_present
       FROM LatestLogs l
       JOIN classes c ON l.class_id = c.id
-      WHERE l.rn = 1
+      WHERE l.rn = 1 AND c.id != 'MANAGEMENT'
       GROUP BY date
       ORDER BY date ASC
     `;
@@ -86,7 +86,7 @@ export class InsightService {
         COUNT(*) as value
       FROM students s
       JOIN classes c ON s.class_id = c.id
-      WHERE s.status = 'ACTIVE' AND (s.tag IS NULL OR s.tag != 'TEMPORARY_LEAVE') ${classFilter}
+      WHERE s.status = 'ACTIVE' AND (s.tag IS NULL OR s.tag != 'TEMPORARY_LEAVE') AND c.id != 'MANAGEMENT' ${classFilter}
       GROUP BY c.type
     `;
 
@@ -99,7 +99,7 @@ export class InsightService {
           SUM(CASE WHEN s.dropout_date BETWEEN ? AND ? THEN 1 ELSE 0 END) as dropout_count
       FROM classes c
       LEFT JOIN students s ON c.id = s.class_id
-      ${classId ? 'WHERE c.id = ?' : ''}
+      WHERE c.id != 'MANAGEMENT' ${classId ? 'AND c.id = ?' : ''}
       GROUP BY c.id
       ORDER BY c.name
     `;
@@ -144,7 +144,7 @@ export class InsightService {
         COALESCE(SUM(CASE WHEN c.block = 'MAM' AND l.status = 'PRESENT' THEN 1 ELSE 0 END), 0) as mam_count
       FROM LatestLogs l
       JOIN classes c ON l.class_id = c.id
-      WHERE l.rn = 1
+      WHERE l.rn = 1 AND c.id != 'MANAGEMENT'
     `;
     const result = await this.db.prepare(query).bind(normalizedDate).first<any>();
     return result || { nursery_count: 0, kindergarten_count: 0, la_count: 0, choi_count: 0, mam_count: 0 };
