@@ -1011,12 +1011,16 @@
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <!-- Table Column -->
                         <div class="lg:col-span-1 card-layered bg-white overflow-hidden border border-[#eee]">
-                            <div class="bg-slate-50 p-3 border-b border-[#eee] flex justify-between items-center">
+                            <div class="bg-slate-50 p-3 border-b border-[#eee] flex flex-wrap justify-between items-center gap-2">
                                 <span class="text-[10px] font-black uppercase tracking-widest">Bảng chi tiết</span>
-                                <select id="class-report-sort" onchange="renderClassReport()" class="text-[9px] font-bold border rounded px-2 py-1 outline-none">
-                                    <option value="desc">Giảm dần %</option>
-                                    <option value="asc">Tăng dần %</option>
-                                </select>
+                                <div class="flex items-center gap-2">
+                                    <select id="class-report-sort" onchange="renderClassReport()" class="text-[9px] font-bold border rounded px-1.5 py-1 outline-none bg-white">
+                                        <option value="desc">Giảm dần %</option>
+                                        <option value="asc">Tăng dần %</option>
+                                    </select>
+                                    <button onclick="exportClassAttendanceToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded text-[8px] font-black uppercase transition-all" title="Xuất Excel">🟢 EXCEL</button>
+                                    <button onclick="exportClassAttendanceToPDF()" class="bg-rose-600 hover:bg-rose-700 text-white px-2 py-1 rounded text-[8px] font-black uppercase transition-all" title="Xuất PDF">🔴 PDF</button>
+                                </div>
                             </div>
                             <div class="overflow-x-auto">
                                 <table class="w-full text-[11px] text-left">
@@ -1044,6 +1048,17 @@
 
                 <!-- Grid Section -->
                 <div id="monthly-report-grid-container" class="card-layered overflow-hidden border border-[#eee] bg-white">
+                    <div id="monthly-report-export-toolbar" class="hidden px-4 py-3 bg-slate-50 border-b border-[#eee] flex justify-between items-center gap-4">
+                        <span class="text-[10px] font-black text-[#006C18] uppercase tracking-wider">📁 Xuất báo cáo điểm danh:</span>
+                        <div class="flex gap-2">
+                            <button onclick="exportMonthlyReportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5 transition-all">
+                                🟢 Excel
+                            </button>
+                            <button onclick="exportMonthlyReportToPDF()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5 transition-all">
+                                🔴 PDF
+                            </button>
+                        </div>
+                    </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-[10px] text-center border-collapse">
                             <thead id="grid-header" class="bg-[#006C18] text-white font-black headline tracking-widest">
@@ -1160,15 +1175,20 @@
                     <!-- Right: Audit Logs & Transfers -->
                     <div class="lg:col-span-2 space-y-6">
                         <div class="card-layered overflow-hidden flex flex-col bg-white border border-[#eee]">
-                            <div class="p-4 border-b border-[#eee] bg-slate-50 flex justify-between items-center">
+                            <div class="p-4 border-b border-[#eee] bg-slate-50 flex flex-wrap justify-between items-center gap-2">
                                 <div class="relative z-10">
                                     <h3 class="font-black text-xs headline text-[#006C18]">Nhật ký hệ thống</h3>
-                                    <p class="text-[#D3C9BD] text-[9px] font-black uppercase tracking-widest mt-1">Lịch
-                                        sử
-                                        điểm danh (500 bản ghi)</p>
+                                    <p class="text-[#D3C9BD] text-[9px] font-black uppercase tracking-widest mt-1">Lịch sử điểm danh (500 bản ghi)</p>
                                 </div>
-                                <button onclick="loadTeacherData()"
-                                    class="p-2 border border-slate-200 rounded-md hover:bg-slate-100 transition-all text-sm">🔄</button>
+                                <div class="flex items-center gap-2">
+                                    <button onclick="exportAuditLogsToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider shadow-sm transition-all">
+                                        🟢 Excel
+                                    </button>
+                                    <button onclick="exportAuditLogsToPDF()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider shadow-sm transition-all">
+                                        🔴 PDF
+                                    </button>
+                                    <button onclick="loadTeacherData()" class="p-2 border border-slate-200 rounded-md hover:bg-slate-100 transition-all text-sm">🔄</button>
+                                </div>
                             </div>
                             <div class="overflow-y-auto max-h-[400px]">
                                 <table class="w-full text-left text-[10px] border-collapse">
@@ -1493,9 +1513,17 @@
                                             <th class="p-4 text-center">Tổng HP</th>
                                             <th class="p-4 text-center">Chiết khấu (%)</th>
                                             <th class="p-4 text-right">
-                                                <button onclick="printAllInvoices()"
-                                                    class="bg-[#006C18] text-white px-4 py-2 rounded-md text-[9px] font-black uppercase tracking-widest shadow-sm hover:scale-105 transition-all">🖨️
-                                                    In đã chọn (<span id="print-selected-count">0</span>)</button>
+                                                <div class="inline-flex items-center gap-2 justify-end">
+                                                    <button onclick="exportBillingListToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider shadow-sm transition-all" title="Xuất danh sách hóa đơn ra Excel">
+                                                        🟢 Excel
+                                                    </button>
+                                                    <button onclick="exportBillingListToPDF()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider shadow-sm transition-all" title="Xuất danh sách hóa đơn ra PDF">
+                                                        🔴 PDF
+                                                    </button>
+                                                    <button onclick="printAllInvoices()"
+                                                        class="bg-[#006C18] text-white px-4 py-2 rounded-md text-[9px] font-black uppercase tracking-widest shadow-sm hover:scale-105 transition-all">🖨️
+                                                        In đã chọn (<span id="print-selected-count">0</span>)</button>
+                                                </div>
                                             </th>
                                         </tr>
                                     </thead>
@@ -1517,8 +1545,16 @@
                             <h3 class="text-sm font-black text-[#006C18] headline uppercase">Chi tiết chuyên cần & Học phí</h3>
                             <p class="text-[9px] font-black text-[#FF8000] uppercase tracking-widest mt-1">Lớp: <span id="class-detail-title">--</span></p>
                         </div>
-                        <button onclick="closeModal('modal-class-attendance-detail')"
-                            class="w-8 h-8 flex items-center justify-center rounded-md bg-slate-100 text-slate-500 hover:bg-slate-200 transition-all text-sm font-bold">✕</button>
+                        <div class="flex items-center gap-2">
+                            <button onclick="exportClassDetailToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider shadow-sm transition-all">
+                                🟢 Excel
+                            </button>
+                            <button onclick="exportClassDetailToPDF()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider shadow-sm transition-all">
+                                🔴 PDF
+                            </button>
+                            <button onclick="closeModal('modal-class-attendance-detail')"
+                                class="w-8 h-8 flex items-center justify-center rounded-md bg-slate-100 text-slate-500 hover:bg-slate-200 transition-all text-sm font-bold ml-2">✕</button>
+                        </div>
                     </div>
                     <div class="p-6 overflow-y-auto max-h-[500px]">
                         <table class="w-full text-left text-[11px] border-collapse">
@@ -1636,13 +1672,19 @@
                     class="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden scale-in">
                     <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                         <div>
-                            <h3 class="font-black text-sm text-[#006C18] headline uppercase tracking-widest">⚙️ Quản lý
-                                danh mục lớp học</h3>
-                            <p class="text-[9px] font-bold text-slate-400 mt-0.5 uppercase tracking-widest">XEM, CHỈNH
-                                SỬA VÀ QUẢN LÝ HỆ ĐÀO TẠO</p>
+                            <h3 class="font-black text-sm text-[#006C18] headline uppercase tracking-widest">⚙️ Quản lý danh mục lớp học</h3>
+                            <p class="text-[9px] font-bold text-slate-400 mt-0.5 uppercase tracking-widest">XEM, CHỈNH SỬA VÀ QUẢN LÝ HỆ ĐÀO TẠO</p>
                         </div>
-                        <button onclick="closeClassManager()"
-                            class="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center transition-colors">✕</button>
+                        <div class="flex items-center gap-2">
+                            <button onclick="exportClassListToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider shadow-sm transition-all">
+                                🟢 Excel
+                            </button>
+                            <button onclick="exportClassListToPDF()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider shadow-sm transition-all">
+                                🔴 PDF
+                            </button>
+                            <button onclick="closeClassManager()"
+                                class="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center transition-colors ml-2">✕</button>
+                        </div>
                     </div>
                     <div class="p-6 overflow-y-auto flex-1 bg-white">
                         <table class="w-full text-left">
@@ -3409,6 +3451,12 @@
                     `;
                 }).join('');
 
+                window.currentClassDetail = {
+                    className: className,
+                    classStudents: classStudents,
+                    month: month
+                };
+
             } catch (e) {
                 console.error("Lỗi tải chi tiết chuyên cần lớp:", e);
                 detailBody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-rose-500 font-bold">Lỗi tải dữ liệu điểm danh!</td></tr>`;
@@ -4519,6 +4567,902 @@
             html2pdf().set(opt).from(element).save();
         }
 
+        // --- EXTRA EXPORTS LOGIC (ALL TABLES) ---
+
+        // Helper to format currency
+        const formatVND = (v) => new Intl.NumberFormat('vi-VN').format(v) + 'đ';
+
+        // 1. Export Monthly Attendance Grid to Excel/PDF
+        function exportMonthlyReportToExcel() {
+            if (!window.currentMonthlyReport) return alert('Chưa có dữ liệu để xuất Excel!');
+            const r = window.currentMonthlyReport;
+            const monthStr = r.startDate.substring(5, 7) + '/' + r.startDate.substring(0, 4);
+
+            const title = [`BÁO CÁO ĐIỂM DANH CHI TIẾT - LỚP: ${r.className.toUpperCase()} - THÁNG ${monthStr}`];
+            const info = [`Từ ngày: ${r.startDate} - Đến ngày: ${r.endDate}`];
+            const stats = [`Tỷ lệ chuyên cần trung bình: ${r.overallRate}%`, ``, ``, `Tổng hoàn tiền ăn:`, `${r.grandTotalRefund}đ`];
+            
+            // Header columns
+            const weekdays = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+            const headerRow = ["STT", "Học sinh"];
+            r.dateList.forEach(dStr => {
+                const date = new Date(dStr);
+                const dayNum = dStr.split('-')[2];
+                headerRow.push(`${weekdays[date.getDay()]} ${dayNum}`);
+            });
+            headerRow.push("Có mặt", "Hoàn tiền");
+
+            // Table body data
+            const tableData = r.students.map((s, idx) => {
+                let totalPresent = 0;
+                let totalAbsent = 0;
+                const row = [idx + 1, s.name];
+
+                r.dateList.forEach(dStr => {
+                    const log = r.logs.find(l => l.student_id === s.id && l.date === dStr);
+                    const date = new Date(dStr);
+                    const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                    const isHoliday = r.holidayDates.includes(dStr);
+
+                    if (isWeekend || isHoliday) {
+                        row.push("-");
+                    } else if (log) {
+                        if (log.status === 'PRESENT') {
+                            row.push("✔");
+                            totalPresent++;
+                        } else if (log.status === 'ABSENT') {
+                            row.push("✘");
+                            totalAbsent++;
+                        } else if (log.status === 'TRANSFER') {
+                            row.push("CL");
+                        } else if (log.status === 'DROPOUT') {
+                            row.push("NL");
+                        } else {
+                            row.push("✘");
+                            totalAbsent++;
+                        }
+                    } else {
+                        const reportMonth = dStr.substring(0, 7);
+                        const dropoutMonth = s.dropout_date ? s.dropout_date.substring(0, 7) : null;
+                        if (s.status === 'PENALTY' && dropoutMonth && reportMonth > dropoutMonth) {
+                            row.push("✘");
+                            totalAbsent++;
+                        } else {
+                            row.push("");
+                        }
+                    }
+                });
+
+                const clsInfo = currentClasses.find(c => c.id === r.classId);
+                const type = clsInfo?.type || 'STANDARD';
+                const feeId = type === 'BILINGUAL' ? 'MEAL_BIL' : 'MEAL_STD';
+                const refundRate = r.feeCats.find(c => c.id === feeId)?.default_amount || (type === 'BILINGUAL' ? 38000 : 35000);
+                const refundAmount = totalAbsent * refundRate;
+                const possibleDays = totalPresent + totalAbsent;
+
+                row.push(`${totalPresent}/${possibleDays}`, refundAmount);
+                return row;
+            });
+
+            // Footer row
+            const footerRow = ["TỔNG CỘNG", ""];
+            r.dateList.forEach(dStr => {
+                footerRow.push(r.dailyTotals[dStr] || 0);
+            });
+            footerRow.push(`${r.overallRate}%`, r.grandTotalRefund);
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet([
+                title, info, stats, [], headerRow, ...tableData, footerRow
+            ]);
+
+            // Styling (Times New Roman & beautiful colors)
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            const headerRowIndex = 4;
+
+            const titleStyle = { font: { bold: true, sz: 14, name: "Times New Roman", color: { rgb: "006C18" } } };
+            const subTitleStyle = { font: { italic: true, sz: 10, name: "Times New Roman" } };
+            const statsStyle = { font: { bold: true, sz: 10, name: "Times New Roman", color: { rgb: "FF8000" } } };
+            
+            const headerStyle = {
+                fill: { fgColor: { rgb: "006C18" } },
+                font: { color: { rgb: "FFFFFF" }, bold: true, name: "Times New Roman", sz: 9 },
+                alignment: { vertical: "center", horizontal: "center" },
+                border: {
+                    top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" }
+                }
+            };
+            const bodyStyle = {
+                font: { name: "Times New Roman", sz: 9 },
+                alignment: { vertical: "center", horizontal: "center" },
+                border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }
+            };
+            const leftAlignStyle = { ...bodyStyle, alignment: { vertical: "center", horizontal: "left" } };
+            const totalStyle = {
+                fill: { fgColor: { rgb: "F3F4F6" } },
+                font: { bold: true, name: "Times New Roman", sz: 10, color: { rgb: "006C18" } },
+                alignment: { vertical: "center", horizontal: "center" },
+                border: { top: { style: "medium" }, bottom: { style: "medium" }, left: { style: "thin" }, right: { style: "thin" } }
+            };
+
+            for (let R = range.s.r; R <= range.e.r; ++R) {
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+                    if (!ws[cellRef]) continue;
+
+                    if (R === 0) ws[cellRef].s = titleStyle;
+                    else if (R === 1) ws[cellRef].s = subTitleStyle;
+                    else if (R === 2) ws[cellRef].s = statsStyle;
+                    else if (R === headerRowIndex) ws[cellRef].s = headerStyle;
+                    else if (R === range.e.r) ws[cellRef].s = totalStyle;
+                    else if (R > headerRowIndex) {
+                        ws[cellRef].s = (C === 1) ? leftAlignStyle : bodyStyle;
+                        if (C === range.e.c) ws[cellRef].z = '#,##0"đ"';
+                    }
+                }
+            }
+
+            // Set column widths
+            const colWidths = [{ wch: 5 }, { wch: 22 }];
+            r.dateList.forEach(() => colWidths.push({ wch: 6 }));
+            colWidths.push({ wch: 10 }, { wch: 15 });
+            ws['!cols'] = colWidths;
+
+            XLSX.utils.book_append_sheet(wb, ws, "DiemDanhThang");
+            XLSX.writeFile(wb, `Bao_cao_diem_danh_${r.className}_Thang_${monthStr.replace('/', '_')}.xlsx`);
+        }
+
+        function exportMonthlyReportToPDF() {
+            if (!window.currentMonthlyReport) return alert('Chưa có dữ liệu để xuất PDF!');
+            const r = window.currentMonthlyReport;
+            const monthStr = r.startDate.substring(5, 7) + '/' + r.startDate.substring(0, 4);
+
+            const element = document.createElement('div');
+            element.style.padding = '15px';
+            element.style.fontFamily = "'Times New Roman', Times, serif";
+            element.style.color = '#333';
+            element.style.width = '1040px'; // Fit standard Landscape A4
+
+            // Reconstruct table html with extremely tight borders and spacing
+            const weekdays = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+            let headerRow1 = `<tr style="background-color: #006C18; color: #fff; font-weight: bold; height: 20px;">
+                <th rowspan="2" style="border: 1px solid #000; padding: 2px; font-size: 7.5pt; width: 30px;">STT</th>
+                <th rowspan="2" style="border: 1px solid #000; padding: 2px; text-align: left; font-size: 8.5pt; width: 140px;">Học sinh</th>`;
+            let headerRow2 = `<tr style="background-color: #006C18; color: #fff; font-weight: bold; height: 20px;">`;
+
+            r.dateList.forEach(dStr => {
+                const d = new Date(dStr);
+                const wd = weekdays[d.getDay()];
+                const dayNum = dStr.split('-')[2];
+                headerRow1 += `<th style="border: 1px solid #000; padding: 1px; font-size: 6pt; text-align: center; width: 22px;">${wd}</th>`;
+                headerRow2 += `<th style="border: 1px solid #000; padding: 1px; font-size: 7.5pt; text-align: center;">${dayNum}</th>`;
+            });
+            headerRow1 += `<th rowspan="2" style="border: 1px solid #000; padding: 2px; font-size: 7.5pt; width: 45px; background-color: #FF8000; text-align: center;">Có mặt</th>`;
+            headerRow1 += `<th rowspan="2" style="border: 1px solid #000; padding: 2px; font-size: 7.5pt; width: 75px; background-color: #E2725B; text-align: center;">Hoàn tiền</th></tr>`;
+            headerRow2 += `</tr>`;
+
+            let bodyRows = r.students.map((s, idx) => {
+                let totalPresent = 0;
+                let totalAbsent = 0;
+                let row = `<tr style="height: 18px; font-size: 7.5pt; border-bottom: 1px solid #ddd; text-align: center;">
+                    <td style="border: 1px solid #ddd; padding: 2px; text-align: center; color: #666;">${idx + 1}</td>
+                    <td style="border: 1px solid #ddd; padding: 2px; text-align: left; font-weight: bold;">${s.name}</td>`;
+
+                r.dateList.forEach(dStr => {
+                    const log = r.logs.find(l => l.student_id === s.id && l.date === dStr);
+                    const d = new Date(dStr);
+                    const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                    const isHoliday = r.holidayDates.includes(dStr);
+
+                    let cell = '';
+                    if (isWeekend || isHoliday) {
+                        cell = '<span style="color: #bbb;">-</span>';
+                    } else if (log) {
+                        if (log.status === 'PRESENT') {
+                            cell = '<span style="color: #10b981; font-weight: bold;">✔</span>';
+                            totalPresent++;
+                        } else if (log.status === 'ABSENT') {
+                            cell = '<span style="color: #ef4444; font-weight: bold;">✘</span>';
+                            totalAbsent++;
+                        } else if (log.status === 'TRANSFER') {
+                            cell = '<span style="color: #3b82f6; font-size: 6.5pt; font-weight: bold;">CL</span>';
+                        } else if (log.status === 'DROPOUT') {
+                            cell = '<span style="color: #64748b; font-size: 6.5pt; font-weight: bold;">NL</span>';
+                        } else {
+                            cell = '<span style="color: #ef4444; font-weight: bold;">✘</span>';
+                            totalAbsent++;
+                        }
+                    } else {
+                        const reportMonth = dStr.substring(0, 7);
+                        const dropoutMonth = s.dropout_date ? s.dropout_date.substring(0, 7) : null;
+                        if (s.status === 'PENALTY' && dropoutMonth && reportMonth > dropoutMonth) {
+                            cell = '<span style="color: rgba(239,68,68,0.3);">✘</span>';
+                            totalAbsent++;
+                        }
+                    }
+                    row += `<td style="border: 1px solid #eee; padding: 1px;">${cell}</td>`;
+                });
+
+                const clsInfo = currentClasses.find(c => c.id === r.classId);
+                const type = clsInfo?.type || 'STANDARD';
+                const feeId = type === 'BILINGUAL' ? 'MEAL_BIL' : 'MEAL_STD';
+                const refundRate = r.feeCats.find(c => c.id === feeId)?.default_amount || (type === 'BILINGUAL' ? 38000 : 35000);
+                const refundAmount = totalAbsent * refundRate;
+                const possibleDays = totalPresent + totalAbsent;
+
+                row += `<td style="border: 1px solid #ddd; padding: 2px; font-weight: bold; background-color: #f0fdf4;">${totalPresent}/${possibleDays}</td>`;
+                row += `<td style="border: 1px solid #ddd; padding: 2px; font-weight: bold; color: #ef4444; background-color: #fef2f2; text-align: right;">${formatVND(refundAmount)}</td></tr>`;
+                return row;
+            }).join('');
+
+            // Footer row
+            let footerRowHtml = `<tr style="height: 22px; font-size: 8pt; font-weight: bold; background-color: #f9fafb; border-top: 2px solid #006C18; text-align: center;">
+                <td colspan="2" style="border: 1px solid #000; padding: 2px; text-align: left; color: #006C18;">TỔNG CỘNG LƯỢT ĐI HỌC</td>`;
+            r.dateList.forEach(dStr => {
+                footerRowHtml += `<td style="border: 1px solid #ddd; padding: 1px;">${r.dailyTotals[dStr] || 0}</td>`;
+            });
+            footerRowHtml += `<td style="border: 1px solid #000; padding: 2px; color: #006C18;">${r.overallRate}%</td>`;
+            footerRowHtml += `<td style="border: 1px solid #000; padding: 2px; color: #ef4444; text-align: right;">${formatVND(r.grandTotalRefund)}</td></tr>`;
+
+            element.innerHTML = `
+                <div style="text-align: center; margin-bottom: 12px;">
+                    <h2 style="margin: 0; color: #006C18; font-size: 16px; font-weight: bold; text-transform: uppercase;">Trường Mầm non Thành Danh</h2>
+                    <h3 style="margin: 3px 0 0 0; color: #333; font-size: 11px; font-weight: bold; text-transform: uppercase;">Sổ điểm danh & Hoàn trả suất ăn</h3>
+                    <p style="margin: 2px 0 8px 0; font-style: italic; font-size: 10px; color: #666;">Lớp: ${r.className.toUpperCase()} - Khoảng ngày: ${r.startDate.split('-').reverse().join('/')} đến ${r.endDate.split('-').reverse().join('/')}</p>
+                </div>
+                
+                <div style="display: flex; gap: 20px; font-size: 9px; margin-bottom: 8px; justify-content: center; background-color: #f9fafb; padding: 6px; border-radius: 4px; border: 1px solid #eee;">
+                    <span><strong>📅 Số ngày học chuẩn:</strong> ${r.numSchoolDays} ngày</span>
+                    <span><strong>👶 Lượng trẻ đi học TB:</strong> ${r.regularChildrenRounded} trẻ/ngày</span>
+                    <span><strong>📈 Tỷ lệ chuyên cần lớp:</strong> <span style="color: #006C18; font-weight: bold;">${r.overallRate}%</span></span>
+                    <span><strong>🔄 Tổng hoàn vắng lớp:</strong> <span style="color: #ef4444; font-weight: bold;">${formatVND(r.grandTotalRefund)}</span></span>
+                </div>
+
+                <table style="width: 100%; border-collapse: collapse; border: 1px solid #000;">
+                    <thead>
+                        ${headerRow1}
+                        ${headerRow2}
+                    </thead>
+                    <tbody>
+                        ${bodyRows}
+                        ${footerRowHtml}
+                    </tbody>
+                </table>
+            `;
+
+            const opt = {
+                margin: 5,
+                filename: `Bao_cao_diem_danh_${r.className}_Thang_${monthStr.replace('/', '_')}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            };
+
+            html2pdf().set(opt).from(element).save();
+        }
+
+        // 2. Export Class Attendance Rate (Tỷ lệ chuyên cần các lớp)
+        function exportClassAttendanceToExcel() {
+            if (!classReportData || classReportData.length === 0) return alert('Chưa có dữ liệu báo cáo!');
+            const rawStart = document.getElementById('report-start').value;
+            const rawEnd = document.getElementById('report-end').value;
+
+            const title = [`BÁO CÁO SO SÁNH TỶ LỆ CHUYÊN CẦN CÁC LỚP`];
+            const info = [`Khoảng ngày đối soát: ${rawStart} đến ${rawEnd}`];
+            const header = ["STT", "Lớp học", "Sĩ số lớp", "Tỷ lệ chuyên cần (%)", "Đạt KPI"];
+
+            const tableData = classReportData.map((r, idx) => {
+                const cls = currentClasses.find(c => c.id === r.class_id);
+                const rate = parseFloat(r.attendance_rate);
+                const isNursery = cls?.is_nursery === 1;
+                const kpi = isNursery ? 85 : 90;
+                
+                return [
+                    idx + 1,
+                    cls?.name || r.class_id,
+                    r.student_count,
+                    rate / 100, // Chia 100 để định dạng % trong Excel
+                    rate >= kpi ? "ĐẠT" : "CHƯA ĐẠT"
+                ];
+            });
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet([title, info, [], header, ...tableData]);
+
+            // Style sheet
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            const titleStyle = { font: { bold: true, sz: 14, name: "Times New Roman", color: { rgb: "006C18" } } };
+            const infoStyle = { font: { italic: true, sz: 10, name: "Times New Roman" } };
+            const headerStyle = {
+                fill: { fgColor: { rgb: "006C18" } },
+                font: { color: { rgb: "FFFFFF" }, bold: true, name: "Times New Roman", sz: 11 },
+                alignment: { vertical: "center", horizontal: "center" }
+            };
+            const bodyStyle = {
+                font: { name: "Times New Roman", sz: 10 },
+                alignment: { vertical: "center", horizontal: "center" },
+                border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }
+            };
+            const leftAlign = { ...bodyStyle, alignment: { vertical: "center", horizontal: "left" } };
+
+            for (let R = range.s.r; R <= range.e.r; ++R) {
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+                    if (!ws[cellRef]) continue;
+
+                    if (R === 0) ws[cellRef].s = titleStyle;
+                    else if (R === 1) ws[cellRef].s = infoStyle;
+                    else if (R === 3) ws[cellRef].s = headerStyle;
+                    else if (R > 3) {
+                        ws[cellRef].s = (C === 1) ? leftAlign : bodyStyle;
+                        if (C === 3) ws[cellRef].z = '0.0%';
+                    }
+                }
+            }
+
+            ws['!cols'] = [{ wch: 6 }, { wch: 25 }, { wch: 15 }, { wch: 22 }, { wch: 15 }];
+
+            XLSX.utils.book_append_sheet(wb, ws, "ChuyenCanCacLop");
+            XLSX.writeFile(wb, `Bao_cao_chuyen_can_cac_lop_${rawStart.replace(/\//g, '_')}_den_${rawEnd.replace(/\//g, '_')}.xlsx`);
+        }
+
+        function exportClassAttendanceToPDF() {
+            if (!classReportData || classReportData.length === 0) return alert('Chưa có dữ liệu báo cáo!');
+            const rawStart = document.getElementById('report-start').value;
+            const rawEnd = document.getElementById('report-end').value;
+
+            const element = document.createElement('div');
+            element.style.padding = '25px';
+            element.style.fontFamily = "'Times New Roman', Times, serif";
+            element.style.color = '#333';
+            element.style.width = '650px';
+
+            const rowsHtml = classReportData.map((r, idx) => {
+                const cls = currentClasses.find(c => c.id === r.class_id);
+                const rate = parseFloat(r.attendance_rate);
+                const isNursery = cls?.is_nursery === 1;
+                const kpi = isNursery ? 85 : 90;
+                
+                let statusBadge = rate >= kpi 
+                    ? `<span style="color: #10b981; font-weight: bold;">✔ ĐẠT KPI</span>`
+                    : `<span style="color: #ef4444; font-weight: bold;">✘ CHƯA ĐẠT</span>`;
+
+                return `
+                    <tr style="border-bottom: 1px solid #ddd; height: 22px; text-align: center; font-size: 11px;">
+                        <td style="padding: 4px; color: #666;">${idx + 1}</td>
+                        <td style="padding: 4px; text-align: left; font-weight: bold;">${cls?.name || r.class_id}</td>
+                        <td style="padding: 4px;">${r.student_count} học sinh</td>
+                        <td style="padding: 4px; font-weight: bold; color: #006C18;">${r.attendance_rate}%</td>
+                        <td style="padding: 4px;">${statusBadge}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            element.innerHTML = `
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h2 style="margin: 0; color: #006C18; font-size: 18px; font-weight: bold; text-transform: uppercase;">Trường Mầm non Thành Danh</h2>
+                    <h3 style="margin: 5px 0 0 0; color: #333; font-size: 12px; font-weight: bold; text-transform: uppercase;">So sánh tỷ lệ chuyên cần của các lớp</h3>
+                    <p style="margin: 2px 0 15px 0; font-style: italic; font-size: 11px; color: #666;">Khoảng ngày đối soát: ${rawStart} đến ${rawEnd}</p>
+                </div>
+
+                <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
+                    <thead>
+                        <tr style="background-color: #006C18; color: #ffffff; text-align: center; height: 24px; font-weight: bold; font-size: 11px;">
+                            <th style="padding: 6px; width: 40px;">STT</th>
+                            <th style="padding: 6px; text-align: left;">Lớp học</th>
+                            <th style="padding: 6px; width: 120px;">Sĩ số</th>
+                            <th style="padding: 6px; width: 150px;">Tỷ lệ chuyên cần</th>
+                            <th style="padding: 6px; width: 120px;">Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+            `;
+
+            const opt = {
+                margin: 10,
+                filename: `So_sanh_chuyen_can_cac_lop.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(element).save();
+        }
+
+        // 3. Export Audit Logs (Nhật ký hệ thống)
+        function exportAuditLogsToExcel() {
+            const tableBody = document.getElementById('audit-logs-body');
+            const rows = tableBody?.querySelectorAll('tr') || [];
+            if (rows.length === 0) return alert('Chưa có dữ liệu nhật ký hệ thống!');
+
+            const title = [`NHẬT KÝ HOẠT ĐỘNG & ĐIỂM DANH HỆ THỐNG`];
+            const timestamp = [`Ngày xuất dữ liệu: ${new Date().toLocaleString('vi-VN')}`];
+            const header = ["Thời gian", "Nhân sự / GV", "Hành động", "Học sinh & Ghi chú"];
+
+            const tableData = Array.from(rows).map(row => {
+                const cols = row.querySelectorAll('td');
+                return [
+                    cols[0]?.innerText || "",
+                    cols[1]?.innerText || "",
+                    cols[2]?.innerText || "",
+                    cols[3]?.innerText || ""
+                ];
+            });
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet([title, timestamp, [], header, ...tableData]);
+
+            // Style sheet
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            const titleStyle = { font: { bold: true, sz: 14, name: "Times New Roman", color: { rgb: "006C18" } } };
+            const headerStyle = {
+                fill: { fgColor: { rgb: "006C18" } },
+                font: { color: { rgb: "FFFFFF" }, bold: true, name: "Times New Roman", sz: 11 },
+                alignment: { vertical: "center", horizontal: "center" }
+            };
+            const bodyStyle = {
+                font: { name: "Times New Roman", sz: 10 },
+                alignment: { vertical: "center", horizontal: "left" },
+                border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }
+            };
+
+            for (let R = range.s.r; R <= range.e.r; ++R) {
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+                    if (!ws[cellRef]) continue;
+
+                    if (R === 0) ws[cellRef].s = titleStyle;
+                    else if (R === 3) ws[cellRef].s = headerStyle;
+                    else if (R > 3) ws[cellRef].s = bodyStyle;
+                }
+            }
+
+            ws['!cols'] = [{ wch: 20 }, { wch: 20 }, { wch: 25 }, { wch: 50 }];
+
+            XLSX.utils.book_append_sheet(wb, ws, "NhatKyHeThong");
+            XLSX.writeFile(wb, `Nhat_ky_diem_danh_he_thong.xlsx`);
+        }
+
+        function exportAuditLogsToPDF() {
+            const tableBody = document.getElementById('audit-logs-body');
+            const rows = tableBody?.querySelectorAll('tr') || [];
+            if (rows.length === 0) return alert('Chưa có dữ liệu nhật ký hệ thống!');
+
+            const element = document.createElement('div');
+            element.style.padding = '20px';
+            element.style.fontFamily = "'Times New Roman', Times, serif";
+            element.style.color = '#333';
+            element.style.width = '800px';
+
+            const rowsHtml = Array.from(rows).map(row => {
+                const cols = row.querySelectorAll('td');
+                return `
+                    <tr style="border-bottom: 1px solid #ddd; height: 20px; font-size: 9.5pt;">
+                        <td style="padding: 4px; color: #666; text-align: center;">${cols[0]?.innerText || ""}</td>
+                        <td style="padding: 4px; font-weight: bold;">${cols[1]?.innerText || ""}</td>
+                        <td style="padding: 4px; color: #FF8000; font-weight: bold;">${cols[2]?.innerText || ""}</td>
+                        <td style="padding: 4px; color: #006C18;">${cols[3]?.innerText || ""}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            element.innerHTML = `
+                <div style="text-align: center; margin-bottom: 15px;">
+                    <h2 style="margin: 0; color: #006C18; font-size: 18px; font-weight: bold; text-transform: uppercase;">Trường Mầm non Thành Danh</h2>
+                    <h3 style="margin: 5px 0 0 0; color: #333; font-size: 11px; font-weight: bold; text-transform: uppercase;">Nhật ký điểm danh & Thao tác hệ thống</h3>
+                    <p style="margin: 2px 0 10px 0; font-style: italic; font-size: 10px; color: #666;">Ngày xuất dữ liệu: ${new Date().toLocaleString('vi-VN')}</p>
+                </div>
+
+                <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
+                    <thead>
+                        <tr style="background-color: #006C18; color: #ffffff; text-align: center; height: 24px; font-weight: bold; font-size: 10pt;">
+                            <th style="padding: 4px; width: 140px;">Thời gian</th>
+                            <th style="padding: 4px; width: 140px; text-align: left;">Nhân sự</th>
+                            <th style="padding: 4px; width: 180px; text-align: left;">Hành động</th>
+                            <th style="padding: 6px; text-align: left;">Học sinh & Ghi chú</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+            `;
+
+            const opt = {
+                margin: 10,
+                filename: `Nhat_ky_he_thong.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            };
+
+            html2pdf().set(opt).from(element).save();
+        }
+
+        // 4. Export Billing List (Danh sách hóa đơn)
+        function exportBillingListToExcel() {
+            if (!currentBills || currentBills.length === 0) return alert('Chưa có dữ liệu hóa đơn!');
+            const monthStr = getFinanceMonth();
+            const monthLabel = monthStr.split('-')[1] + '/' + monthStr.split('-')[0];
+
+            const title = [`DANH SÁCH HÓA ĐƠN CHI TIẾT - THÁNG ${monthLabel}`];
+            const header = ["STT", "Học sinh", "Lớp học", "Tiền ăn (Hoàn)", "Phí năm học", "Học phí thực tế", "Chiết khấu (%)", "Trạng thái thu"];
+
+            const tableData = currentBills.map((b, idx) => {
+                return [
+                    idx + 1,
+                    b.student_name,
+                    b.class_name,
+                    b.refund_amount,
+                    b.include_annual ? "Bật" : "Tắt",
+                    b.total_amount,
+                    b.discount_percent || 0,
+                    b.payment_status === 'PAID' ? "ĐÃ THU" : "CHƯA THU"
+                ];
+            });
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet([title, [], header, ...tableData]);
+
+            // Style sheet
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            const titleStyle = { font: { bold: true, sz: 14, name: "Times New Roman", color: { rgb: "006C18" } } };
+            const headerStyle = {
+                fill: { fgColor: { rgb: "006C18" } },
+                font: { color: { rgb: "FFFFFF" }, bold: true, name: "Times New Roman", sz: 11 },
+                alignment: { vertical: "center", horizontal: "center" }
+            };
+            const bodyStyle = {
+                font: { name: "Times New Roman", sz: 10 },
+                alignment: { vertical: "center", horizontal: "center" },
+                border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }
+            };
+            const leftAlign = { ...bodyStyle, alignment: { vertical: "center", horizontal: "left" } };
+
+            for (let R = range.s.r; R <= range.e.r; ++R) {
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+                    if (!ws[cellRef]) continue;
+
+                    if (R === 0) ws[cellRef].s = titleStyle;
+                    else if (R === 2) ws[cellRef].s = headerStyle;
+                    else if (R > 2) {
+                        ws[cellRef].s = (C === 1) ? leftAlign : bodyStyle;
+                        if (C === 3 || C === 5) ws[cellRef].z = '#,##0"đ"';
+                        if (C === 6) ws[cellRef].z = '0%';
+                    }
+                }
+            }
+
+            ws['!cols'] = [{ wch: 6 }, { wch: 22 }, { wch: 15 }, { wch: 18 }, { wch: 15 }, { wch: 20 }, { wch: 15 }, { wch: 18 }];
+
+            XLSX.utils.book_append_sheet(wb, ws, "HoaDonThang");
+            XLSX.writeFile(wb, `Danh_sach_hoa_don_thang_${monthStr.replace('-', '_')}.xlsx`);
+        }
+
+        function exportBillingListToPDF() {
+            if (!currentBills || currentBills.length === 0) return alert('Chưa có dữ liệu hóa đơn!');
+            const monthStr = getFinanceMonth();
+            const monthLabel = monthStr.split('-')[1] + '/' + monthStr.split('-')[0];
+
+            const element = document.createElement('div');
+            element.style.padding = '25px';
+            element.style.fontFamily = "'Times New Roman', Times, serif";
+            element.style.color = '#333';
+            element.style.width = '800px';
+
+            const rowsHtml = currentBills.map((b, idx) => {
+                const statusBadge = b.payment_status === 'PAID'
+                    ? `<span style="color: #10b981; font-weight: bold;">ĐÃ THU</span>`
+                    : `<span style="color: #ef4444; font-weight: bold;">CHƯA THU</span>`;
+
+                return `
+                    <tr style="border-bottom: 1px solid #ddd; height: 20px; text-align: center; font-size: 10px;">
+                        <td style="padding: 4px; color: #666;">${idx + 1}</td>
+                        <td style="padding: 4px; text-align: left; font-weight: bold;">${b.student_name}</td>
+                        <td style="padding: 4px;">${b.class_name}</td>
+                        <td style="padding: 4px; color: #ef4444;">-${formatVND(b.refund_amount)}</td>
+                        <td style="padding: 4px;">${b.include_annual ? "Có" : "Không"}</td>
+                        <td style="padding: 4px; font-weight: bold; color: #006C18;">${formatVND(b.total_amount)}</td>
+                        <td style="padding: 4px; color: #d97706;">${b.discount_percent || 0}%</td>
+                        <td style="padding: 4px;">${statusBadge}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            element.innerHTML = `
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h2 style="margin: 0; color: #006C18; font-size: 18px; font-weight: bold; text-transform: uppercase;">Trường Mầm non Thành Danh</h2>
+                    <h3 style="margin: 5px 0 0 0; color: #333; font-size: 12px; font-weight: bold; text-transform: uppercase;">Danh sách chi tiết hóa đơn học phí</h3>
+                    <p style="margin: 2px 0 15px 0; font-style: italic; font-size: 11px; color: #666;">Báo cáo học kỳ / Tháng ${monthLabel}</p>
+                </div>
+
+                <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
+                    <thead>
+                        <tr style="background-color: #006C18; color: #ffffff; text-align: center; height: 24px; font-weight: bold; font-size: 10px;">
+                            <th style="padding: 6px; width: 40px;">STT</th>
+                            <th style="padding: 6px; text-align: left;">Học sinh</th>
+                            <th style="padding: 6px; width: 100px;">Lớp</th>
+                            <th style="padding: 6px; width: 120px;">Hoàn tiền vắng</th>
+                            <th style="padding: 6px; width: 90px;">Phí năm</th>
+                            <th style="padding: 6px; width: 120px;">Tổng học phí</th>
+                            <th style="padding: 6px; width: 80px;">CK (%)</th>
+                            <th style="padding: 6px; width: 100px;">Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+            `;
+
+            const opt = {
+                margin: 10,
+                filename: `Danh_sach_hoa_don_thang_${monthStr.replace('-', '_')}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            };
+
+            html2pdf().set(opt).from(element).save();
+        }
+
+        // 5. Export Modal Class Detail (Chi tiết chuyên cần & Học phí từng lớp)
+        function exportClassDetailToExcel() {
+            if (!window.currentClassDetail) return alert('Chưa có thông tin chi tiết lớp để xuất!');
+            const d = window.currentClassDetail;
+            const monthLabel = d.month.split('-')[1] + '/' + d.month.split('-')[0];
+
+            const title = [`BẢNG CHI TIẾT CHUYÊN CẦN & HỌC PHÍ - LỚP: ${d.className.toUpperCase()}`];
+            const info = [`Tháng đối soát: ${monthLabel}`];
+            const header = ["STT", "Học sinh", "Ngày chuẩn", "Đi học", "Vắng", "Hoàn vắng", "Tổng học phí", "Trạng thái", "Hình thức thu"];
+
+            const tableData = d.classStudents.map((s, idx) => {
+                const bill = currentBills.find(b => b.student_id === s.student_id);
+                return [
+                    idx + 1,
+                    s.student_name,
+                    s.expected_days,
+                    s.present_days,
+                    s.absent_days,
+                    bill ? bill.refund_amount : 0,
+                    bill ? bill.total_amount : 0,
+                    bill ? (bill.payment_status === 'PAID' ? "ĐÃ THU" : "CHƯA THU") : "---",
+                    bill && bill.payment_status === 'PAID' ? (bill.payment_method === 'TRANSFER' ? "Chuyển khoản" : "Tiền mặt") : "---"
+                ];
+            });
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet([title, info, [], header, ...tableData]);
+
+            // Style sheet
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            const titleStyle = { font: { bold: true, sz: 14, name: "Times New Roman", color: { rgb: "006C18" } } };
+            const headerStyle = {
+                fill: { fgColor: { rgb: "006C18" } },
+                font: { color: { rgb: "FFFFFF" }, bold: true, name: "Times New Roman", sz: 11 },
+                alignment: { vertical: "center", horizontal: "center" }
+            };
+            const bodyStyle = {
+                font: { name: "Times New Roman", sz: 10 },
+                alignment: { vertical: "center", horizontal: "center" },
+                border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }
+            };
+            const leftAlign = { ...bodyStyle, alignment: { vertical: "center", horizontal: "left" } };
+
+            for (let R = range.s.r; R <= range.e.r; ++R) {
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+                    if (!ws[cellRef]) continue;
+
+                    if (R === 0) ws[cellRef].s = titleStyle;
+                    else if (R === 1) ws[cellRef].s = { font: { italic: true, name: "Times New Roman", sz: 10 } };
+                    else if (R === 3) ws[cellRef].s = headerStyle;
+                    else if (R > 3) {
+                        ws[cellRef].s = (C === 1) ? leftAlign : bodyStyle;
+                        if (C === 5 || C === 6) ws[cellRef].z = '#,##0"đ"';
+                    }
+                }
+            }
+
+            ws['!cols'] = [{ wch: 6 }, { wch: 22 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 15 }, { wch: 18 }, { wch: 15 }, { wch: 18 }];
+
+            XLSX.utils.book_append_sheet(wb, ws, "ChiTietLop");
+            XLSX.writeFile(wb, `Chi_tiet_hoc_phi_chuyen_can_${d.className}_Thang_${d.month.replace('-', '_')}.xlsx`);
+        }
+
+        function exportClassDetailToPDF() {
+            if (!window.currentClassDetail) return alert('Chưa có thông tin chi tiết lớp để xuất!');
+            const d = window.currentClassDetail;
+            const monthLabel = d.month.split('-')[1] + '/' + d.month.split('-')[0];
+
+            const element = document.createElement('div');
+            element.style.padding = '25px';
+            element.style.fontFamily = "'Times New Roman', Times, serif";
+            element.style.color = '#333';
+            element.style.width = '800px';
+
+            const rowsHtml = d.classStudents.map((s, idx) => {
+                const bill = currentBills.find(b => b.student_id === s.student_id);
+                const totalHP = bill ? formatVND(bill.total_amount) : '---';
+                const refund = bill ? formatVND(bill.refund_amount) : '---';
+                
+                let statusBadge = `<span style="color: #ef4444; font-weight: bold;">Chưa thu</span>`;
+                let methodText = '<span style="color: #ccc;">---</span>';
+                
+                if (bill) {
+                    if (bill.payment_status === 'PAID') {
+                        statusBadge = `<span style="color: #10b981; font-weight: bold;">Đã thu</span>`;
+                        methodText = bill.payment_method === 'TRANSFER' ? 'Chuyển khoản' : 'Tiền mặt';
+                    }
+                }
+
+                return `
+                    <tr style="border-bottom: 1px solid #ddd; height: 20px; text-align: center; font-size: 10px;">
+                        <td style="padding: 4px; color: #666;">${idx + 1}</td>
+                        <td style="padding: 4px; text-align: left; font-weight: bold;">${s.student_name}</td>
+                        <td style="padding: 4px;">${s.expected_days} ngày</td>
+                        <td style="padding: 4px; color: #10b981; font-weight: bold;">${s.present_days} ngày</td>
+                        <td style="padding: 4px; color: #ef4444;">${s.absent_days} ngày</td>
+                        <td style="padding: 4px; color: #ef4444;">-${refund}</td>
+                        <td style="padding: 4px; font-weight: bold; color: #006C18;">${totalHP}</td>
+                        <td style="padding: 4px;">${statusBadge}</td>
+                        <td style="padding: 4px;">${methodText}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            element.innerHTML = `
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h2 style="margin: 0; color: #006C18; font-size: 18px; font-weight: bold; text-transform: uppercase;">Trường Mầm non Thành Danh</h2>
+                    <h3 style="margin: 5px 0 0 0; color: #333; font-size: 12px; font-weight: bold; text-transform: uppercase;">Chi tiết chuyên cần & Đóng học phí lớp</h3>
+                    <p style="margin: 2px 0 15px 0; font-style: italic; font-size: 11px; color: #666;">Lớp: ${d.className.toUpperCase()} - Tháng: ${monthLabel}</p>
+                </div>
+
+                <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
+                    <thead>
+                        <tr style="background-color: #006C18; color: #ffffff; text-align: center; height: 24px; font-weight: bold; font-size: 10px;">
+                            <th style="padding: 6px; width: 40px;">STT</th>
+                            <th style="padding: 6px; text-align: left;">Học sinh</th>
+                            <th style="padding: 6px; width: 90px;">Ngày chuẩn</th>
+                            <th style="padding: 6px; width: 80px;">Đi học</th>
+                            <th style="padding: 6px; width: 80px;">Vắng</th>
+                            <th style="padding: 6px; width: 110px;">Hoàn vắng</th>
+                            <th style="padding: 6px; width: 125px;">Tổng học phí</th>
+                            <th style="padding: 6px; width: 100px;">Trạng thái</th>
+                            <th style="padding: 6px; width: 120px;">Hình thức</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+            `;
+
+            const opt = {
+                margin: 10,
+                filename: `Chi_tiet_hoc_phi_chuyen_can_${d.className}_Thang_${d.month.replace('-', '_')}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            };
+
+            html2pdf().set(opt).from(element).save();
+        }
+
+        // 6. Export Class List from Modal (Quản lý lớp học)
+        function exportClassListToExcel() {
+            if (!currentClasses || currentClasses.length === 0) return alert('Chưa có thông tin lớp học!');
+
+            const title = [`DANH MỤC LỚP HỌC & BIỂU PHÍ PHỤ THU`];
+            const header = ["STT", "Mã lớp", "Tên lớp", "Hệ đào tạo", "Tổng phụ thu lớp học"];
+
+            const tableData = currentClasses.map((c, idx) => {
+                return [
+                    idx + 1,
+                    c.id.toUpperCase(),
+                    c.name,
+                    c.type === 'BILINGUAL' ? 'Song Ngữ' : 'Tiêu Chuẩn',
+                    c.surcharge_amount || 0
+                ];
+            });
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet([title, [], header, ...tableData]);
+
+            // Style sheet
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            const titleStyle = { font: { bold: true, sz: 14, name: "Times New Roman", color: { rgb: "006C18" } } };
+            const headerStyle = {
+                fill: { fgColor: { rgb: "006C18" } },
+                font: { color: { rgb: "FFFFFF" }, bold: true, name: "Times New Roman", sz: 11 },
+                alignment: { vertical: "center", horizontal: "center" }
+            };
+            const bodyStyle = {
+                font: { name: "Times New Roman", sz: 10 },
+                alignment: { vertical: "center", horizontal: "center" },
+                border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }
+            };
+            const leftAlign = { ...bodyStyle, alignment: { vertical: "center", horizontal: "left" } };
+
+            for (let R = range.s.r; R <= range.e.r; ++R) {
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+                    if (!ws[cellRef]) continue;
+
+                    if (R === 0) ws[cellRef].s = titleStyle;
+                    else if (R === 2) ws[cellRef].s = headerStyle;
+                    else if (R > 2) {
+                        ws[cellRef].s = (C === 2) ? leftAlign : bodyStyle;
+                        if (C === 4) ws[cellRef].z = '#,##0"đ"';
+                    }
+                }
+            }
+
+            ws['!cols'] = [{ wch: 6 }, { wch: 15 }, { wch: 25 }, { wch: 18 }, { wch: 25 }];
+
+            XLSX.utils.book_append_sheet(wb, ws, "DanhMucLop");
+            XLSX.writeFile(wb, `Danh_muc_lop_hoc_Mam_non_Thanh_Danh.xlsx`);
+        }
+
+        function exportClassListToPDF() {
+            if (!currentClasses || currentClasses.length === 0) return alert('Chưa có thông tin lớp học!');
+
+            const element = document.createElement('div');
+            element.style.padding = '25px';
+            element.style.fontFamily = "'Times New Roman', Times, serif";
+            element.style.color = '#333';
+            element.style.width = '650px';
+
+            const rowsHtml = currentClasses.map((c, idx) => {
+                return `
+                    <tr style="border-bottom: 1px solid #ddd; height: 22px; text-align: center; font-size: 11px;">
+                        <td style="padding: 6px; color: #666;">${idx + 1}</td>
+                        <td style="padding: 6px; font-weight: bold; color: #333; text-transform: uppercase;">${c.id}</td>
+                        <td style="padding: 6px; text-align: left; font-weight: bold;">${c.name}</td>
+                        <td style="padding: 6px; color: #006C18;">${c.type === 'BILINGUAL' ? 'Song Ngữ' : 'Tiêu Chuẩn'}</td>
+                        <td style="padding: 6px; font-weight: bold; color: #FF8000;">${formatVND(c.surcharge_amount || 0)}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            element.innerHTML = `
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h2 style="margin: 0; color: #006C18; font-size: 18px; font-weight: bold; text-transform: uppercase;">Trường Mầm non Thành Danh</h2>
+                    <h3 style="margin: 5px 0 0 0; color: #333; font-size: 12px; font-weight: bold; text-transform: uppercase;">Danh mục quản lý lớp học & Biểu phí phụ thu</h3>
+                    <p style="margin: 2px 0 15px 0; font-style: italic; font-size: 11px; color: #666;">Ngày xuất dữ liệu: ${new Date().toLocaleDateString('vi-VN')}</p>
+                </div>
+
+                <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
+                    <thead>
+                        <tr style="background-color: #006C18; color: #ffffff; text-align: center; height: 24px; font-weight: bold; font-size: 11px;">
+                            <th style="padding: 6px; width: 40px;">STT</th>
+                            <th style="padding: 6px; width: 100px;">Mã lớp</th>
+                            <th style="padding: 6px; text-align: left;">Tên lớp</th>
+                            <th style="padding: 6px; width: 140px;">Hệ đào tạo</th>
+                            <th style="padding: 6px; width: 150px;">Tổng phụ thu</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+            `;
+
+            const opt = {
+                margin: 10,
+                filename: `Danh_muc_lop_hoc_Thanh_Danh.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(element).save();
+        }
+
 
 
         // --- Class Manager Modals ---
@@ -4941,6 +5885,7 @@
             tbody.innerHTML = '<tr><td colspan="50" class="p-20 text-center animate-pulse">⚙️ Đang tính toán chuyên cần & hoàn tiền suất ăn...</td></tr>';
             document.getElementById('attendance-summary').classList.add('hidden');
             document.getElementById('class-report-container').classList.add('hidden');
+            document.getElementById('monthly-report-export-toolbar').classList.add('hidden');
             const gridContainer = document.getElementById('monthly-report-grid-container');
             if (gridContainer) gridContainer.classList.remove('hidden');
 
@@ -5152,6 +6097,25 @@
                 if (finalRateVal >= excellent) statRateEl.classList.add('text-emerald-600');
                 else if (finalRateVal >= kpi) statRateEl.classList.add('text-amber-600');
                 else statRateEl.classList.add('text-rose-600');
+
+                // Save report data state for Excel/PDF export
+                window.currentMonthlyReport = {
+                    classId,
+                    className: document.getElementById('report-class').options[document.getElementById('report-class').selectedIndex]?.text || classId,
+                    startDate,
+                    endDate,
+                    dateList,
+                    students,
+                    logs,
+                    holidayDates: Array.from(holidayDates),
+                    dailyTotals,
+                    grandTotalRefund,
+                    overallRate: finalAttendanceRate,
+                    numSchoolDays,
+                    regularChildrenRounded,
+                    feeCats
+                };
+                document.getElementById('monthly-report-export-toolbar').classList.remove('hidden');
 
             } catch (e) { alert('Lỗi tải lưới dữ liệu!'); }
         }
@@ -6146,7 +7110,7 @@
             const monthStr = currentFinancialSummary.month ? currentFinancialSummary.month.split('-')[1] + '/' + currentFinancialSummary.month.split('-')[0] : '';
 
             const element = document.createElement('div');
-            element.style.padding = '25px';
+            element.style.padding = '15px';
             element.style.fontFamily = "'Times New Roman', Times, serif";
             element.style.color = '#333';
             element.style.width = '800px';
@@ -6158,41 +7122,41 @@
                 const s = currentFinancialSummary.summaries[cname];
                 const pct = s.total > 0 ? Math.round(s.collected * 100 / s.total) : 0;
                 return `
-                    <tr style="border-bottom: 1px solid #ddd; height: 35px; text-align: center;">
-                        <td style="padding: 8px; text-align: left; font-weight: bold; color: #111;">${cname}</td>
-                        <td style="padding: 8px;">${formatCurr(s.total)}</td>
-                        <td style="padding: 8px; color: #4b5563;">${formatCurr(s.cash)}</td>
-                        <td style="padding: 8px; color: #4b5563;">${formatCurr(s.transfer)}</td>
-                        <td style="padding: 8px; font-weight: bold; color: #006C18;">${formatCurr(s.collected)}</td>
-                        <td style="padding: 8px; color: #ea580c;">${formatCurr(s.pending)}</td>
-                        <td style="padding: 8px; color: #ef4444;">-${formatCurr(s.refund)}</td>
-                        <td style="padding: 8px; font-weight: bold;">${pct}%</td>
+                    <tr style="border-bottom: 1px solid #ddd; height: 18px; text-align: center;">
+                        <td style="padding: 2px 4px; text-align: left; font-weight: bold; color: #111; font-size: 8.5px;">${cname}</td>
+                        <td style="padding: 2px 4px; font-size: 8.5px;">${formatCurr(s.total)}</td>
+                        <td style="padding: 2px 4px; color: #4b5563; font-size: 8.5px;">${formatCurr(s.cash)}</td>
+                        <td style="padding: 2px 4px; color: #4b5563; font-size: 8.5px;">${formatCurr(s.transfer)}</td>
+                        <td style="padding: 2px 4px; font-weight: bold; color: #006C18; font-size: 8.5px;">${formatCurr(s.collected)}</td>
+                        <td style="padding: 2px 4px; color: #ea580c; font-size: 8.5px;">${formatCurr(s.pending)}</td>
+                        <td style="padding: 2px 4px; color: #ef4444; font-size: 8.5px;">-${formatCurr(s.refund)}</td>
+                        <td style="padding: 2px 4px; font-weight: bold; font-size: 8.5px;">${pct}%</td>
                     </tr>
                 `;
             }).join('');
 
             const totalPct = currentFinancialSummary.grandTotal > 0 ? Math.round(currentFinancialSummary.grandCollected * 100 / currentFinancialSummary.grandTotal) : 0;
             tableRowsHtml += `
-                <tr style="background-color: #f9fafb; font-weight: bold; border-top: 2px solid #006C18; height: 40px; text-align: center;">
-                    <td style="padding: 8px; text-align: left; color: #006C18;">TỔNG CỘNG HỆ THỐNG</td>
-                    <td style="padding: 8px;">${formatCurr(currentFinancialSummary.grandTotal)}</td>
-                    <td style="padding: 8px;">${formatCurr(currentFinancialSummary.grandCollectedCash)}</td>
-                    <td style="padding: 8px;">${formatCurr(currentFinancialSummary.grandCollectedTransfer)}</td>
-                    <td style="padding: 8px; color: #006C18; font-size: 11px;">${formatCurr(currentFinancialSummary.grandCollected)}</td>
-                    <td style="padding: 8px; color: #ea580c;">${formatCurr(currentFinancialSummary.grandPending)}</td>
-                    <td style="padding: 8px; color: #ef4444;">-${formatCurr(currentFinancialSummary.grandRefund)}</td>
-                    <td style="padding: 8px; color: #006C18;">${totalPct}%</td>
+                <tr style="background-color: #f9fafb; font-weight: bold; border-top: 2px solid #006C18; height: 20px; text-align: center;">
+                    <td style="padding: 2px 4px; text-align: left; color: #006C18; font-size: 9px;">TỔNG CỘNG HỆ THỐNG</td>
+                    <td style="padding: 2px 4px; font-size: 9px;">${formatCurr(currentFinancialSummary.grandTotal)}</td>
+                    <td style="padding: 2px 4px; font-size: 9px;">${formatCurr(currentFinancialSummary.grandCollectedCash)}</td>
+                    <td style="padding: 2px 4px; font-size: 9px;">${formatCurr(currentFinancialSummary.grandCollectedTransfer)}</td>
+                    <td style="padding: 2px 4px; color: #006C18; font-size: 9px;">${formatCurr(currentFinancialSummary.grandCollected)}</td>
+                    <td style="padding: 2px 4px; color: #ea580c; font-size: 9px;">${formatCurr(currentFinancialSummary.grandPending)}</td>
+                    <td style="padding: 2px 4px; color: #ef4444; font-size: 9px;">-${formatCurr(currentFinancialSummary.grandRefund)}</td>
+                    <td style="padding: 2px 4px; color: #006C18; font-size: 9px;">${totalPct}%</td>
                 </tr>
             `;
 
             element.innerHTML = `
-                <div style="text-align: center; margin-bottom: 20px;">
-                    <h2 style="margin: 0; color: #006C18; font-size: 20px; font-weight: bold; text-transform: uppercase;">Trường Mầm non Thành Danh</h2>
-                    <h3 style="margin: 5px 0 0 0; color: #333; font-size: 14px; font-weight: bold; text-transform: uppercase;">Báo cáo tổng hợp công nợ & thực thu theo lớp</h3>
-                    <p style="margin: 2px 0 15px 0; font-style: italic; font-size: 12px; color: #666;">Tháng ${monthStr}</p>
+                <div style="text-align: center; margin-bottom: 12px;">
+                    <h2 style="margin: 0; color: #006C18; font-size: 16px; font-weight: bold; text-transform: uppercase;">Trường Mầm non Thành Danh</h2>
+                    <h3 style="margin: 3px 0 0 0; color: #333; font-size: 12px; font-weight: bold; text-transform: uppercase;">Báo cáo tổng hợp công nợ & thực thu theo lớp</h3>
+                    <p style="margin: 2px 0 8px 0; font-style: italic; font-size: 10px; color: #666;">Tháng ${monthStr}</p>
                 </div>
 
-                <div style="background-color: #f3f4f6; border: 1px dashed #006C18; border-radius: 8px; padding: 15px; margin-bottom: 20px; font-size: 12px; line-height: 1.6;">
+                <div style="background-color: #f3f4f6; border: 1px dashed #006C18; border-radius: 8px; padding: 10px; margin-bottom: 12px; font-size: 10px; line-height: 1.4;">
                     <div style="display: flex; justify-content: space-between;">
                         <div style="width: 48%;">
                             <p style="margin: 2px 0;"><strong>💰 Tổng cần thu:</strong> ${formatCurr(currentFinancialSummary.grandTotal)}</p>
@@ -6203,7 +7167,7 @@
                             <p style="margin: 2px 0;"><strong>💳 Thực thu chuyển khoản:</strong> ${formatCurr(currentFinancialSummary.grandCollectedTransfer)}</p>
                         </div>
                     </div>
-                    <div style="display: flex; justify-content: space-between; border-top: 1px solid #e5e7eb; margin-top: 10px; padding-top: 10px;">
+                    <div style="display: flex; justify-content: space-between; border-top: 1px solid #e5e7eb; margin-top: 6px; padding-top: 6px;">
                         <div style="width: 48%;">
                             <p style="margin: 2px 0;"><strong>📉 Tổng nợ học phí:</strong> ${formatCurr(currentFinancialSummary.grandPending)}</p>
                         </div>
@@ -6213,34 +7177,23 @@
                     </div>
                 </div>
 
-                <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; border: 1px solid #ddd;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 9px; margin-top: 8px; border: 1px solid #ddd;">
                     <thead>
-                        <tr style="background-color: #006C18; color: #ffffff; text-align: center; height: 35px; font-weight: bold;">
-                            <th style="padding: 8px; text-align: left;">Tên lớp</th>
-                            <th style="padding: 8px;">Tổng cần thu</th>
-                            <th style="padding: 8px;">💵 Tiền mặt</th>
-                            <th style="padding: 8px;">💳 Chuyển khoản</th>
-                            <th style="padding: 8px;">Đã thu</th>
-                            <th style="padding: 8px;">Còn nợ</th>
-                            <th style="padding: 8px;">Hoàn vắng</th>
-                            <th style="padding: 8px;">Tỷ lệ</th>
+                        <tr style="background-color: #006C18; color: #ffffff; text-align: center; height: 20px; font-weight: bold;">
+                            <th style="padding: 2px 4px; text-align: left;">Tên lớp</th>
+                            <th style="padding: 2px 4px;">Tổng cần thu</th>
+                            <th style="padding: 2px 4px;">💵 Tiền mặt</th>
+                            <th style="padding: 2px 4px;">💳 Chuyển khoản</th>
+                            <th style="padding: 2px 4px;">Đã thu</th>
+                            <th style="padding: 2px 4px;">Còn nợ</th>
+                            <th style="padding: 2px 4px;">Hoàn vắng</th>
+                            <th style="padding: 2px 4px;">Tỷ lệ</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${tableRowsHtml}
                     </tbody>
                 </table>
-
-                <div style="margin-top: 40px; display: flex; justify-content: space-between; font-size: 12px; font-weight: bold;">
-                    <div style="width: 40%; text-align: center;">
-                        <p style="margin-bottom: 60px;">NGƯỜI LẬP BÁO CÁO</p>
-                        <p style="color: #666; font-weight: normal; font-style: italic;">(Ký và ghi rõ họ tên)</p>
-                    </div>
-                    <div style="width: 40%; text-align: center;">
-                        <p style="margin-bottom: 60px;">BAN GIÁM HIỆU PHÊ DUYỆT</p>
-                        <p style="color: #666; font-weight: normal; font-style: italic;">(Ký tên và đóng dấu)</p>
-                    </div>
-                </div>
             `;
 
             const opt = {
