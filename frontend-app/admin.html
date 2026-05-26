@@ -3,8 +3,14 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Admin - Trường mầm non Thành Danh</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#006C18">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="assets/images/TDS_LOGO.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link
         href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;600;700;800;900&family=Be+Vietnam+Pro:wght@400;500;600;700&family=Maven+Pro:wght@400;600;700&display=swap"
@@ -354,6 +360,65 @@
                 transform: scale(1);
             }
         }
+
+        /* --- Premium Mobile Responsive PWA Styles --- */
+        #sidebar-backdrop {
+            transition: opacity 300ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .sidebar {
+            transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s;
+        }
+
+        .responsive-table-container, .overflow-x-auto {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 108, 24, 0.15) transparent;
+        }
+        
+        .responsive-table-container::-webkit-scrollbar, .overflow-x-auto::-webkit-scrollbar {
+            height: 5px;
+        }
+        
+        .responsive-table-container::-webkit-scrollbar-track, .overflow-x-auto::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .responsive-table-container::-webkit-scrollbar-thumb, .overflow-x-auto::-webkit-scrollbar-thumb {
+            background: rgba(0, 108, 24, 0.15);
+            border-radius: 99px;
+            transition: background 0.2s;
+        }
+        
+        .responsive-table-container::-webkit-scrollbar-thumb:hover, .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar {
+                box-shadow: 20px 0 50px rgba(0, 50, 10, 0.15);
+            }
+        }
+
+        @media (max-width: 768px) {
+            /* iOS Zoom Prevention & Touch Sizing */
+            input, select, textarea {
+                font-size: 14px !important;
+            }
+            .card-layered {
+                padding: 16px !important;
+            }
+            .nav-item {
+                margin: 4px 6px;
+                padding: 10px 14px;
+            }
+            /* Smooth touch scrolling */
+            body, main {
+                -webkit-overflow-scrolling: touch;
+            }
+        }
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/material_blue.css">
@@ -411,6 +476,9 @@
             </svg>
         </button>
     </header>
+
+    <!-- Mobile Sidebar Backdrop Overlay -->
+    <div id="sidebar-backdrop" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[115] hidden opacity-0 transition-opacity duration-300 lg:hidden"></div>
 
     <!-- Sidebar Navigation -->
     <aside id="sidebar"
@@ -3784,24 +3852,43 @@
         }
 
         // --- Mobile Logic ---
-        document.getElementById('mobile-menu-toggle')?.addEventListener('click', () => {
+        function openMobileSidebar() {
             const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            
             sidebar.classList.remove('-translate-x-full');
             sidebar.classList.remove('hidden');
             sidebar.classList.add('flex');
-        });
+            
+            backdrop.classList.remove('hidden');
+            // Force reflow
+            backdrop.offsetHeight;
+            backdrop.classList.add('opacity-100');
+        }
 
-        document.getElementById('mobile-menu-close')?.addEventListener('click', () => {
+        function closeMobileSidebar() {
             const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            
             sidebar.classList.add('-translate-x-full');
-        });
+            
+            backdrop.classList.remove('opacity-100');
+            setTimeout(() => {
+                if (backdrop.classList.contains('opacity-100')) return; // Avoid hiding if quickly re-opened
+                backdrop.classList.add('hidden');
+            }, 300);
+        }
+
+        document.getElementById('mobile-menu-toggle')?.addEventListener('click', openMobileSidebar);
+        document.getElementById('mobile-menu-close')?.addEventListener('click', closeMobileSidebar);
+        document.getElementById('sidebar-backdrop')?.addEventListener('click', closeMobileSidebar);
 
         // Close mobile sidebar on tab switch
         const originalSwitchTab = switchTab;
         switchTab = function (tab) {
             originalSwitchTab(tab);
             if (window.innerWidth < 1024) {
-                document.getElementById('sidebar').classList.add('-translate-x-full');
+                closeMobileSidebar();
             }
         };
 
@@ -8717,6 +8804,17 @@
         <div class="loader-spinner"></div>
         <div id="loading-overlay-text" class="loading-text">VUI LÒNG ĐỢI...</div>
     </div>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('[PWA] Service Worker registered successfully:', reg.scope))
+                    .catch(err => console.error('[PWA] Service Worker registration failed:', err));
+            });
+        }
+    </script>
 </body>
 
 </html>
