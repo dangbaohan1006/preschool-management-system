@@ -457,12 +457,24 @@
                 min-height: 40px;
             }
             
-            /* Buttons touch friendly targets */
-            button, .btn-primary, .btn-secondary {
-                min-height: 40px;
-                padding-top: 8px !important;
-                padding-bottom: 8px !important;
-                font-size: 11px !important;
+            /* Buttons touch friendly targets for main actions */
+            .btn-primary, .btn-secondary, #admin-submit-btn, #submit-btn, .btn-major {
+                min-height: 42px;
+                padding-top: 10px !important;
+                padding-bottom: 10px !important;
+                font-size: 12px !important;
+            }
+            
+            /* Sleek compact sizing for toolbar, table, and inline buttons on mobile */
+            button:not(.btn-primary):not(.btn-secondary):not(#admin-submit-btn):not(#submit-btn):not(.btn-major):not(.nav-item) {
+                min-height: 32px;
+                padding: 6px 10px !important;
+                font-size: 10px !important;
+                border-radius: 6px !important;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 4px;
             }
             
             .nav-item {
