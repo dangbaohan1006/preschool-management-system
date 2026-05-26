@@ -34,14 +34,13 @@ export class AdminService {
   }
 
   // --- Students ---
-  async getStudents(classId?: string, asOfDate?: string) {
+  async getStudents(classId?: string, asOfDate?: string, includeLeave: boolean = true) {
     let query = 'SELECT * FROM students';
-    // Mặc định lấy tất cả học sinh ACTIVE. 
-    // Logic gỡ tag/chuyển dropout sẽ được thực hiện định kỳ hoặc qua logic kiểm tra expiry.
     const conditions = [];
     const params: any[] = [];
     
-    conditions.push(`status = 'ACTIVE'`);
+    // Mặc định chỉ lấy học sinh hoạt động, ẩn các bé đã bị xóa
+    conditions.push("status = 'ACTIVE'");
     
     if (classId) {
       conditions.push(`class_id = ?`);
@@ -52,6 +51,13 @@ export class AdminService {
     if (asOfDate) {
       conditions.push(`(entry_date IS NULL OR entry_date <= ?)`);
       params.push(asOfDate);
+    }
+
+    // Nếu không include học sinh nghỉ tạm thời (Bảo lưu)
+    if (!includeLeave) {
+      const currentDate = asOfDate || new Date().toISOString().substring(0, 10);
+      conditions.push(`(tag IS NULL OR tag != 'TEMPORARY_LEAVE' OR resumption_date IS NULL OR resumption_date <= ?)`);
+      params.push(currentDate);
     }
     
     if (conditions.length > 0) {
@@ -199,19 +205,9 @@ export class AdminService {
   }
 
   async deleteStudent(id: string) {
-    const stmts = [
-      // Delete finance rows first to satisfy foreign key constraints.
-      this.db.prepare('DELETE FROM fact_payments WHERE billing_id IN (SELECT id FROM fact_monthly_billing WHERE student_id = ?)').bind(id),
-      this.db.prepare('DELETE FROM fact_billing_items WHERE billing_id IN (SELECT id FROM fact_monthly_billing WHERE student_id = ?)').bind(id),
-      this.db.prepare('DELETE FROM fact_monthly_billing WHERE student_id = ?').bind(id),
-      this.db.prepare('DELETE FROM Raw_Attendance WHERE student_id = ?').bind(id),
-      this.db.prepare('DELETE FROM class_transfers WHERE student_id = ?').bind(id),
-      this.db.prepare('DELETE FROM audit_logs WHERE student_id = ?').bind(id),
-      this.db.prepare('DELETE FROM trial_history WHERE id = ?').bind(id),
-      this.db.prepare('DELETE FROM dropout_history WHERE id = ?').bind(id),
-      this.db.prepare('DELETE FROM students WHERE id = ?').bind(id)
-    ];
-    return await this.db.batch(stmts);
+    return await this.db.prepare(
+      "UPDATE students SET status = 'DELETED', deleted_at = CURRENT_TIMESTAMP WHERE id = ?"
+    ).bind(id).run();
   }
 
   async migrateStudentId(oldId: string, newId: string) {
@@ -391,6 +387,77 @@ export class AdminService {
 
   async deleteHoliday(date: string) {
     return await this.db.prepare('DELETE FROM dim_holidays WHERE holiday_date = ?').bind(date).run();
+  }
+
+  // --- Trash & Soft Delete ---
+  async restoreStudent(id: string) {
+    return await this.db.prepare(
+      "UPDATE students SET status = 'ACTIVE', deleted_at = NULL WHERE id = ?"
+    ).bind(id).run();
+  }
+
+  async getTrashStudents() {
+    return await this.db.prepare(`
+      SELECT s.*, c.name as class_name 
+      FROM students s
+      LEFT JOIN classes c ON s.class_id = c.id
+      WHERE s.status = 'DELETED' AND s.deleted_at IS NOT NULL
+      ORDER BY s.deleted_at DESC
+    `).all();
+  }
+
+  async hardDeleteStudent(id: string) {
+    const stmts = [
+      this.db.prepare('DELETE FROM fact_payments WHERE billing_id IN (SELECT id FROM fact_monthly_billing WHERE student_id = ?)').bind(id),
+      this.db.prepare('DELETE FROM fact_billing_items WHERE billing_id IN (SELECT id FROM fact_monthly_billing WHERE student_id = ?)').bind(id),
+      this.db.prepare('DELETE FROM fact_monthly_billing WHERE student_id = ?').bind(id),
+      this.db.prepare('DELETE FROM Raw_Attendance WHERE student_id = ?').bind(id),
+      this.db.prepare('DELETE FROM class_transfers WHERE student_id = ?').bind(id),
+      this.db.prepare('DELETE FROM audit_logs WHERE student_id = ?').bind(id),
+      this.db.prepare('DELETE FROM trial_history WHERE id = ?').bind(id),
+      this.db.prepare('DELETE FROM dropout_history WHERE id = ?').bind(id),
+      this.db.prepare('DELETE FROM students WHERE id = ?').bind(id)
+    ];
+    return await this.db.batch(stmts);
+  }
+
+  async purgeExpiredTrash() {
+    const { results } = await this.db.prepare(
+      "SELECT id FROM students WHERE status = 'DELETED' AND deleted_at <= datetime('now', '-30 days')"
+    ).all<{ id: string }>();
+
+    let count = 0;
+    for (const s of results || []) {
+      await this.hardDeleteStudent(s.id);
+      count++;
+    }
+    return { count };
+  }
+
+  // --- Auto-Resumption (Kích hoạt lại bảo lưu) ---
+  async autoResumeStudents() {
+    const { results } = await this.db.prepare(`
+      SELECT id FROM students 
+      WHERE status = 'ACTIVE' 
+        AND tag = 'TEMPORARY_LEAVE' 
+        AND resumption_date IS NOT NULL 
+        AND resumption_date <= DATE('now', 'localtime')
+    `).all<{ id: string }>();
+
+    const stmts = [];
+    for (const s of results || []) {
+      stmts.push(this.db.prepare(
+        "UPDATE students SET tag = NULL, tag_expiry = NULL, resumption_date = NULL WHERE id = ?"
+      ).bind(s.id));
+      stmts.push(this.db.prepare(
+        'INSERT INTO audit_logs (teacher_id, teacher_name, action, student_id, student_name, details) VALUES ("SYSTEM", "Hệ thống tự động", "BẢO LƯU_HẾT HẠN", ?, ?, "Tự động kích hoạt lại học sinh đi học lại theo ngày hẹn")'
+      ).bind(s.id, 'Học sinh'));
+    }
+
+    if (stmts.length > 0) {
+      await this.db.batch(stmts);
+    }
+    return { count: results?.length || 0 };
   }
 }
 

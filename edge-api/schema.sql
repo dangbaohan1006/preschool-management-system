@@ -29,11 +29,13 @@ CREATE TABLE IF NOT EXISTS students (
     resumption_date DATE,
     tag_created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     entry_date DATE,
+    deleted_at DATETIME DEFAULT NULL,
     FOREIGN KEY (class_id) REFERENCES classes(id)
 );
 
 -- Add entry_date column if it doesn't exist (migration for existing databases)
 ALTER TABLE students ADD COLUMN entry_date DATE;
+ALTER TABLE students ADD COLUMN deleted_at DATETIME DEFAULT NULL;
 
 -- Table for expired trial students
 CREATE TABLE IF NOT EXISTS trial_history (

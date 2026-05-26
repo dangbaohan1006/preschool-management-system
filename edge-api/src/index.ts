@@ -74,8 +74,17 @@ app.put('/api/admin/classes/:id', async (c) => {
 app.get('/api/admin/students', async (c) => {
   const classId = c.req.query('class_id');
   const asOfDate = c.req.query('as_of_date');
+  const includeLeave = c.req.query('include_leave') !== 'false';
   const { admin } = getServices(c.env.DB);
-  const { results } = await admin.getStudents(classId, asOfDate);
+  
+  // Tự động kích hoạt lại các bé hết hạn bảo lưu (nghỉ tạm thời)
+  try {
+    await admin.autoResumeStudents();
+  } catch (e) {
+    console.error("Auto resume failed:", e);
+  }
+  
+  const { results } = await admin.getStudents(classId, asOfDate, includeLeave);
   return c.json({ results });
 });
 
@@ -108,6 +117,50 @@ app.delete('/api/admin/students/:id', async (c) => {
     return c.json({ success: true });
   } catch (err: any) {
     return c.json({ error: err?.message || 'Không thể xóa học sinh' }, 400);
+  }
+});
+
+app.get('/api/admin/students/trash', async (c) => {
+  const { admin } = getServices(c.env.DB);
+  try {
+    const { results } = await admin.getTrashStudents();
+    return c.json({ results });
+  } catch (err: any) {
+    return c.json({ error: err?.message || 'Lỗi tải thùng rác' }, 500);
+  }
+});
+
+app.post('/api/admin/students/:id/restore', async (c) => {
+  const id = c.req.param('id');
+  const { admin } = getServices(c.env.DB);
+  try {
+    await admin.restoreStudent(id);
+    return c.json({ success: true });
+  } catch (err: any) {
+    return c.json({ error: err?.message || 'Lỗi khôi phục học sinh' }, 400);
+  }
+});
+
+app.post('/api/admin/students/purge-trash', async (c) => {
+  const { admin } = getServices(c.env.DB);
+  try {
+    const result = await admin.purgeExpiredTrash();
+    return c.json({ success: true, ...result });
+  } catch (err: any) {
+    return c.json({ error: err?.message || 'Lỗi dọn dẹp thùng rác' }, 500);
+  }
+});
+
+app.post('/api/admin/students/:id/purge', async (c) => {
+  const id = c.req.param('id');
+  const { pin } = await c.req.json();
+  const { admin } = getServices(c.env.DB);
+  try {
+    await admin.checkAdminPin(pin);
+    await admin.hardDeleteStudent(id);
+    return c.json({ success: true });
+  } catch (err: any) {
+    return c.json({ error: err?.message || 'Lỗi xóa vĩnh viễn học sinh' }, 400);
   }
 });
 

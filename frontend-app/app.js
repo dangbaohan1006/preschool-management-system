@@ -229,6 +229,7 @@ async function fetchStudents() {
 
         const url = new URL(`${API_URL_BASE}/admin/students`, 'http://localhost');
         url.searchParams.append('class_id', classId);
+        url.searchParams.append('include_leave', 'false');
         if (asOfDate) url.searchParams.append('as_of_date', asOfDate);
         
         const res = await fetch(url.toString(), { headers: { 'x-api-key': SECRET_KEY } });
@@ -521,7 +522,7 @@ async function loadHistory() {
         const isLocked = await isDateLocked(date);
         window.historyDateLocked = isLocked;
 
-        const studentsRes = await fetch(`${API_URL_BASE}/admin/students?class_id=${classId}&as_of_date=${toISODate(date)}`, { headers: { 'x-api-key': SECRET_KEY } });
+        const studentsRes = await fetch(`${API_URL_BASE}/admin/students?class_id=${classId}&as_of_date=${toISODate(date)}&include_leave=false`, { headers: { 'x-api-key': SECRET_KEY } });
         const studentsData = await studentsRes.json();
         const classStudents = studentsData.results;
 

@@ -609,6 +609,10 @@
                 class="nav-item w-full flex items-center gap-3 p-3 rounded-md font-bold text-xs transition-all">
                 Nhân sự & Nhật ký
             </button>
+            <button onclick="switchTab('trash')" id="btn-trash"
+                class="nav-item w-full flex items-center gap-3 p-3 rounded-md font-bold text-xs transition-all">
+                Thùng rác học sinh
+            </button>
             <button onclick="switchTab('about')" id="btn-about"
                 class="nav-item w-full flex items-center gap-3 p-3 rounded-md font-bold text-xs transition-all">
                 Về phần mềm
@@ -1573,6 +1577,43 @@
                 </div>
             </div>
 
+            <!-- Trash View -->
+            <div id="view-trash" class="hidden space-y-4 mt-2">
+                <div class="card-layered p-6 bg-white border border-[#eee]">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                        <div>
+                            <h3 class="text-base font-black text-[#006C18] uppercase tracking-wider flex items-center gap-2">
+                                🗑️ Thùng rác học sinh (Lưu trữ 30 ngày)
+                            </h3>
+                            <p class="text-xs text-slate-400 mt-1">
+                                Dữ liệu chuyên cần và tài chính của học sinh bị xóa được bảo lưu nguyên vẹn trong 30 ngày trước khi bị hệ thống tự động xóa sạch.
+                            </p>
+                        </div>
+                        <button onclick="handlePurgeExpiredTrash()" class="bg-rose-600 text-white px-4 py-2 rounded-lg font-black text-[11px] uppercase tracking-wider shadow-md hover:bg-rose-700 transition-all flex items-center gap-2">
+                            ⚡ Dọn dẹp thùng rác hết hạn
+                        </button>
+                    </div>
+
+                    <div class="responsive-table-container border border-[#eee] rounded-xl overflow-hidden shadow-inner bg-slate-50/20">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr style="background-color: var(--bg-sidebar); border-bottom: 2px solid #eee;" class="text-[#006C18] font-black uppercase tracking-wider">
+                                    <th class="p-4">Mã HS</th>
+                                    <th class="p-4">Họ và tên</th>
+                                    <th class="p-4">Lớp cũ</th>
+                                    <th class="p-4">Ngày xóa</th>
+                                    <th class="p-4 text-center">Thời gian lưu trữ còn lại</th>
+                                    <th class="p-4 text-right">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="trash-table-body" class="divide-y divide-[#eee] text-[#006C18] font-bold">
+                                <!-- Will be rendered dynamically via loadTrash() -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <!-- Finance View -->
             <div id="view-finance" class="hidden space-y-4 mt-2">
                 <div class="grid grid-cols-1 gap-6">
@@ -2395,7 +2436,7 @@
             }
 
             // Hide all views
-            ['dashboard', 'manage', 'calendar', 'report', 'locks', 'staff', 'finance', 'about'].forEach(v => {
+            ['dashboard', 'manage', 'calendar', 'report', 'locks', 'staff', 'finance', 'about', 'trash'].forEach(v => {
                 const view = document.getElementById(`view-${v}`);
                 const btn = document.getElementById(`btn-${v}`);
                 if (view) view.classList.add('hidden');
@@ -2423,7 +2464,8 @@
                 locks: ['Khóa sổ điểm danh', 'Quản lý khóa điểm danh hàng ngày'],
                 staff: ['Nhân sự & Nhật ký', 'Quản lý tài khoản giáo viên và truy soát lịch sử'],
                 finance: ['Quản lý tài chính & Biểu phí', 'Cấu hình hoàn tiền và hóa đơn học sinh'],
-                about: ['Về phần mềm', 'Cấu hình thông tin nhận học phí & Giới thiệu phần mềm']
+                about: ['Về phần mềm', 'Cấu hình thông tin nhận học phí & Giới thiệu phần mềm'],
+                trash: ['Thùng rác học sinh', 'Khôi phục hoặc xóa vĩnh viễn học sinh']
             };
             if (titles[tab]) {
                 document.getElementById('current-tab-title').innerText = titles[tab][0];
@@ -2470,6 +2512,9 @@
             }
             if (tab === 'finance') {
                 loadFinanceData();
+            }
+            if (tab === 'trash') {
+                loadTrash();
             }
             if (tab === 'about') {
                 const panelPerm = document.getElementById('about-sub-permissions');
@@ -2659,6 +2704,7 @@
             const mapping = {
                 dashboard: 'tab_dashboard',
                 manage: 'tab_students',
+                trash: 'tab_students',
                 calendar: 'tab_calendar',
                 report: 'tab_report',
                 locks: 'tab_locks',
@@ -2670,7 +2716,7 @@
         }
 
         function renderSidebarPermissions() {
-            const tabs = ['dashboard', 'manage', 'calendar', 'report', 'locks', 'finance', 'staff', 'about'];
+            const tabs = ['dashboard', 'manage', 'calendar', 'report', 'locks', 'finance', 'staff', 'trash', 'about'];
             let firstAllowed = null;
             tabs.forEach(t => {
                 const btn = document.getElementById(`btn-${t}`);
@@ -6041,7 +6087,7 @@
         }
 
         async function confirmDeleteStudent(id, name) {
-            if (!confirm(`CẢNH BÁO NGUY HIỂM!\n\nBạn có chắc chắn muốn XÓA HOÀN TOÀN học sinh [${name}] khỏi hệ thống không?\nHành động này không thể hoàn tác và sẽ xóa sạch mọi dữ liệu liên quan.`)) {
+            if (!await sysConfirm(`Bạn có chắc chắn muốn di chuyển học sinh [${name}] vào Thùng rác không?\n\nToàn bộ dữ liệu chuyên cần và học phí sẽ được bảo lưu trong 30 ngày trước khi bị xóa vĩnh viễn.`)) {
                 return;
             }
 
@@ -6052,9 +6098,8 @@
                 });
 
                 if (res.ok) {
-                    alert(`Đã xóa học sinh ${name} thành công.`);
+                    showToast(`Đã chuyển học sinh [${name}] vào Thùng rác thành công!`, "success");
                     loadAllData();
-                    // Load dashboard to update stats
                     if (document.getElementById('view-dashboard').classList.contains('hidden') === false) loadDashboard();
                 } else {
                     let errMsg = 'Yêu cầu không thành công';
@@ -6066,10 +6111,156 @@
                         const text = await res.text();
                         if (text) errMsg = text;
                     }
-                    alert('Lỗi khi xóa: ' + errMsg);
+                    showToast('Lỗi khi xóa: ' + errMsg, "error");
                 }
             } catch (e) {
-                alert('Lỗi kết nối máy chủ!');
+                showToast('Lỗi kết nối máy chủ!', "error");
+            }
+        }
+
+        async function loadTrash() {
+            const tbody = document.getElementById('trash-table-body');
+            if (!tbody) return;
+            
+            tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-400 animate-pulse">⚙️ Đang tải danh sách thùng rác...</td></tr>';
+            
+            try {
+                const res = await fetch(`${API_BASE}/admin/students/trash`, {
+                    headers: { 'x-api-key': SECRET }
+                });
+                
+                if (!res.ok) throw new Error('Không thể tải dữ liệu thùng rác');
+                
+                const data = await res.json();
+                const students = data.results || [];
+                
+                if (students.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-400 font-medium">✨ Thùng rác trống. Không có học sinh nào chuẩn bị xóa.</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = students.map(s => {
+                    const deletedDate = new Date(s.deleted_at);
+                    const now = new Date();
+                    const diffTime = Math.abs(now - deletedDate);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    const daysRemaining = Math.max(0, 30 - diffDays);
+                    
+                    const pad = (n) => String(n).padStart(2, '0');
+                    const formattedDate = `${pad(deletedDate.getDate())}/${pad(deletedDate.getMonth() + 1)}/${deletedDate.getFullYear()} ${pad(deletedDate.getHours())}:${pad(deletedDate.getMinutes())}`;
+                    
+                    const countdownColor = daysRemaining <= 5 ? 'text-rose-500 bg-rose-50' : 'text-orange-500 bg-orange-50';
+                    
+                    return `
+                        <tr class="hover:bg-slate-50 transition-all border-b border-slate-100">
+                            <td class="p-4 text-slate-400 font-bold">${s.id}</td>
+                            <td class="p-4">
+                                <span class="font-bold text-[#006C18] text-sm">${s.name}</span>
+                            </td>
+                            <td class="p-4 text-slate-600">${s.class_name || s.class_id || 'Chưa phân lớp'}</td>
+                            <td class="p-4 text-slate-500 font-medium">${formattedDate}</td>
+                            <td class="p-4 text-center">
+                                <span class="${countdownColor} px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider inline-block">
+                                    Còn ${daysRemaining} ngày
+                                </span>
+                            </td>
+                            <td class="p-4 text-right flex gap-2 justify-end">
+                                <button onclick="handleRestoreStudent('${s.id}', '${s.name.replace(/'/g, "\\'")}')" class="bg-[#006C18] text-white px-3 py-2 rounded-lg text-[9px] uppercase font-black tracking-widest shadow-md shadow-emerald-100 hover:scale-105 transition-all">
+                                    ↺ Khôi phục
+                                </button>
+                                <button onclick="handlePermanentDelete('${s.id}', '${s.name.replace(/'/g, "\\'")}')" class="bg-rose-600 text-white px-3 py-2 rounded-lg text-[9px] uppercase font-black tracking-widest shadow-md shadow-rose-100 hover:scale-105 transition-all">
+                                    🗑️ Xóa vĩnh viễn
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error(err);
+                tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-rose-500 font-bold">Lỗi tải thùng rác! Vui lòng thử lại.</td></tr>';
+            }
+        }
+        
+        async function handleRestoreStudent(id, name) {
+            if (!await sysConfirm(`Bạn có chắc chắn muốn khôi phục học sinh [${name}] về lớp học cũ không?\n\nToàn bộ hồ sơ, dữ liệu chuyên cần và học phí sẽ được hồi phục nguyên vẹn.`)) {
+                return;
+            }
+            
+            showLoading('Đang khôi phục học sinh...');
+            try {
+                const res = await fetch(`${API_BASE}/admin/students/${id}/restore`, {
+                    method: 'POST',
+                    headers: { 'x-api-key': SECRET }
+                });
+                
+                if (res.ok) {
+                    showToast(`Học sinh [${name}] đã được khôi phục thành công!`, 'success');
+                    loadTrash();
+                    loadAllData();
+                } else {
+                    const err = await res.json();
+                    showToast(err.error || 'Khôi phục thất bại', 'error');
+                }
+            } catch (e) {
+                showToast('Lỗi kết nối máy chủ!', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        async function handlePermanentDelete(id, name) {
+            const pin = prompt(`⚠️ CẢNH BÁO NGUY HIỂM VÀ KHÔNG THỂ HOÀN TÁC!\n\nBạn đang thực hiện xóa vĩnh viễn học sinh [${name}] khỏi cơ sở dữ liệu gốc của nhà trường.\nMọi hồ sơ, điểm danh và học phí sẽ bị xóa sạch hoàn toàn khỏi 9 bảng dữ liệu.\n\nVui lòng nhập Mã PIN Admin để xác nhận hành động này:`);
+            if (pin === null) return;
+            if (!pin) {
+                showToast('Vui lòng nhập mã PIN xác nhận', 'error');
+                return;
+            }
+            
+            showLoading('Đang thực hiện xóa vĩnh viễn...');
+            try {
+                const res = await fetch(`${API_BASE}/admin/students/${id}/purge`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-api-key': SECRET },
+                    body: JSON.stringify({ pin })
+                });
+                
+                if (res.ok) {
+                    showToast(`Đã xóa vĩnh viễn học sinh [${name}] khỏi hệ thống.`, 'success');
+                    loadTrash();
+                } else {
+                    const err = await res.json();
+                    showToast(err.error || 'Mã PIN sai hoặc lỗi xóa', 'error');
+                }
+            } catch (e) {
+                showToast('Lỗi kết nối máy chủ!', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        async function handlePurgeExpiredTrash() {
+            if (!await sysConfirm(`Bạn có chắc chắn muốn dọn dẹp các học sinh đã lưu trữ quá 30 ngày trong thùng rác không?\n\nHành động này sẽ xóa vĩnh viễn họ khỏi hệ thống học tập của nhà trường.`)) {
+                return;
+            }
+            
+            showLoading('Đang dọn dẹp thùng rác...');
+            try {
+                const res = await fetch(`${API_BASE}/admin/students/purge-trash`, {
+                    method: 'POST',
+                    headers: { 'x-api-key': SECRET }
+                });
+                
+                if (res.ok) {
+                    const result = await res.json();
+                    showToast(`Đã tự động dọn dẹp ${result.count || 0} học sinh hết hạn lưu trữ thành công!`, 'success');
+                    loadTrash();
+                } else {
+                    showToast('Lỗi dọn dẹp thùng rác', 'error');
+                }
+            } catch (e) {
+                showToast('Lỗi kết nối máy chủ!', 'error');
+            } finally {
+                hideLoading();
             }
         }
 
