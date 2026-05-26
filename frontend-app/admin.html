@@ -403,17 +403,94 @@
         }
 
         @media (max-width: 768px) {
-            /* iOS Zoom Prevention & Touch Sizing */
-            input, select, textarea {
-                font-size: 14px !important;
+            /* Text Sizing Reductions for Mobile */
+            body {
+                font-size: 13px;
             }
+            h2, .headline {
+                font-size: 1.25rem !important; /* 20px */
+            }
+            h3 {
+                font-size: 1rem !important; /* 16px */
+            }
+            .text-4xl {
+                font-size: 1.75rem !important; /* 28px */
+            }
+            .text-3xl {
+                font-size: 1.5rem !important; /* 24px */
+            }
+            .text-2xl {
+                font-size: 1.2rem !important; /* 19px */
+            }
+            
+            /* Spacing adjustments */
+            .p-8 {
+                padding: 1rem !important; /* 16px */
+            }
+            .p-6 {
+                padding: 1rem !important;
+            }
+            .pt-8 {
+                padding-top: 1rem !important;
+            }
+            .pb-4 {
+                padding-bottom: 0.75rem !important;
+            }
+            .space-y-8 > :not([hidden]) ~ :not([hidden]) {
+                margin-top: 1rem !important;
+            }
+            .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+                margin-top: 0.75rem !important;
+            }
+            
+            /* Card & Layout tweaks */
             .card-layered {
-                padding: 16px !important;
+                padding: 12px 16px !important;
+                border-radius: var(--radius-lg) !important;
             }
+            
+            /* Input & Select touch optimization */
+            input, select, textarea {
+                font-size: 13px !important;
+                padding: 8px 12px !important;
+                height: auto !important;
+                min-height: 40px;
+            }
+            
+            /* Buttons touch friendly targets */
+            button, .btn-primary, .btn-secondary {
+                min-height: 40px;
+                padding-top: 8px !important;
+                padding-bottom: 8px !important;
+                font-size: 11px !important;
+            }
+            
             .nav-item {
-                margin: 4px 6px;
-                padding: 10px 14px;
+                margin: 2px 4px !important;
+                padding: 10px 12px !important;
+                font-size: 13px !important;
             }
+            
+            /* Login Screen specific tweaks */
+            #login-screen > div {
+                padding: 24px !important;
+                margin: 12px !important;
+                max-width: 90% !important;
+            }
+            #login-screen h2 {
+                font-size: 1.35rem !important;
+            }
+            #login-form-container input {
+                padding: 12px 16px !important;
+                font-size: 14px !important;
+                min-height: 46px;
+            }
+            #login-form-container button {
+                padding: 12px 16px !important;
+                font-size: 11px !important;
+                min-height: 46px;
+            }
+            
             /* Smooth touch scrolling */
             body, main {
                 -webkit-overflow-scrolling: touch;
