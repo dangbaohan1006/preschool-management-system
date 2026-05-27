@@ -114,3 +114,21 @@ test('markAttendanceBatch: Phải chặn nếu kỳ kế toán đã ĐÓNG', asy
 
     await expect(service.markAttendanceBatch(records)).rejects.toThrow(/đã đóng/);
 });
+
+test('markAttendanceBatch: Admin được quyền cập nhật kỳ kế toán đã ĐÓNG khi truyền bypassLocks', async () => {
+    mockDb.batch.mockResolvedValue([{ success: true }]);
+    // Giả lập kỳ kế toán đã ĐÓNG
+    mockDb.first.mockImplementation(async () => {
+      if (lastQuery.includes('dim_financial_periods')) {
+        return { status: 'CLOSED' };
+      }
+      return null;
+    });
+
+    const records = [
+        { student_id: 'S1', student_name: 'Bé A', class_id: 'Lop1', date: '2026-04-09', status: 'PRESENT', teacher_id: 'GV1', teacher_name: 'Cô Hồng' }
+    ];
+
+    // Không được ném lỗi và hoàn thành thành công
+    await expect(service.markAttendanceBatch(records, true)).resolves.not.toThrow();
+});

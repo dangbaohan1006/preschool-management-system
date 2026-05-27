@@ -2069,12 +2069,28 @@
                             </div>
                             <div class="space-y-1 text-left">
                                 <label class="text-[9px] font-black text-slate-400 uppercase">Trạng thái</label>
-                                <select id="edit-std-status"
+                                <select id="edit-std-status" onchange="onEditStatusChange()"
                                     class="w-full border border-[#ddd] rounded-md p-3 text-xs outline-none cursor-pointer font-black italic">
                                     <option value="ACTIVE">✅ Đang học</option>
                                     <option value="DROPOUT">🚪 Nghỉ hẳn</option>
                                     <option value="PENALTY">⚠️ Phạt treo sĩ số</option>
                                 </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Phân vùng Ngày nghỉ học / Phạt Treo sĩ số -->
+                        <div id="edit-dropout-section" class="hidden space-y-3 bg-rose-50/50 border border-rose-100/70 p-4 rounded-xl animate-in slide-in-from-top-1 duration-200 text-left">
+                            <div class="space-y-1">
+                                <label class="text-[9px] font-black text-rose-600 uppercase">Ngày nghỉ học / Ra trường</label>
+                                <input type="text" id="edit-std-dropout-date" placeholder="Chọn ngày nghỉ học (dd/mm/yyyy)"
+                                    class="w-full border border-rose-200 bg-white rounded-md p-3 text-xs outline-none focus:border-rose-500 font-black font-sans">
+                            </div>
+                            <div class="flex items-center gap-2 pt-1">
+                                <input type="checkbox" id="edit-std-hanging" onchange="onEditHangingChange(this)"
+                                    class="w-4 h-4 rounded border-rose-300 text-rose-600 focus:ring-rose-500 cursor-pointer">
+                                <label for="edit-std-hanging" class="text-[10px] font-bold text-rose-700 cursor-pointer select-none">
+                                    Treo sĩ số (Tự động phạt vắng đỏ ✘ đến hết tháng)
+                                </label>
                             </div>
                         </div>
                         <button onclick="submitEditStudent()"
@@ -5904,6 +5920,48 @@
         // --- Student Edit Logic ---
         let currentStudents = [];
 
+        function onEditStatusChange() {
+            const status = document.getElementById('edit-std-status').value;
+            const section = document.getElementById('edit-dropout-section');
+            const hangingCheckbox = document.getElementById('edit-std-hanging');
+            const dropoutInput = document.getElementById('edit-std-dropout-date');
+
+            if (status === 'DROPOUT' || status === 'PENALTY') {
+                if (section) section.classList.remove('hidden');
+                
+                // Initialize flatpickr if not already initialized
+                if (dropoutInput && !dropoutInput._flatpickr) {
+                    flatpickr(dropoutInput, {
+                        dateFormat: "d/m/Y",
+                        locale: "vn",
+                        allowInput: true
+                    });
+                }
+
+                // If input is empty, default to today
+                if (dropoutInput && !dropoutInput.value) {
+                    const today = new Date();
+                    dropoutInput.value = today.toLocaleDateString('vi-VN');
+                    if (dropoutInput._flatpickr) {
+                        dropoutInput._flatpickr.setDate(today);
+                    }
+                }
+
+                if (hangingCheckbox) {
+                    hangingCheckbox.checked = (status === 'PENALTY');
+                }
+            } else {
+                if (section) section.classList.add('hidden');
+            }
+        }
+
+        function onEditHangingChange(checkbox) {
+            const statusSelect = document.getElementById('edit-std-status');
+            if (statusSelect) {
+                statusSelect.value = checkbox.checked ? 'PENALTY' : 'DROPOUT';
+            }
+        }
+
         function openEditStudentModal(id) {
             const student = currentStudentsStore.find(s => s.id === id);
             if (!student) return;
@@ -5933,6 +5991,52 @@
                     btnConvert.classList.remove('hidden');
                 } else {
                     btnConvert.classList.add('hidden');
+                }
+            }
+
+            // Load dropout date and display section if status is DROPOUT or PENALTY
+            const statusVal = student.status || 'ACTIVE';
+            const dropoutSection = document.getElementById('edit-dropout-section');
+            const hangingCheckbox = document.getElementById('edit-std-hanging');
+            const dropoutInput = document.getElementById('edit-std-dropout-date');
+
+            if (statusVal === 'DROPOUT' || statusVal === 'PENALTY') {
+                if (dropoutSection) dropoutSection.classList.remove('hidden');
+                if (hangingCheckbox) hangingCheckbox.checked = (statusVal === 'PENALTY');
+                
+                if (dropoutInput) {
+                    // Ensure flatpickr is initialized
+                    if (!dropoutInput._flatpickr) {
+                        flatpickr(dropoutInput, {
+                            dateFormat: "d/m/Y",
+                            locale: "vn",
+                            allowInput: true
+                        });
+                    }
+
+                    if (student.dropout_date) {
+                        const parts = student.dropout_date.split('-');
+                        const formatted = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : student.dropout_date;
+                        dropoutInput.value = formatted;
+                        if (dropoutInput._flatpickr) {
+                            dropoutInput._flatpickr.setDate(student.dropout_date);
+                        }
+                    } else {
+                        const today = new Date();
+                        dropoutInput.value = today.toLocaleDateString('vi-VN');
+                        if (dropoutInput._flatpickr) {
+                            dropoutInput._flatpickr.setDate(today);
+                        }
+                    }
+                }
+            } else {
+                if (dropoutSection) dropoutSection.classList.add('hidden');
+                if (hangingCheckbox) hangingCheckbox.checked = false;
+                if (dropoutInput) {
+                    dropoutInput.value = '';
+                    if (dropoutInput._flatpickr) {
+                        dropoutInput._flatpickr.clear();
+                    }
                 }
             }
 
@@ -6022,11 +6126,20 @@
                 resumption_date = `${yyyy}-${mm}-${dd}`;
             }
 
+            let dropout_date = null;
+            if (status === 'DROPOUT' || status === 'PENALTY') {
+                const dropout_date_raw = document.getElementById('edit-std-dropout-date').value;
+                if (dropout_date_raw) {
+                    const [dd, mm, yyyy] = dropout_date_raw.split('/');
+                    dropout_date = `${yyyy}-${mm}-${dd}`;
+                }
+            }
+
             try {
                 const res = await fetch(`${API_BASE}/admin/students/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'x-api-key': SECRET },
-                    body: JSON.stringify({ name, birthday, parent_name, phone, address, class_id, tag, status, tag_expiry, resumption_date })
+                    body: JSON.stringify({ name, birthday, parent_name, phone, address, class_id, tag, status, tag_expiry, resumption_date, dropout_date })
                 });
 
                 if (res.ok) {
@@ -6853,7 +6966,11 @@
                 
                 const res = await fetch(`${API_BASE}/admin/attendance`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'x-api-key': SECRET },
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                        'x-api-key': SECRET,
+                        'x-bypass-locks': 'true'
+                    },
                     body: JSON.stringify(records)
                 });
                 

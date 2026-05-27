@@ -36,8 +36,8 @@ export class AttendanceService {
         teacher_id: string;
         teacher_name: string;
         details?: string;
-    }) {
-        return await this.markAttendanceBatch([data]);
+    }, bypassLocks: boolean = false) {
+        return await this.markAttendanceBatch([data], bypassLocks);
     }
 
     async markAttendanceBatch(records: Array<{
@@ -49,7 +49,7 @@ export class AttendanceService {
         teacher_id: string;
         teacher_name: string;
         details?: string;
-    }>) {
+    }>, bypassLocks: boolean = false) {
         if (records.length === 0) return;
 
         const normalizedRecords = records.map(record => ({
@@ -58,15 +58,17 @@ export class AttendanceService {
         }));
 
         // Guardrail: Kiểm tra kỳ kế toán (Chỉ cần kiểm tra ngày đầu tiên vì thường là điểm danh cùng ngày)
-        if (await this.isPeriodClosed(normalizedRecords[0].date)) {
+        if (!bypassLocks && await this.isPeriodClosed(normalizedRecords[0].date)) {
             throw new Error(`Kỳ kế toán tháng ${normalizedRecords[0].date.substring(0, 7)} đã đóng.`);
         }
 
         // Guardrail: Kiểm tra khóa sổ - Kiểm tra tất cả các ngày duy nhất trong batch
-        const uniqueDates = [...new Set(normalizedRecords.map(r => r.date))];
-        for (const d of uniqueDates) {
-            if (await this.isDateLocked(d)) {
-                throw new Error(`Sổ điểm danh ngày ${d} đã bị khóa. Liên hệ Ban quản lý để mở khóa.`);
+        if (!bypassLocks) {
+            const uniqueDates = [...new Set(normalizedRecords.map(r => r.date))];
+            for (const d of uniqueDates) {
+                if (await this.isDateLocked(d)) {
+                    throw new Error(`Sổ điểm danh ngày ${d} đã bị khóa. Liên hệ Ban quản lý để mở khóa.`);
+                }
             }
         }
 
@@ -159,10 +161,34 @@ export class AttendanceService {
     // 3. Lấy dữ liệu điểm danh tháng (Tối ưu hóa query - OCP)
     // Cập nhật: Phân bổ số ngày kỳ vọng (expected days) dựa trên lịch sử chuyển lớp
     async getMonthlyReport(month: string) {
-        // Lấy danh sách học sinh và lớp hiện tại
-        // Loại trừ học sinh nghỉ tạm thời khỏi báo cáo tháng để không tính sĩ số
-        const studentsRes = await this.db.prepare('SELECT id, name, class_id, entry_date FROM students WHERE status != "DROPOUT" AND (tag IS NULL OR tag != "TEMPORARY_LEAVE")').all<any>();
+        const year = parseInt(month.split('-')[0]);
+        const m = parseInt(month.split('-')[1]);
+        const firstDay = `${month}-01`;
+        const lastDay = new Date(year, m, 0).toISOString().split('T')[0];
+
+        // Lấy danh sách học sinh hoạt động thực tế trong tháng
+        const studentsQuery = `
+          SELECT id, name, class_id, entry_date, status, dropout_date, tag 
+          FROM students 
+          WHERE status != 'DELETED'
+            AND (entry_date IS NULL OR entry_date <= ?)
+            AND (dropout_date IS NULL OR dropout_date >= ?)
+            AND (tag IS NULL OR tag != 'TEMPORARY_LEAVE')
+        `;
+        const studentsRes = await this.db.prepare(studentsQuery).bind(lastDay, firstDay).all<any>();
         const students = studentsRes.results;
+
+        // Lấy lớp hoạt động cuối cùng của từng bé từ Raw_Attendance lịch sử (giải quyết lớp lịch sử của bé đã nghỉ)
+        const lastKnownClassesRes = await this.db.prepare(`
+          WITH LatestLogs AS (
+            SELECT student_id, class_id, ROW_NUMBER() OVER (PARTITION BY student_id ORDER BY date DESC, log_id DESC) as rn
+            FROM Raw_Attendance
+          )
+          SELECT student_id, class_id FROM LatestLogs WHERE rn = 1
+        `).all<any>();
+        const lastKnownClasses = new Map<string, string>(
+            (lastKnownClassesRes.results || []).map(r => [r.student_id, r.class_id])
+        );
 
         // Lấy lịch sử chuyển lớp trong tháng này
         const transfersRes = await this.db.prepare('SELECT student_id, from_class_id, to_class_id, effective_date FROM class_transfers WHERE effective_date LIKE ? AND status = "COMPLETED"').bind(`${month}%`).all<any>();
@@ -208,11 +234,6 @@ export class AttendanceService {
             return count;
         };
 
-        const year = parseInt(month.split('-')[0]);
-        const m = parseInt(month.split('-')[1]);
-        const firstDay = `${month}-01`;
-        const lastDay = new Date(year, m, 0).toISOString().split('T')[0];
-
         // Kết quả sẽ chứa thông tin theo cặp (Sinh viên, Lớp)
         const reportMap = new Map<string, any>();
 
@@ -246,7 +267,14 @@ export class AttendanceService {
 
                 // Lớp mới
                 const keyNew = `${s.id}_${transfer.to_class_id}`;
-                const expectedNew = countWorkDays(transfer.effective_date, lastDay);
+                
+                // Xác định ngày cuối cùng tính expected_days trong tháng này cho lớp mới (nếu bé nghỉ học sau khi chuyển lớp)
+                let calcLastDay = lastDay;
+                if (s.dropout_date && s.dropout_date >= firstDay && s.dropout_date <= lastDay) {
+                    calcLastDay = s.dropout_date;
+                }
+
+                const expectedNew = countWorkDays(transfer.effective_date, calcLastDay);
                 reportMap.set(keyNew, {
                     student_id: s.id,
                     student_name: s.name,
@@ -257,14 +285,22 @@ export class AttendanceService {
                 });
             } else {
                 // Chỉ ở 1 lớp suốt tháng
-                const key = `${s.id}_${s.class_id}`;
+                const resolvedClassId = lastKnownClasses.get(s.id) || s.class_id;
+                const key = `${s.id}_${resolvedClassId}`;
+                
+                // Xác định ngày cuối cùng tính expected_days trong tháng này
+                let calcLastDay = lastDay;
+                if (s.dropout_date && s.dropout_date >= firstDay && s.dropout_date <= lastDay) {
+                    calcLastDay = s.dropout_date;
+                }
+
                 reportMap.set(key, {
                     student_id: s.id,
                     student_name: s.name,
-                    class_id: s.class_id,
+                    class_id: resolvedClassId,
                     present_days: 0,
                     absent_days: 0,
-                    expected_days: countWorkDays(calcFirstDay, lastDay)
+                    expected_days: countWorkDays(calcFirstDay, calcLastDay)
                 });
             }
         }
@@ -323,9 +359,28 @@ export class AttendanceService {
         const classesRes = await this.db.prepare('SELECT id, name, is_nursery FROM classes').all<any>();
         const classes = classesRes.results || [];
 
-        // 2. Get all students (ACTIVE or PENALTY or whatever, but exclude DROPOUT)
-        const studentsRes = await this.db.prepare("SELECT id, name, class_id, status, tag, entry_date, dropout_date FROM students WHERE status != 'DROPOUT'").all<any>();
+        // 2. Get all students active during this range
+        const query = `
+          SELECT id, name, class_id, status, tag, entry_date, dropout_date 
+          FROM students 
+          WHERE status != 'DELETED'
+            AND (entry_date IS NULL OR entry_date <= ?)
+            AND (dropout_date IS NULL OR dropout_date >= ?)
+        `;
+        const studentsRes = await this.db.prepare(query).bind(normalEnd, normalStart).all<any>();
         const allStudents = studentsRes.results || [];
+
+        // 2b. Lấy lớp hoạt động cuối cùng của từng bé từ Raw_Attendance lịch sử
+        const lastKnownClassesRes = await this.db.prepare(`
+          WITH LatestLogs AS (
+            SELECT student_id, class_id, ROW_NUMBER() OVER (PARTITION BY student_id ORDER BY date DESC, log_id DESC) as rn
+            FROM Raw_Attendance
+          )
+          SELECT student_id, class_id FROM LatestLogs WHERE rn = 1
+        `).all<any>();
+        const lastKnownClasses = new Map<string, string>(
+            (lastKnownClassesRes.results || []).map(r => [r.student_id, r.class_id])
+        );
 
         // 3. Get holidays
         const holidaysRes = await this.db.prepare('SELECT holiday_date FROM dim_holidays WHERE holiday_date BETWEEN ? AND ?').bind(normalStart, normalEnd).all<any>();
@@ -377,7 +432,8 @@ export class AttendanceService {
             const loggedStudentIds = new Set(logs.filter(l => l.class_id === classId).map(l => l.student_id));
             const classStudents = allStudents.filter((s: any) => {
                 const hasLog = loggedStudentIds.has(s.id);
-                const isCurrentClass = s.class_id === classId;
+                const resolvedClassId = lastKnownClasses.get(s.id) || s.class_id;
+                const isCurrentClass = resolvedClassId === classId;
                 const isDeleted = s.name.includes('DELETED_DUP');
                 
                 if (classId === 'DOLPHIN_4B' && (s.name.includes('Hải Long') || s.name.includes('Nguyễn Thành Gia Phát'))) {

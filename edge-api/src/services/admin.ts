@@ -103,7 +103,7 @@ export class AdminService {
     return await this.db.batch(stmts);
   }
 
-  async updateStudent(id: string, data: { name?: string, class_id?: string, status?: string, birth_year?: number, tag?: string, parent_name?: string, address?: string, phone?: string, birthday?: string, tag_expiry?: string | null, resumption_date?: string | null }) {
+  async updateStudent(id: string, data: { name?: string, class_id?: string, status?: string, birth_year?: number, tag?: string, parent_name?: string, address?: string, phone?: string, birthday?: string, tag_expiry?: string | null, resumption_date?: string | null, dropout_date?: string | null }) {
     const fields = [];
     const values = [];
     
@@ -118,10 +118,18 @@ export class AdminService {
         fields.push('status = ?'); 
         values.push(data.status); 
         if (data.status === 'DROPOUT' || data.status === 'PENALTY') {
-            fields.push('dropout_date = CURRENT_DATE');
+            if (data.dropout_date !== undefined) {
+                fields.push('dropout_date = ?');
+                values.push(data.dropout_date);
+            } else {
+                fields.push('dropout_date = CURRENT_DATE');
+            }
         } else {
             fields.push('dropout_date = NULL');
         }
+    } else if (data.dropout_date !== undefined) {
+        fields.push('dropout_date = ?');
+        values.push(data.dropout_date);
     }
     if (data.birth_year !== undefined) { fields.push('birth_year = ?'); values.push(data.birth_year); }
 

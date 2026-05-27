@@ -17,7 +17,7 @@ const app = new Hono<{ Bindings: Bindings }>();
 
 app.use('*', cors({
   origin: '*',
-  allowHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
+  allowHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-bypass-locks'],
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   exposeHeaders: ['Content-Length'],
   maxAge: 600,
@@ -228,11 +228,12 @@ app.post('/api/admin/students/clear-tag', async (c) => {
 app.post('/api/admin/attendance', async (c) => {
   const body = await c.req.json();
   const { attendance } = getServices(c.env.DB);
+  const bypassLocks = c.req.header('x-bypass-locks') === 'true';
   try {
     if (Array.isArray(body)) {
-      await attendance.markAttendanceBatch(body);
+      await attendance.markAttendanceBatch(body, bypassLocks);
     } else {
-      await attendance.markAttendance(body);
+      await attendance.markAttendance(body, bypassLocks);
     }
     return c.json({ success: true });
   } catch (err: any) {
