@@ -450,35 +450,38 @@
                         <input type="text" id="req-student-name" readonly class="w-full bg-slate-100 border border-slate-200 rounded-lg px-4 py-2.5 text-sm font-bold text-[#006C18] outline-none cursor-not-allowed">
                     </div>
 
-                    <div class="space-y-1">
+                    <div class="space-y-1 hidden">
                         <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Trạng thái học tập đề xuất</label>
-                        <select id="req-status" onchange="toggleRequestFields()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm font-bold text-[#006C18] outline-none cursor-pointer">
-                            <option value="ACTIVE">Đang học / Hoạt động bình thường</option>
-                            <option value="TEMPORARY_LEAVE">Nghỉ học tạm thời / Bảo lưu</option>
-                            <option value="PENALTY">Treo sĩ số (Phạt vắng có học phí)</option>
-                            <option value="DROPOUT">Nghỉ hẳn / Ra trường</option>
+                        <select id="req-status" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm font-bold text-[#006C18] outline-none cursor-pointer">
+                            <option value="ACTIVE" selected>Đang học / Hoạt động bình thường</option>
                         </select>
                     </div>
 
                     <div class="space-y-1">
-                        <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Loại Tag tương ứng</label>
+                        <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Tình trạng đề xuất</label>
                         <select id="req-tag" onchange="toggleRequestFields()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm font-bold text-[#006C18] outline-none cursor-pointer">
-                            <option value="">Không áp dụng</option>
-                            <option value="TRIAL">Học thử (TRIAL)</option>
-                            <option value="HANGING">Treo sĩ số luôn vắng (HANGING)</option>
-                            <option value="TEMPORARY_LEAVE">Nghỉ tạm thời bảo lưu (TEMPORARY_LEAVE)</option>
+                            <option value="">Chính thức / Không áp dụng</option>
+                            <option value="TRIAL">Học thử</option>
+                            <option value="HANGING">Nghỉ luôn</option>
+                            <option value="TEMPORARY_LEAVE">Nghỉ tạm thời</option>
                         </select>
                     </div>
 
-                    <!-- Ngày nghỉ học -->
+                    <!-- Ngày bắt đầu -->
                     <div id="req-dropout-section" class="space-y-1 hidden">
-                        <label class="text-[9px] font-black text-orange-500 uppercase tracking-widest ml-1">Ngày bắt đầu nghỉ học / Treo sĩ số</label>
-                        <input type="text" id="req-dropout-date" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm font-bold text-[#006C18] outline-none cursor-pointer" placeholder="Chọn ngày nghỉ học" readonly>
+                        <label id="req-dropout-label" class="text-[9px] font-black text-orange-500 uppercase tracking-widest ml-1">Ngày bắt đầu</label>
+                        <input type="text" id="req-dropout-date" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm font-bold text-[#006C18] outline-none cursor-pointer" placeholder="Chọn ngày bắt đầu" readonly>
+                    </div>
+
+                    <!-- Học thử trong bao lâu -->
+                    <div id="req-trial-duration-section" class="space-y-1 hidden">
+                        <label class="text-[9px] font-black text-orange-500 tracking-widest ml-1">Học thử trong bao lâu (số ngày)</label>
+                        <input type="number" id="req-trial-duration" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm font-bold text-[#006C18] outline-none" placeholder="Ví dụ: 7" min="1">
                     </div>
 
                     <!-- Ngày đi học lại -->
                     <div id="req-resumption-section" class="space-y-1 hidden">
-                        <label class="text-[9px] font-black text-orange-500 tracking-widest ml-1">Ngày đi học lại dự kiến</label>
+                        <label id="req-resumption-label" class="text-[9px] font-black text-orange-500 tracking-widest ml-1">Ngày đi học lại dự kiến</label>
                         <input type="text" id="req-resumption-date" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm font-bold text-[#006C18] outline-none cursor-pointer" placeholder="Chọn ngày đi học lại" readonly>
                     </div>
 

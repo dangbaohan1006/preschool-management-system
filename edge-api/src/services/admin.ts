@@ -513,7 +513,7 @@ export class AdminService {
     return results;
   }
 
-  async reviewStatusRequest(requestId: number, action: 'APPROVED' | 'REJECTED', adminName: string, reviewNote: string = '') {
+  async reviewStatusRequest(requestId: number, action: 'APPROVED' | 'REJECTED', adminName: string, reviewNote: string = '', isHanging: boolean = true) {
     const request = await this.db.prepare('SELECT * FROM student_status_requests WHERE id = ?').bind(requestId).first<any>();
     if (!request) throw new Error('Yêu cầu không tồn tại');
     if (request.status !== 'PENDING') throw new Error('Yêu cầu này đã được xử lý trước đó');
@@ -529,40 +529,68 @@ export class AdminService {
       const fields = [];
       const values = [];
 
-      fields.push('status = ?');
-      values.push(request.requested_status);
-
-      fields.push('tag = ?');
-      values.push(request.requested_tag || null);
-
-      if (request.requested_status === 'DROPOUT' || request.requested_status === 'PENALTY') {
-        fields.push('dropout_date = ?');
-        values.push(request.requested_dropout_date || null);
-        
-        // Nếu chuyển sang DROPOUT -> Xóa các Tag đi kèm và chuyển lớp thành "DROPOUT"
-        if (request.requested_status === 'DROPOUT') {
+      if (request.requested_tag === 'HANGING') {
+        if (isHanging) {
+          // Treo sĩ số: status = ACTIVE, tag = HANGING, dropout_date = start_date, class_id remains unchanged
+          fields.push('status = ?');
+          values.push('ACTIVE');
+          fields.push('tag = ?');
+          values.push('HANGING');
+          fields.push('dropout_date = ?');
+          values.push(request.requested_dropout_date || null);
+          fields.push('tag_expiry = date("now", "+2 months")');
+          fields.push('resumption_date = NULL');
+        } else {
+          // Không treo sĩ số: status = DROPOUT, tag = NULL, class_id = DROPOUT, dropout_date = start_date
+          fields.push('status = ?');
+          values.push('DROPOUT');
+          fields.push('class_id = ?');
+          values.push('DROPOUT');
           fields.push('tag = NULL');
           fields.push('tag_expiry = NULL');
-          fields.push('class_id = "DROPOUT"');
+          fields.push('resumption_date = NULL');
+          fields.push('dropout_date = ?');
+          values.push(request.requested_dropout_date || null);
         }
-      } else {
+      } else if (request.requested_tag === 'TRIAL') {
+        // Học thử: status = ACTIVE, tag = TRIAL, entry_date = start_date, tag_expiry = end_date
+        fields.push('status = ?');
+        values.push('ACTIVE');
+        fields.push('tag = ?');
+        values.push('TRIAL');
+        fields.push('entry_date = ?');
+        values.push(request.requested_dropout_date || null);
+        fields.push('tag_expiry = ?');
+        values.push(request.requested_resumption_date || null);
+        fields.push('resumption_date = NULL');
         fields.push('dropout_date = NULL');
-      }
-
-      if (request.requested_tag === 'TEMPORARY_LEAVE') {
+      } else if (request.requested_tag === 'TEMPORARY_LEAVE') {
+        // Nghỉ tạm thời: status = ACTIVE, tag = TEMPORARY_LEAVE, dropout_date = start_date, resumption_date = return_date
+        fields.push('status = ?');
+        values.push('ACTIVE');
+        fields.push('tag = ?');
+        values.push('TEMPORARY_LEAVE');
+        fields.push('dropout_date = ?');
+        values.push(request.requested_dropout_date || null);
         fields.push('resumption_date = ?');
         values.push(request.requested_resumption_date || null);
-      } else {
-        fields.push('resumption_date = NULL');
-      }
-
-      // Xử lý các tag hết hạn hoặc tag_expiry khác nếu có
-      if (request.requested_tag === 'TRIAL') {
-        fields.push('tag_expiry = date("now", "+7 days")');
-      } else if (request.requested_tag === 'HANGING') {
-        fields.push('tag_expiry = date("now", "+2 months")');
-      } else if (!request.requested_tag) {
         fields.push('tag_expiry = NULL');
+      } else {
+        // Trạng thái bình thường khác (không tag)
+        fields.push('status = ?');
+        values.push(request.requested_status);
+        fields.push('tag = ?');
+        values.push(request.requested_tag || null);
+        fields.push('tag_expiry = NULL');
+        fields.push('resumption_date = NULL');
+
+        if (request.requested_status === 'DROPOUT') {
+          fields.push('class_id = "DROPOUT"');
+          fields.push('dropout_date = ?');
+          values.push(request.requested_dropout_date || null);
+        } else {
+          fields.push('dropout_date = NULL');
+        }
       }
 
       values.push(request.student_id);
@@ -573,7 +601,7 @@ export class AdminService {
       stmts.push(updateStudentStmt);
 
       // Thêm log hệ thống
-      const logDetails = `Admin ${adminName} duyệt yêu cầu đổi trạng thái của GV ${request.teacher_name} cho bé ${request.student_name} sang ${request.requested_status} (Tag: ${request.requested_tag || 'Không'}). Ghi chú duyệt: ${reviewNote || 'Không có'}`;
+      const logDetails = `Admin ${adminName} duyệt yêu cầu đổi trạng thái của GV ${request.teacher_name} cho bé ${request.student_name} sang ${request.requested_status} (Tag: ${request.requested_tag || 'Không'}, Treo sĩ số: ${isHanging}). Ghi chú duyệt: ${reviewNote || 'Không có'}`;
       stmts.push(this.db.prepare(
         'INSERT INTO audit_logs (teacher_id, teacher_name, action, student_id, student_name, details) VALUES (?, ?, ?, ?, ?, ?)'
       ).bind('ADMIN', adminName, `DUYỆT YÊU CẦU: ${request.requested_status}`, request.student_id, request.student_name, logDetails));

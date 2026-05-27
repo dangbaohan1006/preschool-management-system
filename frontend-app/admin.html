@@ -1035,11 +1035,11 @@
                                     </div>
                                     <div class="relative min-w-[140px]">
                                         <select id="filter-tag" onchange="loadAllData()"
-                                            class="appearance-none w-full bg-white border border-slate-200 rounded-lg h-9 px-3 pr-8 text-[10px] font-black uppercase tracking-wider text-[#006C18] focus:border-[#006C18] outline-none transition-all cursor-pointer shadow-sm">
+                                            class="appearance-none w-full bg-white border border-slate-200 rounded-lg h-9 px-3 pr-8 text-[10px] font-black uppercase tracking-wider text-[#006C18] focus:border-[#006C18] outline-none transition-all cubic-bezier(0.4, 0, 0.2, 1) cursor-pointer shadow-sm">
                                             <option value="">Tất cả trạng thái</option>
                                             <option value="NORMAL">Chính thức</option>
                                             <option value="TRIAL">Học thử</option>
-                                            <option value="HANGING">Treo sĩ số</option>
+                                            <option value="HANGING">Nghỉ luôn</option>
                                             <option value="TEMPORARY_LEAVE">Nghỉ tạm thời</option>
                                         </select>
                                         <div class="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-orange-400 text-[10px]">⌄</div>
@@ -2089,7 +2089,7 @@
                                     class="w-full border border-[#ddd] rounded-md p-3 text-xs outline-none cursor-pointer font-black">
                                     <option value="">Chính thức</option>
                                     <option value="TRIAL">Học thử (Trial)</option>
-                                    <option value="HANGING">Treo sĩ số (Hanging)</option>
+                                    <option value="HANGING">Nghỉ luôn (Hanging)</option>
                                     <option value="TEMPORARY_LEAVE">Nghỉ tạm thời (Leave)</option>
                                 </select>
                             </div>
@@ -4646,7 +4646,7 @@
                     if (s.tag === 'TRIAL') {
                         tagBadge = `<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-sm text-[8px] font-black headline ml-2">HỌC THỬ</span>`;
                     } else if (s.tag === 'HANGING') {
-                        tagBadge = `<span class="bg-rose-100 text-rose-700 px-2 py-0.5 rounded-sm text-[8px] font-black headline ml-2">TREO SĨ SỐ</span>`;
+                        tagBadge = `<span class="bg-rose-100 text-rose-700 px-2 py-0.5 rounded-sm text-[8px] font-black headline ml-2">NGHỈ LUÔN</span>`;
                     } else if (s.tag === 'TEMPORARY_LEAVE') {
                         tagBadge = `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-sm text-[8px] font-black headline ml-2">NGHỈ TẠM THỜI</span>`;
                     }
@@ -4761,7 +4761,7 @@
                     s.parent_name || "",
                     s.phone || "",
                     s.address || "",
-                    s.tag === 'TRIAL' ? 'Học thử' : s.tag === 'HANGING' ? 'Treo sĩ số' : s.tag === 'TEMPORARY_LEAVE' ? 'Nghỉ tạm thời' : 'Chính thức'
+                    s.tag === 'TRIAL' ? 'Học thử' : s.tag === 'HANGING' ? 'Nghỉ luôn' : s.tag === 'TEMPORARY_LEAVE' ? 'Nghỉ tạm thời' : 'Chính thức'
                 ];
             });
 
@@ -4893,7 +4893,7 @@
 
             students.forEach((s, i) => {
                 const cls = classes.find(c => c.id === s.class_id);
-                const statusStr = s.tag === 'TRIAL' ? 'Học thử' : s.tag === 'HANGING' ? 'Treo sĩ số' : s.tag === 'TEMPORARY_LEAVE' ? 'Nghỉ tạm thời' : 'Chính thức';
+                const statusStr = s.tag === 'TRIAL' ? 'Học thử' : s.tag === 'HANGING' ? 'Nghỉ luôn' : s.tag === 'TEMPORARY_LEAVE' ? 'Nghỉ tạm thời' : 'Chính thức';
                 const rowBg = (showOnlyEligible && s._isEligible) ? 'background-color: #D1FAE5;' : '';
                 html += `
                     <tr style="${rowBg}">
@@ -9181,19 +9181,25 @@
                     let detailsHTML = '';
                     if (req.requested_tag) {
                         const tagLabels = {
-                            TRIAL: 'Học thử (TRIAL)',
-                            HANGING: 'Treo sĩ số (HANGING)',
-                            TEMPORARY_LEAVE: 'Nghỉ tạm thời (TEMPORARY_LEAVE)'
+                            TRIAL: 'Học thử',
+                            HANGING: 'Nghỉ luôn',
+                            TEMPORARY_LEAVE: 'Nghỉ tạm thời'
                         };
                         detailsHTML += `<div class="mt-1"><span class="px-1.5 py-0.5 bg-indigo-50 text-indigo-600 text-[9px] font-bold rounded border border-indigo-100">Tag: ${tagLabels[req.requested_tag] || req.requested_tag}</span></div>`;
                     }
                     if (req.requested_dropout_date) {
                         const dateFormatted = req.requested_dropout_date.split('-').reverse().join('/');
-                        detailsHTML += `<div class="mt-1 text-[10px] text-orange-600 font-bold">📅 Ngày nghỉ: ${dateFormatted}</div>`;
+                        let dateLabel = "Ngày nghỉ";
+                        if (req.requested_tag === 'TRIAL') dateLabel = "Bắt đầu học thử";
+                        if (req.requested_tag === 'HANGING') dateLabel = "Bắt đầu nghỉ luôn";
+                        if (req.requested_tag === 'TEMPORARY_LEAVE') dateLabel = "Bắt đầu nghỉ";
+                        detailsHTML += `<div class="mt-1 text-[10px] text-orange-600 font-bold">📅 ${dateLabel}: ${dateFormatted}</div>`;
                     }
                     if (req.requested_resumption_date) {
                         const dateFormatted = req.requested_resumption_date.split('-').reverse().join('/');
-                        detailsHTML += `<div class="mt-1 text-[10px] text-blue-600 font-bold">📅 Ngày đi học lại: ${dateFormatted}</div>`;
+                        let dateLabel = "Ngày đi học lại";
+                        if (req.requested_tag === 'TRIAL') dateLabel = "Kết thúc học thử";
+                        detailsHTML += `<div class="mt-1 text-[10px] text-blue-600 font-bold">📅 ${dateLabel}: ${dateFormatted}</div>`;
                     }
 
                     const createdDate = new Date(req.created_at).toLocaleString('vi-VN');
@@ -9214,7 +9220,7 @@
                     if (req.status === 'PENDING') {
                         actionsHTML = `
                             <div class="flex items-center justify-end gap-2">
-                                <button onclick="reviewStatusRequest(${req.id}, 'APPROVED', '${req.student_name.replace(/'/g, "\\'")}')"
+                                <button onclick="reviewStatusRequest(${req.id}, 'APPROVED', '${req.student_name.replace(/'/g, "\\'")}', '${req.requested_tag || ''}')"
                                     class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[10px] rounded-lg shadow-sm hover:shadow-md transition-all uppercase tracking-wider flex items-center gap-1 active:scale-95">
                                     <span>✓</span> Phê duyệt
                                 </button>
@@ -9260,7 +9266,7 @@
             }
         }
 
-        async function reviewStatusRequest(requestId, action, studentName) {
+        async function reviewStatusRequest(requestId, action, studentName, requestedTag) {
             if (!currentUser) return;
             const access = getPermission('requests');
             if (access !== 'WRITE') {
@@ -9268,41 +9274,95 @@
                 return;
             }
 
-            const actionLabel = action === 'APPROVED' ? 'phê duyệt' : 'từ chối';
-            let reviewNote = null;
-
             if (action === 'REJECTED') {
-                reviewNote = prompt(`Vui lòng nhập lý do từ chối yêu cầu của bé ${studentName}:`);
+                const reviewNote = prompt(`Vui lòng nhập lý do từ chối yêu cầu của bé ${studentName}:`);
                 if (reviewNote === null) return;
                 if (!reviewNote.trim()) {
                     showToast("Bắt buộc nhập lý do từ chối!", "error");
                     return;
                 }
-            } else {
-                if (!await sysConfirm(`Bạn có chắc chắn muốn PHÊ DUYỆT yêu cầu đổi tình trạng học của bé ${studentName}? Hệ thống sẽ cập nhật trạng thái học tập chính thức.`)) {
-                    return;
-                }
-            }
 
-            showLoading(`Đang xử lý ${actionLabel} yêu cầu...`);
+                showLoading(`Đang xử lý từ chối yêu cầu...`);
+                try {
+                    const res = await fetch(`${API_BASE}/admin/status-requests/${requestId}/review`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'x-api-key': SECRET },
+                        body: JSON.stringify({
+                            action: 'REJECTED',
+                            admin_name: currentUser.name,
+                            review_note: reviewNote.trim()
+                        })
+                    });
+
+                    const data = await res.json();
+                    if (res.ok && data.success) {
+                        showToast(`Đã từ chối yêu cầu đổi tình trạng học của bé ${studentName} thành công!`, 'success');
+                        loadStatusRequests();
+                        updateRequestsBadge();
+                    } else {
+                        showToast(data.error || `Có lỗi khi từ chối yêu cầu`, 'error');
+                    }
+                } catch (e) {
+                    console.error(`Error rejecting status request:`, e);
+                    showToast('Lỗi kết nối máy chủ!', 'error');
+                } finally {
+                    hideLoading();
+                }
+            } else {
+                // APPROVED action -> Show our premium review request modal
+                document.getElementById('review-request-id').value = requestId;
+                document.getElementById('review-request-tag').value = requestedTag || '';
+                document.getElementById('review-request-student-name').value = studentName;
+                document.getElementById('review-request-note').value = '';
+
+                let tagLabel = "Chính thức / Không áp dụng";
+                if (requestedTag === 'TRIAL') tagLabel = "Học thử";
+                if (requestedTag === 'HANGING') tagLabel = "Nghỉ luôn";
+                if (requestedTag === 'TEMPORARY_LEAVE') tagLabel = "Nghỉ tạm thời";
+
+                document.getElementById('review-request-prompt').innerHTML = `Bạn có chắc chắn muốn phê duyệt đề xuất chuyển sang tình trạng <strong>${tagLabel}</strong> cho bé <strong>${studentName}</strong> không?`;
+
+                const hangingOption = document.getElementById('review-hanging-option');
+                if (requestedTag === 'HANGING') {
+                    hangingOption.classList.remove('hidden');
+                    document.getElementById('review-is-hanging').checked = true; // Default to Treo sĩ số
+                } else {
+                    hangingOption.classList.add('hidden');
+                }
+
+                document.getElementById('modal-review-request').classList.remove('hidden');
+            }
+        }
+
+        async function submitRequestApproval() {
+            const requestId = document.getElementById('review-request-id').value;
+            const tag = document.getElementById('review-request-tag').value;
+            const studentName = document.getElementById('review-request-student-name').value;
+            const reviewNote = document.getElementById('review-request-note').value;
+            const isHanging = document.getElementById('review-is-hanging').checked;
+
+            document.getElementById('modal-review-request').classList.add('hidden');
+
+            showLoading(`Đang xử lý phê duyệt yêu cầu...`);
             try {
                 const res = await fetch(`${API_BASE}/admin/status-requests/${requestId}/review`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'x-api-key': SECRET },
                     body: JSON.stringify({
-                        action: action,
+                        action: 'APPROVED',
                         admin_name: currentUser.name,
-                        review_note: reviewNote ? reviewNote.trim() : null
+                        review_note: reviewNote ? reviewNote.trim() : null,
+                        is_hanging: isHanging
                     })
                 });
 
                 const data = await res.json();
                 if (res.ok && data.success) {
-                    showToast(`Đã ${actionLabel} yêu cầu đổi tình trạng học của bé ${studentName} thành công!`, 'success');
+                    showToast(`Đã phê duyệt yêu cầu đổi tình trạng học của bé ${studentName} thành công!`, 'success');
                     loadStatusRequests();
                     updateRequestsBadge();
                 } else {
-                    showToast(data.error || `Có lỗi khi ${actionLabel} yêu cầu`, 'error');
+                    showToast(data.error || `Có lỗi khi phê duyệt yêu cầu`, 'error');
                 }
             } catch (e) {
                 console.error(`Error reviewing status request:`, e);
@@ -9745,9 +9805,9 @@
                         <select id="new-std-tag" onchange="toggleTagExpiryUI('new')"
                             class="w-full border border-slate-200 rounded-lg p-3 text-sm font-bold text-[#006C18] outline-none cursor-pointer bg-slate-50">
                             <option value="">-- Không có Tag --</option>
-                            <option value="TRIAL">HÀNH TRÌNH HỌC THỬ (TRIAL)</option>
-                            <option value="HANGING">TREO SĨ SỐ (HANGING)</option>
-                            <option value="TEMPORARY_LEAVE">NGHỈ TẠM THỜI (LEAVE)</option>
+                            <option value="TRIAL">Học thử</option>
+                            <option value="HANGING">Nghỉ luôn</option>
+                            <option value="TEMPORARY_LEAVE">Nghỉ tạm thời</option>
                         </select>
                     </div>
                     <div id="new-std-expiry-container" class="hidden col-span-2 space-y-1 animate-in slide-in-from-top-1">
@@ -9813,6 +9873,52 @@
                         class="flex-1 px-6 py-4 rounded-xl bg-[#006C18] text-white font-black text-[10px] uppercase tracking-widest shadow-lg shadow-green-100 hover:scale-[1.02] active:scale-[0.98] transition-all">
                         Đồng ý
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Phê duyệt đề xuất thay đổi trạng thái -->
+    <div id="modal-review-request" class="fixed inset-0 z-[10000] hidden no-print modal-overlay flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in duration-300 border-t-4 border-[#006C18]">
+            <div class="p-5 bg-emerald-50 flex justify-between items-center border-b border-emerald-100">
+                <h3 class="text-xs font-black text-[#006C18] headline uppercase tracking-widest">✓ PHÊ DUYỆT ĐỀ XUẤT</h3>
+                <button onclick="document.getElementById('modal-review-request').classList.add('hidden')"
+                    class="w-8 h-8 flex items-center justify-center rounded-full bg-emerald-200/50 text-[#006C18] hover:bg-emerald-200 transition-all font-bold">✕</button>
+            </div>
+            <div class="p-6 space-y-4 text-left">
+                <p id="review-request-prompt" class="text-xs font-bold text-slate-600 leading-relaxed"></p>
+                
+                <input type="hidden" id="review-request-id">
+                <input type="hidden" id="review-request-tag">
+                <input type="hidden" id="review-request-student-name">
+                
+                <!-- Option Treo sĩ số (Only visible for Nghỉ luôn / HANGING) -->
+                <div id="review-hanging-option" class="hidden p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                    <label class="flex items-start gap-3 cursor-pointer select-none">
+                        <input type="checkbox" id="review-is-hanging" checked class="mt-1 w-4 h-4 accent-emerald-600 rounded">
+                        <div class="space-y-0.5">
+                            <span class="text-xs font-extrabold text-[#006C18] uppercase tracking-wide">Treo sĩ số học phí</span>
+                            <p class="text-[10px] text-slate-400 font-semibold leading-relaxed">
+                                Bé sẽ xuất hiện trong danh sách chuyên cần nhưng bị vô hiệu hóa (tự động vắng).
+                                <br>
+                                <span class="text-amber-600">Bỏ chọn nếu bé nghỉ học hoàn toàn (đổi thành không treo sĩ số, bé sẽ biến mất khỏi danh sách điểm danh).</span>
+                            </p>
+                        </div>
+                    </label>
+                </div>
+                
+                <div class="space-y-1">
+                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Phản hồi / Ghi chú phê duyệt (không bắt buộc)</label>
+                    <textarea id="review-request-note" rows="2" placeholder="Nhập ghi chú phê duyệt gửi giáo viên..."
+                        class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs font-semibold text-[#006C18] outline-none placeholder:text-slate-300 resize-none focus:border-[#006C18]"></textarea>
+                </div>
+                
+                <div class="flex gap-3 pt-2">
+                    <button onclick="document.getElementById('modal-review-request').classList.add('hidden')"
+                        class="flex-1 px-4 py-3 rounded-xl bg-slate-100 text-slate-600 font-black text-[9px] uppercase tracking-widest hover:bg-slate-200 transition-all">Hủy bỏ</button>
+                    <button onclick="submitRequestApproval()"
+                        class="flex-1 px-4 py-3 rounded-xl bg-[#006C18] text-white font-black text-[9px] uppercase tracking-widest shadow-lg shadow-green-100 hover:scale-[1.02] active:scale-[0.98] transition-all">Xác nhận duyệt</button>
                 </div>
             </div>
         </div>

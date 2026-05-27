@@ -254,7 +254,7 @@ async function fetchStudents() {
         students = data.results.filter(s => s.tag !== 'TEMPORARY_LEAVE').map(s => ({ 
             ...s, 
             status: s.tag === 'HANGING' ? 'ABSENT' : 'PRESENT',
-            note: s.tag === 'HANGING' ? '[Tự động] Treo sĩ số' : ''
+            note: s.tag === 'HANGING' ? '[Tự động] Nghỉ luôn' : ''
         }));
         renderStudents();
     } catch (e) { console.error("Lỗi tải học sinh:", e); }
@@ -359,7 +359,7 @@ function renderStudents() {
                             <div class="text-sm font-bold text-[#006C18] headline flex items-center gap-2">
                                 <span class="truncate max-w-[160px]">${s.name}</span>
                                 ${s.tag === 'TRIAL' ? '<span class="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[8px] rounded font-black ring-1 ring-amber-200">HỌC THỬ</span>' : ''}
-                                ${s.tag === 'HANGING' ? '<span class="px-1.5 py-0.5 bg-rose-100 text-rose-700 text-[8px] rounded font-black ring-1 ring-rose-200">TREO SĨ SỐ</span>' : ''}
+                                ${s.tag === 'HANGING' ? '<span class="px-1.5 py-0.5 bg-rose-100 text-rose-700 text-[8px] rounded font-black ring-1 ring-rose-200">NGHỈ LUÔN</span>' : ''}
                             </div>
                             <div class="text-[9px] font-black text-[#D3C9BD] uppercase tracking-widest flex items-center gap-2">
                                 <span>ID: ${s.id}</span>
@@ -567,7 +567,7 @@ async function loadHistory() {
                 name: s.name,
                 tag: s.tag, 
                 status: record ? record.status : (s.tag === 'HANGING' ? 'ABSENT' : 'PRESENT'),
-                note: record ? record.details || '' : (s.tag === 'HANGING' ? '[Tự động] Treo sĩ số' : ''),
+                note: record ? record.details || '' : (s.tag === 'HANGING' ? '[Tự động] Nghỉ luôn' : ''),
                 exists: !!record
             };
         });
@@ -608,7 +608,7 @@ function renderHistory() {
                     <div class="text-sm font-bold text-[#006C18] headline flex items-center gap-2">
                         ${s.name}
                         ${s.tag === 'TRIAL' ? '<span class="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[7px] rounded font-black ring-1 ring-amber-200">HỌC THỬ</span>' : ''}
-                        ${s.tag === 'HANGING' ? '<span class="px-1.5 py-0.5 bg-rose-100 text-rose-700 text-[7px] rounded font-black ring-1 ring-rose-200">TREO SĨ SỐ</span>' : ''}
+                        ${s.tag === 'HANGING' ? '<span class="px-1.5 py-0.5 bg-rose-100 text-rose-700 text-[7px] rounded font-black ring-1 ring-rose-200">NGHỈ LUÔN</span>' : ''}
                     </div>
                     <div class="text-[9px] font-black text-[#D3C9BD] uppercase tracking-widest">ID: ${s.id}</div>
                 </td>
@@ -731,10 +731,12 @@ function openStatusRequestModal(id, name, classId, currentTag, currentStatus) {
     document.getElementById('req-class-id').value = classId;
     document.getElementById('req-student-name').value = name;
     
-    // Đặt mặc định trạng thái và tag hiện tại của học sinh
-    document.getElementById('req-status').value = currentStatus || 'ACTIVE';
+    // Đặt mặc định tag hiện tại của học sinh
     document.getElementById('req-tag').value = currentTag || '';
     document.getElementById('req-note').value = '';
+    
+    const durationInput = document.getElementById('req-trial-duration');
+    if (durationInput) durationInput.value = '';
     
     // Init flatpickrs on modal
     const dropoutInput = document.getElementById('req-dropout-date');
@@ -766,23 +768,37 @@ function closeStatusRequestModal() {
 }
 
 function toggleRequestFields() {
-    const status = document.getElementById('req-status').value;
     const tag = document.getElementById('req-tag').value;
     
     const dropoutSec = document.getElementById('req-dropout-section');
+    const dropoutLabel = document.getElementById('req-dropout-label');
+    const trialDurationSec = document.getElementById('req-trial-duration-section');
     const resumptionSec = document.getElementById('req-resumption-section');
+    const resumptionLabel = document.getElementById('req-resumption-label');
     
-    // 1. Ràng buộc trường Ngày nghỉ học: DROPOUT hoặc PENALTY
-    if (status === 'DROPOUT' || status === 'PENALTY') {
+    if (tag === 'TRIAL') {
+        // Học thử
         dropoutSec.classList.remove('hidden');
-    } else {
-        dropoutSec.classList.add('hidden');
-    }
-    
-    // 2. Ràng buộc trường Ngày đi học lại: Tag === TEMPORARY_LEAVE
-    if (tag === 'TEMPORARY_LEAVE') {
+        if (dropoutLabel) dropoutLabel.innerText = "Ngày bắt đầu học thử (bắt buộc)";
+        trialDurationSec.classList.remove('hidden');
+        resumptionSec.classList.add('hidden');
+    } else if (tag === 'HANGING') {
+        // Nghỉ luôn
+        dropoutSec.classList.remove('hidden');
+        if (dropoutLabel) dropoutLabel.innerText = "Ngày bắt đầu nghỉ luôn (bắt buộc)";
+        trialDurationSec.classList.add('hidden');
+        resumptionSec.classList.add('hidden');
+    } else if (tag === 'TEMPORARY_LEAVE') {
+        // Nghỉ tạm thời
+        dropoutSec.classList.remove('hidden');
+        if (dropoutLabel) dropoutLabel.innerText = "Ngày bắt đầu nghỉ (bắt buộc)";
+        trialDurationSec.classList.add('hidden');
         resumptionSec.classList.remove('hidden');
+        if (resumptionLabel) resumptionLabel.innerText = "Ngày đi học lại dự kiến (không bắt buộc)";
     } else {
+        // Không áp dụng (Chính thức)
+        dropoutSec.classList.add('hidden');
+        trialDurationSec.classList.add('hidden');
         resumptionSec.classList.add('hidden');
     }
 }
@@ -791,7 +807,6 @@ async function submitStatusRequest() {
     const id = document.getElementById('req-student-id').value;
     const name = document.getElementById('req-student-name').value;
     const classId = document.getElementById('req-class-id').value;
-    const status = document.getElementById('req-status').value;
     const tag = document.getElementById('req-tag').value || null;
     const note = document.getElementById('req-note').value;
     
@@ -803,17 +818,31 @@ async function submitStatusRequest() {
     };
     
     let requested_dropout_date = null;
-    if (status === 'DROPOUT' || status === 'PENALTY') {
-        const rawDate = document.getElementById('req-dropout-date').value;
-        requested_dropout_date = toISODate(rawDate);
-        if (!requested_dropout_date) return alert("Vui lòng chọn ngày bắt đầu nghỉ học!");
-    }
-    
     let requested_resumption_date = null;
-    if (tag === 'TEMPORARY_LEAVE') {
-        const rawDate = document.getElementById('req-resumption-date').value;
-        requested_resumption_date = toISODate(rawDate);
-        if (!requested_resumption_date) return alert("Vui lòng chọn ngày đi học lại dự kiến!");
+    
+    if (tag) {
+        const rawStartDate = document.getElementById('req-dropout-date').value;
+        requested_dropout_date = toISODate(rawStartDate);
+        
+        if (!requested_dropout_date) {
+            let errorMsg = "Vui lòng chọn ngày bắt đầu!";
+            if (tag === 'TRIAL') errorMsg = "Vui lòng chọn ngày bắt đầu học thử!";
+            if (tag === 'HANGING') errorMsg = "Vui lòng chọn ngày bắt đầu nghỉ luôn!";
+            if (tag === 'TEMPORARY_LEAVE') errorMsg = "Vui lòng chọn ngày bắt đầu nghỉ!";
+            return alert(errorMsg);
+        }
+        
+        if (tag === 'TRIAL') {
+            const durationVal = document.getElementById('req-trial-duration').value;
+            if (durationVal) {
+                const startDateObj = new Date(requested_dropout_date);
+                startDateObj.setDate(startDateObj.getDate() + parseInt(durationVal));
+                requested_resumption_date = startDateObj.toISOString().split('T')[0];
+            }
+        } else if (tag === 'TEMPORARY_LEAVE') {
+            const rawResumptionDate = document.getElementById('req-resumption-date').value;
+            requested_resumption_date = toISODate(rawResumptionDate);
+        }
     }
     
     if (!note.trim()) return alert("Vui lòng nhập lý do thay đổi tình trạng học của bé!");
@@ -825,7 +854,7 @@ async function submitStatusRequest() {
         class_id: classId,
         teacher_id: teacherInfo.id,
         teacher_name: teacherInfo.name,
-        requested_status: status,
+        requested_status: 'ACTIVE', // Status automatically handled by tags in backend
         requested_tag: tag,
         requested_dropout_date,
         requested_resumption_date,

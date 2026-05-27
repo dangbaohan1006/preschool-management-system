@@ -98,7 +98,7 @@ export class AttendanceService {
                 }
 
                 finalStatus = 'ABSENT';
-                finalDetails = '[Tự động] Treo sĩ số - Luôn vắng';
+                finalDetails = '[Tự động] Nghỉ luôn - Luôn vắng';
             } else if (student?.tag === 'TEMPORARY_LEAVE') {
                 // Skip students on temporary leave
                 continue;

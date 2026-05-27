@@ -253,10 +253,10 @@ app.get('/api/admin/status-requests', async (c) => {
 
 app.post('/api/admin/status-requests/:id/review', async (c) => {
   const requestId = parseInt(c.req.param('id'));
-  const { action, admin_name, review_note } = await c.req.json();
+  const { action, admin_name, review_note, is_hanging } = await c.req.json();
   const { admin } = getServices(c.env.DB);
   try {
-    await admin.reviewStatusRequest(requestId, action, admin_name || 'Admin', review_note);
+    await admin.reviewStatusRequest(requestId, action, admin_name || 'Admin', review_note, is_hanging !== false);
     return c.json({ success: true });
   } catch (err: any) {
     return c.json({ error: err.message }, 400);
