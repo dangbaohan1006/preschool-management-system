@@ -3080,7 +3080,7 @@
             try {
                 const r = await fetch(`${API_BASE}/admin/classes`, { headers: { 'x-api-key': SECRET } });
                 const d = await r.json();
-                currentClasses = d.results || [];
+                currentClasses = (d.results || []).filter(c => c.id !== 'MANAGEMENT');
 
                 // Populate dashboard class filter
                 const dashCSelect = document.getElementById('dash-filter-class');
@@ -3284,7 +3284,7 @@
 
                 // 3. Populate Class Filter Select
                 const clsRes = await fetch(`${API_BASE}/admin/classes`, { headers: { 'x-api-key': SECRET } });
-                const classes = (await clsRes.json()).results || [];
+                const classes = ((await clsRes.json()).results || []).filter(c => c.id !== 'MANAGEMENT');
                 const classFilter = document.getElementById('finance-class-filter');
                 const currentVal = classFilter.value;
                 classFilter.innerHTML = '<option value="" class="text-slate-900">Tất cả lớp</option>' +
@@ -4474,7 +4474,7 @@
                     ]);
 
                     const classes = (await clsRes.json()).results || [];
-                    currentClasses = sortClassesList(classes);
+                    currentClasses = sortClassesList(classes).filter(c => c.id !== 'MANAGEMENT');
                     currentStudentsStore = (await stdRes.json()).results || [];
                 }
 

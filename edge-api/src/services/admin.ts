@@ -6,7 +6,7 @@ export class AdminService {
 
   // --- Classes ---
   async getClasses() {
-    return await this.db.prepare('SELECT * FROM classes ORDER BY name').all();
+    return await this.db.prepare("SELECT * FROM classes WHERE id != 'MANAGEMENT' ORDER BY name").all();
   }
 
   async addClass(id: string, name: string, type: string = 'STANDARD', surcharge_amount: number = 0, surcharge_note: string = '', is_nursery: number = 0, block: string = '', config: string = '{}') {
