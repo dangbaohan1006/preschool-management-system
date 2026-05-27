@@ -1164,6 +1164,18 @@
                             class="bg-emerald-500 hover:bg-emerald-600 h-10 px-6 rounded-md font-bold uppercase tracking-widest text-[10px] transition-all flex items-center gap-2">
                             📊 Tỷ lệ chuyên cần theo lớp
                         </button>
+                        <button id="btn-edit-report" onclick="toggleReportEditMode()"
+                            class="hidden bg-amber-500 hover:bg-amber-600 h-10 px-6 rounded-md font-bold uppercase tracking-widest text-[10px] transition-all flex items-center gap-2">
+                            ✏️ Chỉnh sửa
+                        </button>
+                        <button id="btn-save-report" onclick="saveReportEdits()"
+                            class="hidden bg-emerald-600 hover:bg-emerald-700 h-10 px-6 rounded-md font-bold uppercase tracking-widest text-[10px] transition-all flex items-center gap-2">
+                            💾 Lưu thay đổi
+                        </button>
+                        <button id="btn-cancel-report" onclick="cancelReportEdits()"
+                            class="hidden bg-rose-500 hover:bg-rose-600 h-10 px-6 rounded-md font-bold uppercase tracking-widest text-[10px] transition-all flex items-center gap-2">
+                            ✕ Hủy
+                        </button>
                     </div>
                 </div>
 
@@ -2450,6 +2462,16 @@
                 const classReport = document.getElementById('class-report-container');
                 if (classReport) classReport.classList.add('hidden');
             }
+
+            // Reset monthly report grid edit state on tab switch
+            isGridEditMode = false;
+            gridEdits = {};
+            const btnEdit = document.getElementById('btn-edit-report');
+            const btnSave = document.getElementById('btn-save-report');
+            const btnCancel = document.getElementById('btn-cancel-report');
+            if (btnEdit) btnEdit.classList.add('hidden');
+            if (btnSave) btnSave.classList.add('hidden');
+            if (btnCancel) btnCancel.classList.add('hidden');
 
             // Show active view
             document.getElementById(`view-${tab}`).classList.remove('hidden');
@@ -6264,6 +6286,9 @@
             }
         }
 
+        let isGridEditMode = false;
+        let gridEdits = {};
+
         async function loadMonthlyReport() {
             const rawStart = document.getElementById('report-start').value;
             const rawEnd = document.getElementById('report-end').value;
@@ -6285,6 +6310,17 @@
             document.getElementById('attendance-summary').classList.add('hidden');
             document.getElementById('class-report-container').classList.add('hidden');
             document.getElementById('monthly-report-export-toolbar').classList.add('hidden');
+            
+            // Reset edit mode when loading new report
+            isGridEditMode = false;
+            gridEdits = {};
+            const btnEdit = document.getElementById('btn-edit-report');
+            const btnSave = document.getElementById('btn-save-report');
+            const btnCancel = document.getElementById('btn-cancel-report');
+            if (btnEdit) btnEdit.classList.add('hidden');
+            if (btnSave) btnSave.classList.add('hidden');
+            if (btnCancel) btnCancel.classList.add('hidden');
+
             const gridContainer = document.getElementById('monthly-report-grid-container');
             if (gridContainer) gridContainer.classList.remove('hidden');
 
@@ -6326,37 +6362,6 @@
                     dateList.push(`${y}-${m}-${day}`);
                 }
 
-                const formatter = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
-                const dailyTotals = {};
-                dateList.forEach(d => dailyTotals[d] = 0);
-
-                const weekdays = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
-
-                let headerRow1 = `<tr><th rowspan="2" class="p-2 text-center min-w-[40px] max-w-[40px] sticky left-0 bg-[#006C18] border-r border-white/10 headline text-[10px] uppercase tracking-widest text-white z-20">STT</th>`;
-                headerRow1 += `<th rowspan="2" class="p-4 text-left min-w-[150px] sticky left-[40px] bg-[#006C18] border-r border-white/10 headline text-[10px] uppercase tracking-widest text-white z-20">Học sinh</th>`;
-                let headerRow2 = `<tr>`;
-
-                dateList.forEach(dateStr => {
-                    const d = new Date(dateStr);
-                    const wd = weekdays[d.getDay()];
-                    const dayNum = dateStr.split('-')[2];
-                    const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-                    const isHoliday = holidayDates.has(dateStr);
-
-                    const bgClassWd = (isWeekend || isHoliday) ? 'bg-white/10' : '';
-                    const textClassWd = (isWeekend || isHoliday) ? 'text-[#FAEBCC]' : 'text-white/80';
-                    headerRow1 += `<th class="w-8 border-l border-white/10 whitespace-nowrap text-center text-[8px] font-black ${bgClassWd} ${textClassWd}">${wd}</th>`;
-
-                    const bgClassDay = (isWeekend || isHoliday) ? 'bg-white/10' : '';
-                    headerRow2 += `<th class="w-8 border-t border-l border-white/10 whitespace-nowrap text-center text-[10px] font-bold ${bgClassDay} text-white">${dayNum}</th>`;
-                });
-
-                headerRow1 += `<th rowspan="2" class="p-2 bg-[#FF8000] text-[9px] uppercase headline text-white text-center">Có</th>`;
-                headerRow1 += `<th rowspan="2" class="p-2 bg-[#E2725B] text-[9px] uppercase headline text-white text-center">Hoàn tiền</th></tr>`;
-                headerRow2 += `</tr>`;
-
-                header.innerHTML = headerRow1 + headerRow2;
-
                 const totalSchoolWeekdays = dateList.filter(dStr => {
                     const d = new Date(dStr);
                     return d.getDay() !== 0 && d.getDay() !== 6 && !holidayDates.has(dStr);
@@ -6364,138 +6369,9 @@
 
                 const numSchoolDays = totalSchoolWeekdays || 1;
 
-                let grandTotalRefund = 0;
-                let grandTotalPresent = 0;
-                let grandTotalPossible = 0;
-                let sumOfIndividualRates = 0;
-                let validStudentsForRate = 0;
-
                 // Lấy đơn giá hoàn tiền từ danh mục phí (Dữ liệu động) - Fetch ngoài loop để tối ưu
                 const feeCatsRes = await fetch(`${API_BASE}/admin/finance/fee-categories`, { headers: { 'x-api-key': SECRET } });
                 const feeCats = (await feeCatsRes.json()).results || [];
-
-                let rowsHtml = students.map((s, index) => {
-                    let totalPresent = 0;
-                    let totalAbsent = 0;
-                    let rowHtml = `<tr class="hover:bg-slate-50 transition-colors border-b border-slate-100 text-[10px]">
-                                    <td class="p-2 text-center font-bold text-slate-500 border-r border-slate-100 sticky left-0 bg-white/95 z-10">${index + 1}</td>
-                                    <td class="p-2.5 text-left font-bold text-slate-800 border-r border-slate-100 sticky left-[40px] bg-white/95 z-10">${s.name}</td>`;
-
-                    dateList.forEach(dateStr => {
-                        let cell = '';
-                        const log = logs.find(l => l.student_id === s.id && l.date === dateStr);
-                        const d = new Date(dateStr);
-                        const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-                        const isHoliday = holidayDates.has(dateStr);
-
-                        if (isWeekend || isHoliday) {
-                            cell = '<span class="text-slate-300">-</span>';
-                        } else if (log) {
-                            if (log.status === 'PRESENT') {
-                                cell = '<span class="text-emerald-500 font-black">✔</span>';
-                                totalPresent++;
-                                dailyTotals[dateStr]++;
-                            } else if (log.status === 'ABSENT') {
-                                cell = '<span class="text-rose-500 font-black">✘</span>';
-                                totalAbsent++;
-                            } else if (log.status === 'TRANSFER') {
-                                cell = '<span class="text-blue-500 font-bold text-[9px]">CL</span>';
-                            } else if (log.status === 'DROPOUT') {
-                                cell = '<span class="text-slate-400 font-bold text-[9px]">NL</span>';
-                            } else {
-                                cell = '<span class="text-rose-500 font-black">✘</span>';
-                                totalAbsent++;
-                            }
-                        } else {
-                            const reportMonth = dateStr.substring(0, 7);
-                            const dropoutMonth = s.dropout_date ? s.dropout_date.substring(0, 7) : null;
-                            if (s.status === 'PENALTY' && dropoutMonth && reportMonth > dropoutMonth) {
-                                cell = '<span class="text-rose-500/30 font-black">✘</span>';
-                                totalAbsent++;
-                            }
-                        }
-                        rowHtml += `<td class="border-l border-slate-50 text-center">${cell}</td>`;
-                    });
-
-                    const clsInfo = currentClasses.find(c => c.id === classId);
-                    const type = clsInfo?.type || 'STANDARD';
-                    const feeId = type === 'BILINGUAL' ? 'MEAL_BIL' : 'MEAL_STD';
-                    const refundRate = feeCats.find(c => c.id === feeId)?.default_amount || (type === 'BILINGUAL' ? 38000 : 35000);
-
-                    const refundAmount = totalAbsent * refundRate;
-                    // FIX: Chỉ tính mẫu số dựa trên những ngày thực tế có đi học (X) hoặc vắng (P)
-                    // Không tính những ngày Chuyển lớp (CL)
-                    const possibleDays = totalPresent + totalAbsent; 
-                    
-                    grandTotalRefund += refundAmount;
-                    grandTotalPresent += totalPresent;
-                    grandTotalPossible += (totalPresent + totalAbsent); 
-                    
-                    if (possibleDays > 0) {
-                        sumOfIndividualRates += (totalPresent / possibleDays);
-                        validStudentsForRate++;
-                    }
-                    
-                    const individualRate = possibleDays > 0 ? (totalPresent / possibleDays) * 100 : 0;
-
-                    rowHtml += `<td class="p-2 text-center font-bold text-slate-800 bg-emerald-50">${totalPresent}/${possibleDays}</td>
-                                     <td class="p-2 text-center font-bold text-rose-700 bg-rose-50 border-l border-slate-100">${formatter.format(refundAmount)}</td>
-                                  </tr>`;
-                    return rowHtml;
-                }).join('');
-
-                const finalAttendanceRate = validStudentsForRate > 0 ? ((sumOfIndividualRates / validStudentsForRate) * 100).toFixed(2) : "0.00";
-                const overallRate = finalAttendanceRate; // Đảm bảo đồng nhất giữa Header và Footer
-                let footerHtml = `<tr class="bg-slate-100 text-[#006C18] font-bold text-[10px]">
-                                    <td colspan="2" class="p-3 text-left border-r border-slate-200 sticky left-0 bg-slate-100 uppercase tracking-widest text-[9px] headline z-10">Tổng cộng</td>`;
-                dateList.forEach(d => {
-                    footerHtml += `<td class="border-l border-slate-200 text-center text-[9px]">${dailyTotals[d] || 0}</td>`;
-                });
-                const clsInfo = currentClasses.find(c => c.id === classId);
-                const isNursery = clsInfo?.is_nursery === 1;
-                const kpi = isNursery ? 85 : 90;
-                const excellent = isNursery ? 90 : 95;
-                const rateVal = parseFloat(overallRate);
-
-                let footerColor = 'text-rose-600';
-                let footerBg = 'bg-rose-50';
-                if (rateVal >= excellent) {
-                    footerColor = 'text-emerald-600';
-                    footerBg = 'bg-emerald-50';
-                } else if (rateVal >= kpi) {
-                    footerColor = 'text-amber-600';
-                    footerBg = 'bg-amber-50';
-                }
-
-                footerHtml += `<td class="${footerBg} ${footerColor} text-center headline text-[9px]">${overallRate}%</td>`;
-                footerHtml += `<td class="bg-[#E2725B]/10 text-[#E2725B] text-[9px] text-right pr-2 headline">${formatter.format(grandTotalRefund)}</td></tr>`;
-
-                tbody.innerHTML = rowsHtml + footerHtml;
-
-                // --- Summary Stats ---
-                const numStudents = students.length;
-
-
-
-                // Trẻ đi học trung bình = Tổng lượt hiện diện / Tổng số ngày học trong tháng
-                const totalClassAttendanceDays = grandTotalPresent;
-                const regularChildrenRaw = totalClassAttendanceDays / numSchoolDays;
-                const regularChildrenRounded = Math.round(regularChildrenRaw);
-
-                // Tỉ lệ chuyên cần: Hiển thị 2 chữ số thập phân (Tính theo trung bình cộng tỷ lệ từng bé)
-                // finalAttendanceRate đã được tính ở trên
-                document.getElementById('attendance-summary').classList.remove('hidden');
-                document.getElementById('stat-total-class-days').innerText = `${numSchoolDays} ngày`;
-                document.getElementById('stat-regular-children').innerText = `${regularChildrenRounded} trẻ`;
-                const statRateEl = document.getElementById('stat-attendance-rate');
-                statRateEl.innerText = `${finalAttendanceRate}%`;
-                // Xóa các class màu cũ (bao gồm cả class inline từ HTML nếu có)
-                statRateEl.className = statRateEl.className.replace(/text-\[[^\]]+\]|text-(emerald|amber|rose)-600/g, '').trim();
-                
-                const finalRateVal = parseFloat(finalAttendanceRate);
-                if (finalRateVal >= excellent) statRateEl.classList.add('text-emerald-600');
-                else if (finalRateVal >= kpi) statRateEl.classList.add('text-amber-600');
-                else statRateEl.classList.add('text-rose-600');
 
                 // Save report data state for Excel/PDF export
                 window.currentMonthlyReport = {
@@ -6507,16 +6383,502 @@
                     students,
                     logs,
                     holidayDates: Array.from(holidayDates),
-                    dailyTotals,
-                    grandTotalRefund,
-                    overallRate: finalAttendanceRate,
                     numSchoolDays,
-                    regularChildrenRounded,
                     feeCats
                 };
-                document.getElementById('monthly-report-export-toolbar').classList.remove('hidden');
 
-            } catch (e) { alert('Lỗi tải lưới dữ liệu!'); }
+                // Call rendering function
+                renderMonthlyReportGrid();
+
+                // Show Edit button since report is successfully loaded
+                if (students.length > 0) {
+                    if (btnEdit) btnEdit.classList.remove('hidden');
+                }
+
+            } catch (e) {
+                console.error(e);
+                alert('Lỗi tải lưới dữ liệu!');
+            }
+        }
+
+        function renderMonthlyReportGrid() {
+            const report = window.currentMonthlyReport;
+            if (!report) return;
+
+            const { classId, startDate, endDate, dateList, students, logs, holidayDates: holidayDatesArray, numSchoolDays, feeCats } = report;
+            const holidayDates = new Set(holidayDatesArray);
+
+            const header = document.getElementById('grid-header');
+            const tbody = document.getElementById('grid-body');
+
+            const formatter = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
+            const dailyTotals = {};
+            dateList.forEach(d => dailyTotals[d] = 0);
+
+            const weekdays = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+
+            let headerRow1 = `<tr><th rowspan="2" class="p-2 text-center min-w-[40px] max-w-[40px] sticky left-0 bg-[#006C18] border-r border-white/10 headline text-[10px] uppercase tracking-widest text-white z-20">STT</th>`;
+            headerRow1 += `<th rowspan="2" class="p-4 text-left min-w-[150px] sticky left-[40px] bg-[#006C18] border-r border-white/10 headline text-[10px] uppercase tracking-widest text-white z-20">Học sinh</th>`;
+            let headerRow2 = `<tr>`;
+
+            dateList.forEach(dateStr => {
+                const d = new Date(dateStr);
+                const wd = weekdays[d.getDay()];
+                const dayNum = dateStr.split('-')[2];
+                const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                const isHoliday = holidayDates.has(dateStr);
+
+                const bgClassWd = (isWeekend || isHoliday) ? 'bg-white/10' : '';
+                const textClassWd = (isWeekend || isHoliday) ? 'text-[#FAEBCC]' : 'text-white/80';
+                headerRow1 += `<th class="w-8 border-l border-white/10 whitespace-nowrap text-center text-[8px] font-black ${bgClassWd} ${textClassWd}">${wd}</th>`;
+
+                const bgClassDay = (isWeekend || isHoliday) ? 'bg-white/10' : '';
+                headerRow2 += `<th class="w-8 border-t border-l border-white/10 whitespace-nowrap text-center text-[10px] font-bold ${bgClassDay} text-white">${dayNum}</th>`;
+            });
+
+            headerRow1 += `<th rowspan="2" class="p-2 bg-[#FF8000] text-[9px] uppercase headline text-white text-center">Có</th>`;
+            headerRow1 += `<th rowspan="2" class="p-2 bg-[#E2725B] text-[9px] uppercase headline text-white text-center">Hoàn tiền</th></tr>`;
+            headerRow2 += `</tr>`;
+
+            header.innerHTML = headerRow1 + headerRow2;
+
+            let grandTotalRefund = 0;
+            let grandTotalPresent = 0;
+            let grandTotalPossible = 0;
+            let sumOfIndividualRates = 0;
+            let validStudentsForRate = 0;
+
+            const clsInfo = currentClasses.find(c => c.id === classId);
+            const type = clsInfo?.type || 'STANDARD';
+            const feeId = type === 'BILINGUAL' ? 'MEAL_BIL' : 'MEAL_STD';
+            const refundRate = feeCats.find(c => c.id === feeId)?.default_amount || (type === 'BILINGUAL' ? 38000 : 35000);
+
+            let rowsHtml = students.map((s, index) => {
+                let totalPresent = 0;
+                let totalAbsent = 0;
+                let rowHtml = `<tr class="hover:bg-slate-50 transition-colors border-b border-slate-100 text-[10px]">
+                                <td class="p-2 text-center font-bold text-slate-500 border-r border-slate-100 sticky left-0 bg-white/95 z-10">${index + 1}</td>
+                                <td class="p-2.5 text-left font-bold text-slate-800 border-r border-slate-100 sticky left-[40px] bg-white/95 z-10">${s.name}</td>`;
+
+                dateList.forEach(dateStr => {
+                    let cell = '';
+                    const d = new Date(dateStr);
+                    const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                    const isHoliday = holidayDates.has(dateStr);
+
+                    // Check if there is an unsaved edit
+                    const editKey = `${s.id}_${dateStr}`;
+                    const hasEdit = gridEdits[editKey] !== undefined;
+                    
+                    // Determine current active status
+                    let status = 'EMPTY';
+                    const log = logs.find(l => l.student_id === s.id && l.date === dateStr);
+                    if (log) {
+                        status = log.status;
+                    } else {
+                        const reportMonth = dateStr.substring(0, 7);
+                        const dropoutMonth = s.dropout_date ? s.dropout_date.substring(0, 7) : null;
+                        if (s.status === 'PENALTY' && dropoutMonth && reportMonth > dropoutMonth) {
+                            status = 'ABSENT';
+                        }
+                    }
+
+                    if (hasEdit) {
+                        status = gridEdits[editKey];
+                    }
+
+                    let cellAttr = `data-student-id="${s.id}" data-date="${dateStr}" data-status="${status}"`;
+                    let cellClass = 'border-l border-slate-50 text-center';
+
+                    if (isWeekend || isHoliday) {
+                        cell = '<span class="text-slate-300">-</span>';
+                    } else {
+                        if (isGridEditMode) {
+                            cellClass += ' hover:bg-orange-100 cursor-pointer transition-colors relative group';
+                            cellAttr += ` onclick="toggleCell('${s.id}', '${dateStr}', this)"`;
+                            if (hasEdit) {
+                                cellClass += ' bg-amber-100 border-amber-300 ring-2 ring-amber-300 ring-inset';
+                            }
+                        }
+
+                        if (status === 'PRESENT') {
+                            cell = '<span class="text-emerald-500 font-black">✔</span>';
+                            totalPresent++;
+                            dailyTotals[dateStr]++;
+                        } else if (status === 'ABSENT') {
+                            cell = '<span class="text-rose-500 font-black">✘</span>';
+                            totalAbsent++;
+                        } else if (status === 'TRANSFER') {
+                            cell = '<span class="text-blue-500 font-bold text-[9px]">CL</span>';
+                        } else if (status === 'DROPOUT') {
+                            cell = '<span class="text-slate-400 font-bold text-[9px]">NL</span>';
+                        } else {
+                            cell = '<span class="text-slate-300">-</span>';
+                        }
+                    }
+                    rowHtml += `<td class="${cellClass}" ${cellAttr}>${cell}</td>`;
+                });
+
+                const refundAmount = totalAbsent * refundRate;
+                const possibleDays = totalPresent + totalAbsent;
+
+                grandTotalRefund += refundAmount;
+                grandTotalPresent += totalPresent;
+                grandTotalPossible += possibleDays;
+
+                if (possibleDays > 0) {
+                    sumOfIndividualRates += (totalPresent / possibleDays);
+                    validStudentsForRate++;
+                }
+
+                rowHtml += `<td id="row-present-${s.id}" class="p-2 text-center font-bold text-slate-800 bg-emerald-50">${totalPresent}/${possibleDays}</td>
+                                 <td id="row-refund-${s.id}" class="p-2 text-center font-bold text-rose-700 bg-rose-50 border-l border-slate-100">${formatter.format(refundAmount)}</td>
+                              </tr>`;
+                return rowHtml;
+            }).join('');
+
+            const finalAttendanceRate = validStudentsForRate > 0 ? ((sumOfIndividualRates / validStudentsForRate) * 100).toFixed(2) : "0.00";
+            const overallRate = finalAttendanceRate;
+            
+            let footerHtml = `<tr class="bg-slate-100 text-[#006C18] font-bold text-[10px]">
+                                <td colspan="2" class="p-3 text-left border-r border-slate-200 sticky left-0 bg-slate-100 uppercase tracking-widest text-[9px] headline z-10">Tổng cộng</td>`;
+            dateList.forEach(d => {
+                footerHtml += `<td id="footer-daily-${d}" class="border-l border-slate-200 text-center text-[9px]">${dailyTotals[d] || 0}</td>`;
+            });
+            
+            const isNursery = clsInfo?.is_nursery === 1;
+            const kpi = isNursery ? 85 : 90;
+            const excellent = isNursery ? 90 : 95;
+            const rateVal = parseFloat(overallRate);
+
+            let footerColor = 'text-rose-600';
+            let footerBg = 'bg-rose-50';
+            if (rateVal >= excellent) {
+                footerColor = 'text-emerald-600';
+                footerBg = 'bg-emerald-50';
+            } else if (rateVal >= kpi) {
+                footerColor = 'text-amber-600';
+                footerBg = 'bg-amber-50';
+            }
+
+            footerHtml += `<td id="footer-overall-rate" class="${footerBg} ${footerColor} text-center headline text-[9px]">${overallRate}%</td>`;
+            footerHtml += `<td id="footer-overall-refund" class="bg-[#E2725B]/10 text-[#E2725B] text-[9px] text-right pr-2 headline">${formatter.format(grandTotalRefund)}</td></tr>`;
+
+            tbody.innerHTML = rowsHtml + footerHtml;
+
+            // --- Summary Stats ---
+            const numStudents = students.length;
+            const totalClassAttendanceDays = grandTotalPresent;
+            const regularChildrenRaw = totalClassAttendanceDays / numSchoolDays;
+            const regularChildrenRounded = Math.round(regularChildrenRaw);
+
+            document.getElementById('attendance-summary').classList.remove('hidden');
+            document.getElementById('stat-total-class-days').innerText = `${numSchoolDays} ngày`;
+            document.getElementById('stat-regular-children').innerText = `${regularChildrenRounded} trẻ`;
+            const statRateEl = document.getElementById('stat-attendance-rate');
+            statRateEl.innerText = `${finalAttendanceRate}%`;
+            
+            statRateEl.className = statRateEl.className.replace(/text-\[[^\]]+\]|text-(emerald|amber|rose)-600/g, '').trim();
+            
+            const finalRateVal = parseFloat(finalAttendanceRate);
+            if (finalRateVal >= excellent) statRateEl.classList.add('text-emerald-600');
+            else if (finalRateVal >= kpi) statRateEl.classList.add('text-amber-600');
+            else statRateEl.classList.add('text-rose-600');
+
+            // Save report data state for Excel/PDF export
+            window.currentMonthlyReport.dailyTotals = dailyTotals;
+            window.currentMonthlyReport.grandTotalRefund = grandTotalRefund;
+            window.currentMonthlyReport.overallRate = finalAttendanceRate;
+            window.currentMonthlyReport.regularChildrenRounded = regularChildrenRounded;
+            
+            document.getElementById('monthly-report-export-toolbar').classList.remove('hidden');
+        }
+
+        function toggleReportEditMode() {
+            isGridEditMode = true;
+            gridEdits = {};
+            
+            // Show Save & Cancel, hide Edit
+            document.getElementById('btn-edit-report').classList.add('hidden');
+            document.getElementById('btn-save-report').classList.remove('hidden');
+            document.getElementById('btn-cancel-report').classList.remove('hidden');
+            
+            // Re-render the grid
+            renderMonthlyReportGrid();
+            showToast('Đã kích hoạt chế độ chỉnh sửa lưới điểm danh tháng!', 'warning');
+        }
+
+        function cancelReportEdits() {
+            isGridEditMode = false;
+            gridEdits = {};
+            
+            // Show Edit, hide Save & Cancel
+            document.getElementById('btn-edit-report').classList.remove('hidden');
+            document.getElementById('btn-save-report').classList.add('hidden');
+            document.getElementById('btn-cancel-report').classList.add('hidden');
+            
+            // Re-render the grid (restoring to original state)
+            renderMonthlyReportGrid();
+            showToast('Đã hủy bỏ các thay đổi.', 'success');
+        }
+
+        function toggleCell(studentId, dateStr, tdElement) {
+            if (!isGridEditMode) return;
+            
+            // Get current status
+            let currentStatus = tdElement.getAttribute('data-status') || 'EMPTY';
+            
+            // Determine new status
+            let newStatus = 'PRESENT';
+            if (currentStatus === 'PRESENT') {
+                newStatus = 'ABSENT';
+            } else if (currentStatus === 'ABSENT') {
+                newStatus = 'PRESENT';
+            } else {
+                newStatus = 'PRESENT'; // default for empty/no status
+            }
+            
+            // Update data attribute
+            tdElement.setAttribute('data-status', newStatus);
+            
+            // Update visual indicator immediately
+            if (newStatus === 'PRESENT') {
+                tdElement.innerHTML = '<span class="text-emerald-500 font-black">✔</span>';
+            } else {
+                tdElement.innerHTML = '<span class="text-rose-500 font-black">✘</span>';
+            }
+            
+            // Track the edit
+            const editKey = `${studentId}_${dateStr}`;
+            
+            // If new status is same as the original status, we can delete the edit
+            const report = window.currentMonthlyReport;
+            const originalLog = report.logs.find(l => l.student_id === studentId && l.date === dateStr);
+            
+            let originalStatus = 'EMPTY';
+            if (originalLog) {
+                originalStatus = originalLog.status;
+            } else {
+                const student = report.students.find(s => s.id === studentId);
+                const reportMonth = dateStr.substring(0, 7);
+                const dropoutMonth = student?.dropout_date ? student.dropout_date.substring(0, 7) : null;
+                if (student?.status === 'PENALTY' && dropoutMonth && reportMonth > dropoutMonth) {
+                    originalStatus = 'ABSENT';
+                }
+            }
+            
+            if (newStatus === originalStatus) {
+                delete gridEdits[editKey];
+                tdElement.classList.remove('bg-amber-100', 'border-amber-300', 'ring-2', 'ring-amber-300', 'ring-inset');
+            } else {
+                gridEdits[editKey] = newStatus;
+                tdElement.classList.add('bg-amber-100', 'border-amber-300', 'ring-2', 'ring-amber-300', 'ring-inset');
+            }
+            
+            // Live recalculate statistics on DOM
+            recalculateGridStatsLive();
+        }
+
+        function recalculateGridStatsLive() {
+            const report = window.currentMonthlyReport;
+            if (!report) return;
+            
+            const { students, dateList, feeCats, classId, numSchoolDays } = report;
+            const clsInfo = currentClasses.find(c => c.id === classId);
+            const type = clsInfo?.type || 'STANDARD';
+            const feeId = type === 'BILINGUAL' ? 'MEAL_BIL' : 'MEAL_STD';
+            const refundRate = feeCats.find(c => c.id === feeId)?.default_amount || (type === 'BILINGUAL' ? 38000 : 35000);
+            const formatter = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
+            
+            const dailyTotals = {};
+            dateList.forEach(d => dailyTotals[d] = 0);
+            
+            let grandTotalRefund = 0;
+            let grandTotalPresent = 0;
+            let grandTotalPossible = 0;
+            let sumOfIndividualRates = 0;
+            let validStudentsForRate = 0;
+            
+            students.forEach((s, idx) => {
+                let totalPresent = 0;
+                let totalAbsent = 0;
+                
+                dateList.forEach(dateStr => {
+                    const td = document.querySelector(`td[data-student-id="${s.id}"][data-date="${dateStr}"]`);
+                    if (td) {
+                        const status = td.getAttribute('data-status');
+                        if (status === 'PRESENT') {
+                            totalPresent++;
+                            dailyTotals[dateStr]++;
+                        } else if (status === 'ABSENT') {
+                            totalAbsent++;
+                        }
+                    } else {
+                        // Fallback
+                        const log = report.logs.find(l => l.student_id === s.id && l.date === dateStr);
+                        if (log) {
+                            if (log.status === 'PRESENT') {
+                                totalPresent++;
+                                dailyTotals[dateStr]++;
+                            } else if (log.status === 'ABSENT') {
+                                totalAbsent++;
+                            }
+                        } else {
+                            const reportMonth = dateStr.substring(0, 7);
+                            const dropoutMonth = s.dropout_date ? s.dropout_date.substring(0, 7) : null;
+                            if (s.status === 'PENALTY' && dropoutMonth && reportMonth > dropoutMonth) {
+                                totalAbsent++;
+                            }
+                        }
+                    }
+                });
+                
+                const refundAmount = totalAbsent * refundRate;
+                const possibleDays = totalPresent + totalAbsent;
+                
+                grandTotalRefund += refundAmount;
+                grandTotalPresent += totalPresent;
+                grandTotalPossible += possibleDays;
+                
+                if (possibleDays > 0) {
+                    sumOfIndividualRates += (totalPresent / possibleDays);
+                    validStudentsForRate++;
+                }
+                
+                // Update row present & refund cells live
+                const presentCell = document.getElementById(`row-present-${s.id}`);
+                if (presentCell) presentCell.innerText = `${totalPresent}/${possibleDays}`;
+                
+                const refundCell = document.getElementById(`row-refund-${s.id}`);
+                if (refundCell) refundCell.innerText = formatter.format(refundAmount);
+            });
+            
+            const finalAttendanceRate = validStudentsForRate > 0 ? ((sumOfIndividualRates / validStudentsForRate) * 100).toFixed(2) : "0.00";
+            
+            // Update daily totals in footer
+            dateList.forEach(d => {
+                const footerTd = document.getElementById(`footer-daily-${d}`);
+                if (footerTd) {
+                    footerTd.innerText = dailyTotals[d] || 0;
+                }
+            });
+            
+            // Update footer overall rate
+            const footerRateTd = document.getElementById('footer-overall-rate');
+            if (footerRateTd) {
+                footerRateTd.innerText = `${finalAttendanceRate}%`;
+                
+                const isNursery = clsInfo?.is_nursery === 1;
+                const kpi = isNursery ? 85 : 90;
+                const excellent = isNursery ? 90 : 95;
+                const rateVal = parseFloat(finalAttendanceRate);
+                
+                footerRateTd.className = footerRateTd.className.replace(/bg-(emerald|amber|rose)-50|text-(emerald|amber|rose)-600/g, '').trim();
+                
+                let footerColor = 'text-rose-600';
+                let footerBg = 'bg-rose-50';
+                if (rateVal >= excellent) {
+                    footerColor = 'text-emerald-600';
+                    footerBg = 'bg-emerald-50';
+                } else if (rateVal >= kpi) {
+                    footerColor = 'text-amber-600';
+                    footerBg = 'bg-amber-50';
+                }
+                footerRateTd.classList.add(footerBg, footerColor);
+            }
+            
+            // Update footer overall refund
+            const footerRefundTd = document.getElementById('footer-overall-refund');
+            if (footerRefundTd) {
+                footerRefundTd.innerText = formatter.format(grandTotalRefund);
+            }
+            
+            // Update main widgets
+            const regularChildrenRaw = grandTotalPresent / numSchoolDays;
+            const regularChildrenRounded = Math.round(regularChildrenRaw);
+            
+            document.getElementById('stat-regular-children').innerText = `${regularChildrenRounded} trẻ`;
+            const statRateEl = document.getElementById('stat-attendance-rate');
+            statRateEl.innerText = `${finalAttendanceRate}%`;
+            
+            statRateEl.className = statRateEl.className.replace(/text-\[[^\]]+\]|text-(emerald|amber|rose)-600/g, '').trim();
+            const finalRateVal = parseFloat(finalAttendanceRate);
+            const isNursery = clsInfo?.is_nursery === 1;
+            const kpi = isNursery ? 85 : 90;
+            const excellent = isNursery ? 90 : 95;
+            if (finalRateVal >= excellent) statRateEl.classList.add('text-emerald-600');
+            else if (finalRateVal >= kpi) statRateEl.classList.add('text-amber-600');
+            else statRateEl.classList.add('text-rose-600');
+            
+            // Update currentmonthlyreport values
+            window.currentMonthlyReport.dailyTotals = dailyTotals;
+            window.currentMonthlyReport.grandTotalRefund = grandTotalRefund;
+            window.currentMonthlyReport.overallRate = finalAttendanceRate;
+            window.currentMonthlyReport.regularChildrenRounded = regularChildrenRounded;
+        }
+
+        async function saveReportEdits() {
+            if (Object.keys(gridEdits).length === 0) {
+                showToast('Không có thay đổi nào để lưu!', 'warning');
+                return;
+            }
+            
+            const count = Object.keys(gridEdits).length;
+            if (!await sysConfirm(`Bạn có chắc chắn muốn LƯU ${count} thay đổi điểm danh này vào hệ thống?\nLịch sử thay đổi sẽ được ghi nhận để đối soát.`)) {
+                return;
+            }
+            
+            showLoading('Đang lưu các thay đổi điểm danh...');
+            try {
+                const report = window.currentMonthlyReport;
+                const { students, classId } = report;
+                const records = [];
+                
+                for (const key in gridEdits) {
+                    const [studentId, date] = key.split('_');
+                    const status = gridEdits[key];
+                    const student = students.find(s => s.id === studentId);
+                    
+                    records.push({
+                        student_id: studentId,
+                        student_name: student ? student.name : 'Học sinh',
+                        class_id: classId,
+                        date: date,
+                        status: status,
+                        teacher_id: currentUser?.id || 'ADMIN',
+                        teacher_name: currentUser?.name || 'Quản trị viên',
+                        details: 'Điều chỉnh trực tiếp trên Bảng báo cáo chuyên cần tháng'
+                    });
+                }
+                
+                const res = await fetch(`${API_BASE}/admin/attendance`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-api-key': SECRET },
+                    body: JSON.stringify(records)
+                });
+                
+                if (res.ok) {
+                    showToast(`Đã cập nhật thành công ${count} điểm danh và ghi nhận lịch sử!`, 'success');
+                    isGridEditMode = false;
+                    gridEdits = {};
+                    
+                    // Show Edit, hide Save & Cancel
+                    document.getElementById('btn-edit-report').classList.remove('hidden');
+                    document.getElementById('btn-save-report').classList.add('hidden');
+                    document.getElementById('btn-cancel-report').classList.add('hidden');
+                    
+                    // Reload the report from backend
+                    loadMonthlyReport();
+                } else {
+                    const data = await res.json();
+                    showToast(data.error || 'Lỗi khi lưu điểm danh!', 'error');
+                }
+            } catch (e) {
+                console.error(e);
+                showToast('Lỗi kết nối máy chủ!', 'error');
+            } finally {
+                hideLoading();
+            }
         }
 
         let classReportData = [];
