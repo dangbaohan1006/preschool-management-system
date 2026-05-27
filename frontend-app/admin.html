@@ -6964,12 +6964,11 @@
                     });
                 }
                 
-                const res = await fetch(`${API_BASE}/admin/attendance`, {
+                const res = await fetch(`${API_BASE}/admin/attendance?bypass_locks=true`, {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json', 
-                        'x-api-key': SECRET,
-                        'x-bypass-locks': 'true'
+                        'x-api-key': SECRET
                     },
                     body: JSON.stringify(records)
                 });

@@ -228,7 +228,7 @@ app.post('/api/admin/students/clear-tag', async (c) => {
 app.post('/api/admin/attendance', async (c) => {
   const body = await c.req.json();
   const { attendance } = getServices(c.env.DB);
-  const bypassLocks = c.req.header('x-bypass-locks') === 'true';
+  const bypassLocks = c.req.query('bypass_locks') === 'true' || c.req.header('x-bypass-locks') === 'true';
   try {
     if (Array.isArray(body)) {
       await attendance.markAttendanceBatch(body, bypassLocks);
