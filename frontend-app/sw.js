@@ -63,9 +63,10 @@ self.addEventListener('fetch', (event) => {
         }
         return fetch(event.request).then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
+            const clonedResponse = networkResponse.clone();
             const cacheToOpen = caches.open(CACHE_NAME);
             event.waitUntil(
-              cacheToOpen.then((cache) => cache.put(event.request, networkResponse.clone()))
+              cacheToOpen.then((cache) => cache.put(event.request, clonedResponse))
             );
           }
           return networkResponse;
@@ -81,9 +82,10 @@ self.addEventListener('fetch', (event) => {
       fetch(event.request).then((networkResponse) => {
         // Cache dynamic successful responses for same-origin
         if (networkResponse && networkResponse.status === 200 && requestUrl.origin === self.location.origin) {
+          const clonedResponse = networkResponse.clone();
           const cacheToOpen = caches.open(CACHE_NAME);
           event.waitUntil(
-            cacheToOpen.then((cache) => cache.put(event.request, networkResponse.clone()))
+            cacheToOpen.then((cache) => cache.put(event.request, clonedResponse))
           );
         }
         return networkResponse;
