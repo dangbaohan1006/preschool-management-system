@@ -424,6 +424,7 @@ export class AdminService {
       this.db.prepare('DELETE FROM audit_logs WHERE student_id = ?').bind(id),
       this.db.prepare('DELETE FROM trial_history WHERE id = ?').bind(id),
       this.db.prepare('DELETE FROM dropout_history WHERE id = ?').bind(id),
+      this.db.prepare('DELETE FROM student_status_requests WHERE student_id = ?').bind(id),
       this.db.prepare('DELETE FROM students WHERE id = ?').bind(id)
     ];
     return await this.db.batch(stmts);
