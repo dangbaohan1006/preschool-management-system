@@ -205,6 +205,31 @@ CREATE TABLE IF NOT EXISTS attendance_locks (
     is_locked INTEGER DEFAULT 1
 );
 
+-- 4c. STUDENT STATUS REQUESTS
+CREATE TABLE IF NOT EXISTS student_status_requests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id TEXT NOT NULL,
+    student_name TEXT NOT NULL,
+    class_id TEXT NOT NULL,
+    teacher_id TEXT NOT NULL,
+    teacher_name TEXT NOT NULL,
+    requested_status TEXT NOT NULL,
+    requested_tag TEXT,
+    requested_dropout_date TEXT,
+    requested_resumption_date TEXT,
+    note TEXT,
+    status TEXT NOT NULL DEFAULT 'PENDING',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    reviewed_by TEXT,
+    reviewed_at DATETIME,
+    review_note TEXT,
+    FOREIGN KEY (student_id) REFERENCES students(id),
+    FOREIGN KEY (class_id) REFERENCES classes(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_status_requests_student ON student_status_requests(student_id);
+CREATE INDEX IF NOT EXISTS idx_status_requests_status ON student_status_requests(status);
+
 -- 5. PERFORMANCE INDEXES
 CREATE INDEX IF NOT EXISTS idx_students_class ON students(class_id);
 CREATE INDEX IF NOT EXISTS idx_students_status ON students(status);

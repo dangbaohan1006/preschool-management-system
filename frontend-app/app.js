@@ -364,6 +364,10 @@ function renderStudents() {
                             <div class="text-[9px] font-black text-[#D3C9BD] uppercase tracking-widest flex items-center gap-2">
                                 <span>ID: ${s.id}</span>
                                 <span class="md:hidden">• ${s.birth_year || '----'}</span>
+                                <button onclick="openStatusRequestModal('${s.id}', '${s.name.replace(/'/g, "\\'")}', '${s.class_id}', '${s.tag || ''}', '${s.status || ''}')" 
+                                        class="ml-1 px-1.5 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-[#006C18] text-[8px] rounded font-bold ring-1 ring-emerald-200 flex items-center gap-1 transition-all active:scale-95">
+                                    ✏️ Tình trạng
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -718,3 +722,132 @@ async function updateHistory() {
         btn.innerText = originalText;
     }
 }
+
+// --- Đề xuất thay đổi trạng thái học sinh (Teacher status change requests) ---
+function openStatusRequestModal(id, name, classId, currentTag, currentStatus) {
+    if (!teacherInfo) return alert("Vui lòng đăng nhập trước khi thực hiện đề xuất!");
+    
+    document.getElementById('req-student-id').value = id;
+    document.getElementById('req-class-id').value = classId;
+    document.getElementById('req-student-name').value = name;
+    
+    // Đặt mặc định trạng thái và tag hiện tại của học sinh
+    document.getElementById('req-status').value = currentStatus || 'ACTIVE';
+    document.getElementById('req-tag').value = currentTag || '';
+    document.getElementById('req-note').value = '';
+    
+    // Init flatpickrs on modal
+    const dropoutInput = document.getElementById('req-dropout-date');
+    if (dropoutInput && !dropoutInput._flatpickr) {
+        flatpickr(dropoutInput, {
+            dateFormat: "d/m/Y",
+            locale: "vn",
+            defaultDate: "today",
+            allowInput: true
+        });
+    }
+    
+    const resumptionInput = document.getElementById('req-resumption-date');
+    if (resumptionInput && !resumptionInput._flatpickr) {
+        flatpickr(resumptionInput, {
+            dateFormat: "d/m/Y",
+            locale: "vn",
+            defaultDate: new Date(new Date().setDate(new Date().getDate() + 30)), // Mặc định hẹn 30 ngày sau
+            allowInput: true
+        });
+    }
+    
+    toggleRequestFields();
+    document.getElementById('modal-status-request').classList.remove('hidden');
+}
+
+function closeStatusRequestModal() {
+    document.getElementById('modal-status-request').classList.add('hidden');
+}
+
+function toggleRequestFields() {
+    const status = document.getElementById('req-status').value;
+    const tag = document.getElementById('req-tag').value;
+    
+    const dropoutSec = document.getElementById('req-dropout-section');
+    const resumptionSec = document.getElementById('req-resumption-section');
+    
+    // 1. Ràng buộc trường Ngày nghỉ học: DROPOUT hoặc PENALTY
+    if (status === 'DROPOUT' || status === 'PENALTY') {
+        dropoutSec.classList.remove('hidden');
+    } else {
+        dropoutSec.classList.add('hidden');
+    }
+    
+    // 2. Ràng buộc trường Ngày đi học lại: Tag === TEMPORARY_LEAVE
+    if (tag === 'TEMPORARY_LEAVE') {
+        resumptionSec.classList.remove('hidden');
+    } else {
+        resumptionSec.classList.add('hidden');
+    }
+}
+
+async function submitStatusRequest() {
+    const id = document.getElementById('req-student-id').value;
+    const name = document.getElementById('req-student-name').value;
+    const classId = document.getElementById('req-class-id').value;
+    const status = document.getElementById('req-status').value;
+    const tag = document.getElementById('req-tag').value || null;
+    const note = document.getElementById('req-note').value;
+    
+    const toISODate = (value) => {
+        if (!value) return null;
+        const parts = value.split('/');
+        if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        return value;
+    };
+    
+    let requested_dropout_date = null;
+    if (status === 'DROPOUT' || status === 'PENALTY') {
+        const rawDate = document.getElementById('req-dropout-date').value;
+        requested_dropout_date = toISODate(rawDate);
+        if (!requested_dropout_date) return alert("Vui lòng chọn ngày bắt đầu nghỉ học!");
+    }
+    
+    let requested_resumption_date = null;
+    if (tag === 'TEMPORARY_LEAVE') {
+        const rawDate = document.getElementById('req-resumption-date').value;
+        requested_resumption_date = toISODate(rawDate);
+        if (!requested_resumption_date) return alert("Vui lòng chọn ngày đi học lại dự kiến!");
+    }
+    
+    if (!note.trim()) return alert("Vui lòng nhập lý do thay đổi tình trạng học của bé!");
+    
+    if (!await sysConfirm(`Gửi đề xuất thay đổi trạng thái cho bé ${name} gửi Admin phê duyệt?`)) return;
+    
+    const payload = {
+        student_name: name,
+        class_id: classId,
+        teacher_id: teacherInfo.id,
+        teacher_name: teacherInfo.name,
+        requested_status: status,
+        requested_tag: tag,
+        requested_dropout_date,
+        requested_resumption_date,
+        note
+    };
+    
+    try {
+        const res = await fetch(`${API_URL_BASE}/teacher/students/${id}/status-request`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-api-key': SECRET_KEY },
+            body: JSON.stringify(payload)
+        });
+        
+        const data = await res.json();
+        if (data.success) {
+            alert(`Đã gửi đề xuất thay đổi tình trạng học của bé ${name} thành công. Vui lòng chờ Ban quản lý phê duyệt.`);
+            closeStatusRequestModal();
+        } else {
+            alert('Lỗi: ' + (data.error || 'Không thể gửi đề xuất.'));
+        }
+    } catch (e) {
+        alert('Lỗi kết nối máy chủ khi gửi đề xuất thay đổi trạng thái!');
+    }
+}
+

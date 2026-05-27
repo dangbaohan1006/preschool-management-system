@@ -613,6 +613,11 @@
                 class="nav-item w-full flex items-center gap-3 p-3 rounded-md font-bold text-xs transition-all">
                 Xóa / Khôi phục
             </button>
+            <button onclick="switchTab('requests')" id="btn-requests"
+                class="nav-item w-full flex items-center justify-between p-3 rounded-md font-bold text-xs transition-all relative">
+                <span>Duyệt yêu cầu</span>
+                <span id="requests-badge" class="hidden w-2 h-2 bg-rose-500 rounded-full animate-pulse ring-2 ring-[#006C18]"></span>
+            </button>
             <button onclick="switchTab('about')" id="btn-about"
                 class="nav-item w-full flex items-center gap-3 p-3 rounded-md font-bold text-xs transition-all">
                 Về phần mềm
@@ -1292,6 +1297,50 @@
                         <div id="locked-dates-list" class="space-y-2">
                             <div class="text-center text-[#D3C9BD] italic py-4">Đang tải...</div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Requests View (Duyệt yêu cầu thay đổi trạng thái) -->
+            <div id="view-requests" class="hidden space-y-4 mt-2">
+                <div class="bg-[#006C18] p-6 rounded-lg text-white flex flex-col lg:flex-row justify-between items-center gap-6 shadow-lg relative overflow-hidden">
+                    <div class="space-y-1 text-center lg:text-left relative z-10">
+                        <h2 class="text-xl font-black tracking-tight text-white">📝 Duyệt yêu cầu thay đổi tình trạng học</h2>
+                        <p class="text-[#FAEBCC] text-[9px] font-black uppercase tracking-widest opacity-80">Phê duyệt đề xuất chuyển trạng thái học sinh của giáo viên</p>
+                    </div>
+                    <div class="flex items-center gap-3 relative z-10">
+                        <select id="request-status-filter" onchange="loadStatusRequests()"
+                            class="bg-white/10 border border-white/20 rounded-md h-10 px-4 text-white text-xs font-bold outline-none focus:bg-white/20 transition-all cursor-pointer">
+                            <option value="PENDING" class="text-slate-900">Yêu cầu chờ duyệt</option>
+                            <option value="APPROVED" class="text-slate-900">Yêu cầu đã duyệt</option>
+                            <option value="REJECTED" class="text-slate-900">Yêu cầu bị từ chối</option>
+                            <option value="ALL" class="text-slate-900">Tất cả yêu cầu</option>
+                        </select>
+                        <button onclick="loadStatusRequests()"
+                            class="bg-[#FF8000] hover:bg-orange-600 h-10 px-6 rounded-md font-bold uppercase tracking-widest text-[10px] transition-all">Làm mới</button>
+                    </div>
+                </div>
+
+                <div class="card-layered overflow-hidden border border-[#eee] bg-white">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-[10px] uppercase tracking-widest text-[#D3C9BD] font-black border-b border-slate-200">
+                                    <th class="p-4 w-12 text-center">STT</th>
+                                    <th class="p-4">Học sinh</th>
+                                    <th class="p-4">Lớp hiện tại</th>
+                                    <th class="p-4">Người đề xuất</th>
+                                    <th class="p-4">Đề xuất thay đổi</th>
+                                    <th class="p-4">Lý do thay đổi</th>
+                                    <th class="p-4">Thời gian gửi</th>
+                                    <th class="p-4 text-center">Trạng thái duyệt</th>
+                                    <th class="p-4 text-right">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="requests-table-body" class="divide-y divide-slate-100 text-xs">
+                                <tr><td colspan="9" class="p-12 text-center text-slate-400 font-bold animate-pulse">⚙️ Đang tải danh sách đề xuất...</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -2464,7 +2513,7 @@
             }
 
             // Hide all views
-            ['dashboard', 'manage', 'calendar', 'report', 'locks', 'staff', 'finance', 'about', 'trash'].forEach(v => {
+            ['dashboard', 'manage', 'calendar', 'report', 'locks', 'requests', 'staff', 'finance', 'about', 'trash'].forEach(v => {
                 const view = document.getElementById(`view-${v}`);
                 const btn = document.getElementById(`btn-${v}`);
                 if (view) view.classList.add('hidden');
@@ -2500,6 +2549,7 @@
                 calendar: ['Cấu hình lịch học', 'Tùy chỉnh ngày nghỉ và ngày lễ'],
                 report: ['Báo cáo chi tiết', 'Tổng hợp kết quả theo tháng'],
                 locks: ['Khóa sổ điểm danh', 'Quản lý khóa điểm danh hàng ngày'],
+                requests: ['Phê duyệt đề xuất', 'Duyệt yêu cầu thay đổi tình trạng học sinh'],
                 staff: ['Nhân sự & Nhật ký', 'Quản lý tài khoản giáo viên và truy soát lịch sử'],
                 finance: ['Quản lý tài chính & Biểu phí', 'Cấu hình hoàn tiền và hóa đơn học sinh'],
                 about: ['Về phần mềm', 'Cấu hình thông tin nhận học phí & Giới thiệu phần mềm'],
@@ -2514,6 +2564,7 @@
             console.log(`[NAV] Tab switched to: ${tab}`);
             if (tab === 'dashboard') loadDashboard();
             if (tab === 'calendar') loadCalendar();
+            if (tab === 'requests') loadStatusRequests();
             if (tab === 'locks') {
                 loadLockedDates();
                 // Khởi tạo Flatpickr khi chuyển tab locks
@@ -2746,6 +2797,7 @@
                 calendar: 'tab_calendar',
                 report: 'tab_report',
                 locks: 'tab_locks',
+                requests: 'tab_locks',
                 finance: 'tab_finance',
                 staff: 'tab_staff'
             };
@@ -2754,7 +2806,7 @@
         }
 
         function renderSidebarPermissions() {
-            const tabs = ['dashboard', 'manage', 'calendar', 'report', 'locks', 'finance', 'staff', 'trash', 'about'];
+            const tabs = ['dashboard', 'manage', 'calendar', 'report', 'locks', 'requests', 'finance', 'staff', 'trash', 'about'];
             let firstAllowed = null;
             tabs.forEach(t => {
                 const btn = document.getElementById(`btn-${t}`);
@@ -2794,6 +2846,7 @@
             if (tab === 'manage') applyManageTabRestrictions();
             if (tab === 'finance') applyFinanceTabRestrictions();
             if (tab === 'locks') applyLocksTabRestrictions();
+            if (tab === 'requests') applyRequestsTabRestrictions();
             if (tab === 'staff') applyStaffTabRestrictions();
             if (tab === 'calendar') applyCalendarTabRestrictions();
         }
@@ -2867,6 +2920,15 @@
             document.querySelectorAll('#locked-dates-list button').forEach(b => b.classList.toggle('hidden', isRead));
             
             toggleReadModeWarning('view-locks', isRead);
+        }
+
+        function applyRequestsTabRestrictions() {
+            const access = getPermission('requests');
+            const isRead = access === 'READ';
+            
+            document.querySelectorAll('#requests-table-body button').forEach(b => b.classList.toggle('hidden', isRead));
+            
+            toggleReadModeWarning('view-requests', isRead);
         }
 
         function applyStaffTabRestrictions() {
@@ -3152,6 +3214,13 @@
             } else {
                 showToast("Tài khoản của bạn không có bất kỳ quyền truy cập nào trên hệ thống!", "error");
             }
+
+            // Initial requests badge count update
+            updateRequestsBadge();
+            
+            // Set periodic request updates every 3 minutes (180000ms)
+            if (window.requestsInterval) clearInterval(window.requestsInterval);
+            window.requestsInterval = setInterval(updateRequestsBadge, 180000);
         }
 
         // --- FINANCE LOGIC (NEW) ---
@@ -9045,6 +9114,198 @@
                 }
             } catch (e) {
                 console.error('Error unlocking date:', e);
+                showToast('Lỗi kết nối máy chủ!', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // ===== Đề xuất thay đổi tình trạng học sinh (Status Requests) =====
+        async function updateRequestsBadge() {
+            if (!currentUser) return;
+            const access = getPermission('requests');
+            if (access === 'NONE') {
+                const badge = document.getElementById('requests-badge');
+                if (badge) badge.classList.add('hidden');
+                return;
+            }
+            try {
+                const res = await fetch(`${API_BASE}/admin/status-requests?status=PENDING`, {
+                    headers: { 'x-api-key': SECRET }
+                });
+                const data = await res.json();
+                const pendingCount = (data.results || []).length;
+                const badge = document.getElementById('requests-badge');
+                if (badge) {
+                    if (pendingCount > 0) {
+                        badge.classList.remove('hidden');
+                        badge.innerText = pendingCount;
+                        badge.className = "flex items-center justify-center min-w-[16px] h-4 px-1 text-[9px] font-extrabold text-white bg-rose-500 rounded-full animate-pulse ring-2 ring-[#006C18] shadow-lg shadow-rose-200";
+                    } else {
+                        badge.classList.add('hidden');
+                    }
+                }
+            } catch (e) {
+                console.error("Lỗi cập nhật badge yêu cầu:", e);
+            }
+        }
+
+        async function loadStatusRequests() {
+            const filter = document.getElementById('request-status-filter').value;
+            const tbody = document.getElementById('requests-table-body');
+            if (!tbody) return;
+
+            tbody.innerHTML = `<tr><td colspan="9" class="p-12 text-center text-slate-400 font-bold animate-pulse">⚙️ Đang tải danh sách đề xuất...</td></tr>`;
+
+            try {
+                const res = await fetch(`${API_BASE}/admin/status-requests?status=${filter}`, {
+                    headers: { 'x-api-key': SECRET }
+                });
+                const data = await res.json();
+                const requests = data.results || [];
+
+                if (requests.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="9" class="p-12 text-center text-slate-400 font-medium italic">Không có đề xuất nào được tìm thấy.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = requests.map((req, index) => {
+                    const statusLabels = {
+                        ACTIVE: '<span class="px-2 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-black rounded-lg ring-1 ring-emerald-100 uppercase tracking-wider">Đang học (ACTIVE)</span>',
+                        DROPOUT: '<span class="px-2 py-1 bg-rose-50 text-rose-700 text-[10px] font-black rounded-lg ring-1 ring-rose-100 uppercase tracking-wider">Nghỉ hẳn (DROPOUT)</span>',
+                        PENALTY: '<span class="px-2 py-1 bg-amber-50 text-amber-700 text-[10px] font-black rounded-lg ring-1 ring-amber-100 uppercase tracking-wider">Treo sĩ số (PENALTY)</span>',
+                        TEMPORARY_LEAVE: '<span class="px-2 py-1 bg-sky-50 text-sky-700 text-[10px] font-black rounded-lg ring-1 ring-sky-100 uppercase tracking-wider">Bảo lưu (TEMPORARY_LEAVE)</span>'
+                    };
+                    const reqStatusHTML = statusLabels[req.requested_status] || req.requested_status;
+
+                    let detailsHTML = '';
+                    if (req.requested_tag) {
+                        const tagLabels = {
+                            TRIAL: 'Học thử (TRIAL)',
+                            HANGING: 'Treo sĩ số (HANGING)',
+                            TEMPORARY_LEAVE: 'Nghỉ tạm thời (TEMPORARY_LEAVE)'
+                        };
+                        detailsHTML += `<div class="mt-1"><span class="px-1.5 py-0.5 bg-indigo-50 text-indigo-600 text-[9px] font-bold rounded border border-indigo-100">Tag: ${tagLabels[req.requested_tag] || req.requested_tag}</span></div>`;
+                    }
+                    if (req.requested_dropout_date) {
+                        const dateFormatted = req.requested_dropout_date.split('-').reverse().join('/');
+                        detailsHTML += `<div class="mt-1 text-[10px] text-orange-600 font-bold">📅 Ngày nghỉ: ${dateFormatted}</div>`;
+                    }
+                    if (req.requested_resumption_date) {
+                        const dateFormatted = req.requested_resumption_date.split('-').reverse().join('/');
+                        detailsHTML += `<div class="mt-1 text-[10px] text-blue-600 font-bold">📅 Ngày đi học lại: ${dateFormatted}</div>`;
+                    }
+
+                    const createdDate = new Date(req.created_at).toLocaleString('vi-VN');
+
+                    const requestStatusBadges = {
+                        PENDING: '<span class="px-2 py-1 bg-orange-100 text-orange-700 text-[10px] font-black rounded-full uppercase tracking-widest animate-pulse">Chờ duyệt</span>',
+                        APPROVED: `<div class="flex flex-col items-center"><span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-black rounded-full uppercase tracking-widest">Đã duyệt</span><span class="text-[9px] text-slate-400 mt-1 font-semibold">Bởi: ${req.reviewed_by}</span></div>`,
+                        REJECTED: `<div class="flex flex-col items-center"><span class="px-2 py-0.5 bg-rose-100 text-rose-800 text-[10px] font-black rounded-full uppercase tracking-widest">Từ chối</span><span class="text-[9px] text-slate-400 mt-1 font-semibold">Bởi: ${req.reviewed_by}</span></div>`
+                    };
+                    const approvalStatusHTML = requestStatusBadges[req.status] || req.status;
+
+                    let noteHTML = `<div class="text-slate-700 font-bold max-w-[200px] break-words whitespace-pre-wrap">${req.note || '-'}</div>`;
+                    if (req.review_note) {
+                        noteHTML += `<div class="mt-2 p-2 bg-slate-50 border border-slate-200 rounded text-[10px] text-slate-500 font-medium"><strong>Phản hồi:</strong> ${req.review_note}</div>`;
+                    }
+
+                    let actionsHTML = '';
+                    if (req.status === 'PENDING') {
+                        actionsHTML = `
+                            <div class="flex items-center justify-end gap-2">
+                                <button onclick="reviewStatusRequest(${req.id}, 'APPROVED', '${req.student_name.replace(/'/g, "\\'")}')"
+                                    class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[10px] rounded-lg shadow-sm hover:shadow-md transition-all uppercase tracking-wider flex items-center gap-1 active:scale-95">
+                                    <span>✓</span> Phê duyệt
+                                </button>
+                                <button onclick="reviewStatusRequest(${req.id}, 'REJECTED', '${req.student_name.replace(/'/g, "\\'")}')"
+                                    class="px-3 py-1.5 bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-[10px] rounded-lg shadow-sm hover:shadow-md transition-all uppercase tracking-wider flex items-center gap-1 active:scale-95">
+                                    <span>✗</span> Từ chối
+                                </button>
+                            </div>
+                        `;
+                    } else {
+                        actionsHTML = '<span class="text-slate-400 font-bold italic text-[10px]">Đã xử lý</span>';
+                    }
+
+                    return `
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="p-4 text-center font-bold text-slate-400">${index + 1}</td>
+                            <td class="p-4">
+                                <div class="font-black text-[#006C18] text-sm">${req.student_name}</div>
+                                <div class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">ID: ${req.student_id}</div>
+                            </td>
+                            <td class="p-4 font-bold text-slate-600">${req.class_id}</td>
+                            <td class="p-4">
+                                <div class="font-bold text-slate-700 text-xs">${req.teacher_name}</div>
+                                <div class="text-[9px] text-slate-400 font-semibold uppercase tracking-widest">ID: ${req.teacher_id}</div>
+                            </td>
+                            <td class="p-4">
+                                <div>${reqStatusHTML}</div>
+                                ${detailsHTML}
+                            </td>
+                            <td class="p-4">${noteHTML}</td>
+                            <td class="p-4 text-[10px] font-semibold text-slate-400">${createdDate}</td>
+                            <td class="p-4 text-center">${approvalStatusHTML}</td>
+                            <td class="p-4 text-right">${actionsHTML}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+                applyRequestsTabRestrictions();
+                updateRequestsBadge();
+            } catch (e) {
+                console.error("Lỗi tải danh sách đề xuất:", e);
+                tbody.innerHTML = `<tr><td colspan="9" class="p-12 text-center text-rose-500 font-bold">Lỗi tải dữ liệu từ máy chủ! Vui lòng thử lại.</td></tr>`;
+            }
+        }
+
+        async function reviewStatusRequest(requestId, action, studentName) {
+            if (!currentUser) return;
+            const access = getPermission('requests');
+            if (access !== 'WRITE') {
+                showToast("Tài khoản của bạn không có quyền phê duyệt yêu cầu!", "error");
+                return;
+            }
+
+            const actionLabel = action === 'APPROVED' ? 'phê duyệt' : 'từ chối';
+            let reviewNote = null;
+
+            if (action === 'REJECTED') {
+                reviewNote = prompt(`Vui lòng nhập lý do từ chối yêu cầu của bé ${studentName}:`);
+                if (reviewNote === null) return;
+                if (!reviewNote.trim()) {
+                    showToast("Bắt buộc nhập lý do từ chối!", "error");
+                    return;
+                }
+            } else {
+                if (!await sysConfirm(`Bạn có chắc chắn muốn PHÊ DUYỆT yêu cầu đổi tình trạng học của bé ${studentName}? Hệ thống sẽ cập nhật trạng thái học tập chính thức.`)) {
+                    return;
+                }
+            }
+
+            showLoading(`Đang xử lý ${actionLabel} yêu cầu...`);
+            try {
+                const res = await fetch(`${API_BASE}/admin/status-requests/${requestId}/review`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-api-key': SECRET },
+                    body: JSON.stringify({
+                        action: action,
+                        admin_name: currentUser.name,
+                        review_note: reviewNote ? reviewNote.trim() : null
+                    })
+                });
+
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    showToast(`Đã ${actionLabel} yêu cầu đổi tình trạng học của bé ${studentName} thành công!`, 'success');
+                    loadStatusRequests();
+                    updateRequestsBadge();
+                } else {
+                    showToast(data.error || `Có lỗi khi ${actionLabel} yêu cầu`, 'error');
+                }
+            } catch (e) {
+                console.error(`Error reviewing status request:`, e);
                 showToast('Lỗi kết nối máy chủ!', 'error');
             } finally {
                 hideLoading();

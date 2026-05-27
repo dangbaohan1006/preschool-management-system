@@ -467,6 +467,126 @@ export class AdminService {
     }
     return { count: results?.length || 0 };
   }
+
+  // --- Student Status Requests (Đề xuất thay đổi trạng thái của Giáo viên) ---
+  async createStatusRequest(data: {
+    student_id: string,
+    student_name: string,
+    class_id: string,
+    teacher_id: string,
+    teacher_name: string,
+    requested_status: string,
+    requested_tag: string | null,
+    requested_dropout_date: string | null,
+    requested_resumption_date: string | null,
+    note?: string
+  }) {
+    return await this.db.prepare(
+      'INSERT INTO student_status_requests (student_id, student_name, class_id, teacher_id, teacher_name, requested_status, requested_tag, requested_dropout_date, requested_resumption_date, note, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "PENDING")'
+    ).bind(
+      data.student_id,
+      data.student_name,
+      data.class_id,
+      data.teacher_id,
+      data.teacher_name,
+      data.requested_status,
+      data.requested_tag || null,
+      data.requested_dropout_date || null,
+      data.requested_resumption_date || null,
+      data.note || ''
+    ).run();
+  }
+
+  async getStatusRequests(statusFilter: string = 'PENDING') {
+    let query = `
+      SELECT r.*, c.name as class_name
+      FROM student_status_requests r
+      LEFT JOIN classes c ON r.class_id = c.id
+    `;
+    const params: any[] = [];
+    if (statusFilter !== 'ALL') {
+      query += ' WHERE r.status = ?';
+      params.push(statusFilter);
+    }
+    query += ' ORDER BY r.created_at DESC';
+    const { results } = await this.db.prepare(query).bind(...params).all<any>();
+    return results;
+  }
+
+  async reviewStatusRequest(requestId: number, action: 'APPROVED' | 'REJECTED', adminName: string, reviewNote: string = '') {
+    const request = await this.db.prepare('SELECT * FROM student_status_requests WHERE id = ?').bind(requestId).first<any>();
+    if (!request) throw new Error('Yêu cầu không tồn tại');
+    if (request.status !== 'PENDING') throw new Error('Yêu cầu này đã được xử lý trước đó');
+
+    const updateReqStmt = this.db.prepare(
+      'UPDATE student_status_requests SET status = ?, reviewed_by = ?, reviewed_at = CURRENT_TIMESTAMP, review_note = ? WHERE id = ?'
+    ).bind(action, adminName, reviewNote, requestId);
+
+    const stmts = [updateReqStmt];
+
+    if (action === 'APPROVED') {
+      // Cập nhật học sinh
+      const fields = [];
+      const values = [];
+
+      fields.push('status = ?');
+      values.push(request.requested_status);
+
+      fields.push('tag = ?');
+      values.push(request.requested_tag || null);
+
+      if (request.requested_status === 'DROPOUT' || request.requested_status === 'PENALTY') {
+        fields.push('dropout_date = ?');
+        values.push(request.requested_dropout_date || null);
+        
+        // Nếu chuyển sang DROPOUT -> Xóa các Tag đi kèm và chuyển lớp thành "DROPOUT"
+        if (request.requested_status === 'DROPOUT') {
+          fields.push('tag = NULL');
+          fields.push('tag_expiry = NULL');
+          fields.push('class_id = "DROPOUT"');
+        }
+      } else {
+        fields.push('dropout_date = NULL');
+      }
+
+      if (request.requested_tag === 'TEMPORARY_LEAVE') {
+        fields.push('resumption_date = ?');
+        values.push(request.requested_resumption_date || null);
+      } else {
+        fields.push('resumption_date = NULL');
+      }
+
+      // Xử lý các tag hết hạn hoặc tag_expiry khác nếu có
+      if (request.requested_tag === 'TRIAL') {
+        fields.push('tag_expiry = date("now", "+7 days")');
+      } else if (request.requested_tag === 'HANGING') {
+        fields.push('tag_expiry = date("now", "+2 months")');
+      } else if (!request.requested_tag) {
+        fields.push('tag_expiry = NULL');
+      }
+
+      values.push(request.student_id);
+      const updateStudentStmt = this.db.prepare(
+        `UPDATE students SET ${fields.join(', ')} WHERE id = ?`
+      ).bind(...values);
+
+      stmts.push(updateStudentStmt);
+
+      // Thêm log hệ thống
+      const logDetails = `Admin ${adminName} duyệt yêu cầu đổi trạng thái của GV ${request.teacher_name} cho bé ${request.student_name} sang ${request.requested_status} (Tag: ${request.requested_tag || 'Không'}). Ghi chú duyệt: ${reviewNote || 'Không có'}`;
+      stmts.push(this.db.prepare(
+        'INSERT INTO audit_logs (teacher_id, teacher_name, action, student_id, student_name, details) VALUES (?, ?, ?, ?, ?, ?)'
+      ).bind('ADMIN', adminName, `DUYỆT YÊU CẦU: ${request.requested_status}`, request.student_id, request.student_name, logDetails));
+    } else {
+      // Từ chối (REJECTED) -> Chỉ cần ghi audit log
+      const logDetails = `Admin ${adminName} từ chối yêu cầu đổi trạng thái của GV ${request.teacher_name} cho bé ${request.student_name} sang ${request.requested_status}. Ghi chú từ chối: ${reviewNote || 'Không có'}`;
+      stmts.push(this.db.prepare(
+        'INSERT INTO audit_logs (teacher_id, teacher_name, action, student_id, student_name, details) VALUES (?, ?, ?, ?, ?, ?)'
+      ).bind('ADMIN', adminName, `TỪ CHỐI YÊU CẦU`, request.student_id, request.student_name, logDetails));
+    }
+
+    return await this.db.batch(stmts);
+  }
 }
 
 export class AuthService {

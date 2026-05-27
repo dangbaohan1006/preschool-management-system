@@ -224,6 +224,45 @@ app.post('/api/admin/students/clear-tag', async (c) => {
   }
 });
 
+// 1b. Student Status Change Requests (Teacher to Admin workflow)
+app.post('/api/teacher/students/:id/status-request', async (c) => {
+  const studentId = c.req.param('id');
+  const payload = await c.req.json();
+  const { admin } = getServices(c.env.DB);
+  try {
+    const result = await admin.createStatusRequest({
+      student_id: studentId,
+      ...payload
+    });
+    return c.json({ success: true, result });
+  } catch (err: any) {
+    return c.json({ error: err.message }, 400);
+  }
+});
+
+app.get('/api/admin/status-requests', async (c) => {
+  const statusFilter = c.req.query('status') || 'PENDING';
+  const { admin } = getServices(c.env.DB);
+  try {
+    const results = await admin.getStatusRequests(statusFilter);
+    return c.json({ results });
+  } catch (err: any) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+app.post('/api/admin/status-requests/:id/review', async (c) => {
+  const requestId = parseInt(c.req.param('id'));
+  const { action, admin_name, review_note } = await c.req.json();
+  const { admin } = getServices(c.env.DB);
+  try {
+    await admin.reviewStatusRequest(requestId, action, admin_name || 'Admin', review_note);
+    return c.json({ success: true });
+  } catch (err: any) {
+    return c.json({ error: err.message }, 400);
+  }
+});
+
 // 2. Attendance & Reporting
 app.post('/api/admin/attendance', async (c) => {
   const body = await c.req.json();
