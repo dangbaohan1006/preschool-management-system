@@ -13,10 +13,10 @@ let originalHistory = []; // Bản sao để so sánh diff
 function showToast(message, type = 'success') {
     let container = document.getElementById('toast-container');
     if (!container) return console.log("Toast:", message);
-    
+
     const titles = { success: 'Thành công', error: 'Lỗi', warning: 'Cảnh báo' };
     const icons = { success: '✅', error: '❌', warning: '⚠️' };
-    
+
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     toast.innerHTML = `
@@ -26,7 +26,7 @@ function showToast(message, type = 'success') {
             <div class="toast-message">${message}</div>
         </div>
     `;
-    
+
     container.appendChild(toast);
     setTimeout(() => toast.classList.add('show'), 100);
     setTimeout(() => {
@@ -61,11 +61,11 @@ async function isDateLocked(dateStr) {
 
 // Override native alert
 window.alert = (msg) => {
-    const isError = msg.toLowerCase().includes('lỗi') || 
-                    msg.toLowerCase().includes('không') || 
-                    msg.toLowerCase().includes('sai') ||
-                    msg.toLowerCase().includes('fail') ||
-                    msg.toLowerCase().includes('unauthorized');
+    const isError = msg.toLowerCase().includes('lỗi') ||
+        msg.toLowerCase().includes('không') ||
+        msg.toLowerCase().includes('sai') ||
+        msg.toLowerCase().includes('fail') ||
+        msg.toLowerCase().includes('unauthorized');
     showToast(msg, isError ? 'error' : 'success');
 };
 
@@ -76,17 +76,17 @@ function sysConfirm(message) {
         const msgEl = document.getElementById('sys-confirm-message');
         const okBtn = document.getElementById('sys-confirm-ok');
         const cancelBtn = document.getElementById('sys-confirm-cancel');
-        
+
         msgEl.innerText = message;
         modal.classList.remove('hidden');
-        
+
         const cleanup = (val) => {
             modal.classList.add('hidden');
             okBtn.onclick = null;
             cancelBtn.onclick = null;
             resolve(val);
         };
-        
+
         okBtn.onclick = () => cleanup(true);
         cancelBtn.onclick = () => cleanup(false);
     });
@@ -148,7 +148,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         disableMobile: "true", // Force custom picker on mobile
         onChange: () => fetchStudents() // Reload students when date changes
     };
-    
+
     const dateInput = flatpickr("#date-input", fpConfig);
     const historyDateInput = flatpickr("#history-date-input", fpConfig);
 
@@ -218,12 +218,12 @@ async function fetchStudents() {
     const select = document.getElementById('class-select');
     if (!select) return;
     const classId = select.value;
-    
+
     try {
         // Get current attendance date and convert to YYYY-MM-DD format
         const dateInput = document.getElementById('date-input');
         let dateVal = dateInput.value;
-        
+
         // Nếu input trống, lấy ngày hiện tại (phòng trường hợp Flatpickr chưa init xong)
         if (!dateVal) {
             const now = new Date();
@@ -252,11 +252,11 @@ async function fetchStudents() {
         url.searchParams.append('class_id', classId);
         url.searchParams.append('include_leave', 'false');
         if (asOfDate) url.searchParams.append('as_of_date', asOfDate);
-        
+
         const res = await fetch(url.toString(), { headers: { 'x-api-key': SECRET_KEY } });
         const data = await res.json();
-        students = data.results.filter(s => s.tag !== 'TEMPORARY_LEAVE').map(s => ({ 
-            ...s, 
+        students = data.results.filter(s => s.tag !== 'TEMPORARY_LEAVE').map(s => ({
+            ...s,
             status: s.tag === 'HANGING' ? 'ABSENT' : 'PRESENT',
             note: s.tag === 'HANGING' ? '[Tự động] Nghỉ luôn' : ''
         }));
@@ -317,7 +317,7 @@ async function loginTeacher(data, isRestore = false) {
     document.getElementById('main-content').style.display = 'block';
     document.getElementById('submit-btn-container').style.display = 'flex';
     if (document.getElementById('history-btn')) document.getElementById('history-btn').classList.remove('hidden');
-    
+
     // Show logout button
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) logoutBtn.classList.remove('hidden');
@@ -338,7 +338,7 @@ async function loginTeacher(data, isRestore = false) {
     if (teacherInfo.is_first_login) {
         document.getElementById('modal-change-pass').classList.remove('hidden');
     } else {
-        renderStudents(); 
+        renderStudents();
     }
 }
 
@@ -419,7 +419,7 @@ function updateNote(id, note) {
 async function handleSubmit() {
     const date = document.getElementById('date-input').value;
     if (!teacherInfo) return alert("Vui lòng đăng nhập trước!");
-    
+
     // Kiểm tra khóa sổ một lần nữa trước khi hiện modal (Admin bypasses lock)
     const isLocked = (teacherInfo && (teacherInfo.class_id === 'MANAGEMENT' || teacherInfo.id === 'admin')) ? false : await isDateLocked(date);
     if (isLocked) {
@@ -532,7 +532,7 @@ function closeHistoryModal() {
 async function loadHistory() {
     const date = document.getElementById('history-date-input').value;
     const classId = (teacherInfo?.class_id && teacherInfo.class_id !== 'MANAGEMENT' && teacherInfo.id !== 'admin') ? teacherInfo.class_id : document.getElementById('class-select').value;
-    
+
     if (!date) return alert("Vui lòng chọn ngày!");
 
     const toISODate = (value) => {
@@ -540,7 +540,7 @@ async function loadHistory() {
         if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
         return value;
     };
-    
+
     const tbody = document.getElementById('history-table-body');
     tbody.innerHTML = `<tr><td colspan="4" class="p-12 text-center text-slate-400 font-bold">ĐANG TẢI...</td></tr>`;
 
@@ -552,20 +552,20 @@ async function loadHistory() {
         const studentsData = await studentsRes.json();
         const classStudents = studentsData.results;
 
-        const res = await fetch(`${API_URL_BASE}/admin/report/class-grid?start_date=${date}&end_date=${date}&class_id=${classId}&t=${Date.now()}`, { 
-            headers: { 'x-api-key': SECRET_KEY } 
+        const res = await fetch(`${API_URL_BASE}/admin/report/class-grid?start_date=${date}&end_date=${date}&class_id=${classId}&t=${Date.now()}`, {
+            headers: { 'x-api-key': SECRET_KEY }
         });
         const data = await res.json();
-        
+
         historyData = classStudents.filter(s => s.tag !== 'TEMPORARY_LEAVE').map(s => {
             // Robust matching: trim and case-insensitive (just in case)
-            const record = (data.results || []).find(r => 
+            const record = (data.results || []).find(r =>
                 String(r.student_id).trim() === String(s.id).trim()
             );
             return {
                 id: s.id,
                 name: s.name,
-                tag: s.tag, 
+                tag: s.tag,
                 status: record ? record.status : (s.tag === 'HANGING' ? 'ABSENT' : 'PRESENT'),
                 note: record ? record.details || '' : (s.tag === 'HANGING' ? '[Tự động] Nghỉ luôn' : ''),
                 exists: !!record
@@ -574,7 +574,7 @@ async function loadHistory() {
 
         originalHistory = JSON.parse(JSON.stringify(historyData));
         renderHistory();
-        
+
         const updateBtn = document.getElementById('history-update-btn');
         if (isLocked) {
             updateBtn.disabled = true;
@@ -726,7 +726,7 @@ async function updateHistory() {
 // --- Đề xuất thay đổi trạng thái học sinh (Teacher status change requests) ---
 async function openClassStatusModal() {
     if (!teacherInfo) return alert("Vui lòng đăng nhập trước khi thực hiện đề xuất!");
-    
+
     const select = document.getElementById('class-select');
     if (!select) return;
     const classId = select.value;
@@ -739,7 +739,7 @@ async function openClassStatusModal() {
     // Reset view modes in modal
     document.getElementById('status-request-list-container').classList.remove('hidden');
     document.getElementById('status-request-form').classList.add('hidden');
-    
+
     document.getElementById('status-modal-title').innerText = "Tình trạng học sinh";
     document.getElementById('status-modal-subtitle').innerText = "Danh sách tình trạng lớp học";
 
@@ -748,10 +748,10 @@ async function openClassStatusModal() {
     try {
         const url = new URL(`${API_URL_BASE}/admin/students`, 'http://localhost');
         url.searchParams.append('class_id', classId);
-        
+
         const res = await fetch(url.toString(), { headers: { 'x-api-key': SECRET_KEY } });
         const data = await res.json();
-        
+
         const allStudents = data.results || [];
         if (allStudents.length === 0) {
             listContainer.innerHTML = '<div class="text-center py-6 text-xs text-slate-400 font-bold">Không có học sinh trong lớp này.</div>';
@@ -785,7 +785,7 @@ async function openClassStatusModal() {
                 </div>
             `;
         });
-        
+
         listContainer.innerHTML = html;
     } catch (e) {
         console.error("Lỗi khi tải danh sách đề xuất tình trạng:", e);
@@ -804,14 +804,14 @@ function openStudentStatusForm(id, name, classId, currentTag, currentStatus) {
     document.getElementById('req-student-id').value = id;
     document.getElementById('req-class-id').value = classId;
     document.getElementById('req-student-name').value = name;
-    
+
     // Đặt mặc định tag hiện tại của học sinh
     document.getElementById('req-tag').value = currentTag || '';
     document.getElementById('req-note').value = '';
-    
+
     const durationInput = document.getElementById('req-trial-duration');
     if (durationInput) durationInput.value = '';
-    
+
     // Init flatpickrs on modal
     const dropoutInput = document.getElementById('req-dropout-date');
     if (dropoutInput && !dropoutInput._flatpickr) {
@@ -822,7 +822,7 @@ function openStudentStatusForm(id, name, classId, currentTag, currentStatus) {
             allowInput: true
         });
     }
-    
+
     const resumptionInput = document.getElementById('req-resumption-date');
     if (resumptionInput && !resumptionInput._flatpickr) {
         flatpickr(resumptionInput, {
@@ -832,9 +832,9 @@ function openStudentStatusForm(id, name, classId, currentTag, currentStatus) {
             allowInput: true
         });
     }
-    
+
     toggleRequestFields();
-    
+
     document.getElementById('status-request-list-container').classList.add('hidden');
     document.getElementById('status-request-form').classList.remove('hidden');
 }
@@ -845,32 +845,32 @@ function closeStatusRequestModal() {
 
 function toggleRequestFields() {
     const tag = document.getElementById('req-tag').value;
-    
+
     const dropoutSec = document.getElementById('req-dropout-section');
     const dropoutLabel = document.getElementById('req-dropout-label');
     const trialDurationSec = document.getElementById('req-trial-duration-section');
     const resumptionSec = document.getElementById('req-resumption-section');
     const resumptionLabel = document.getElementById('req-resumption-label');
-    
+
     if (tag === 'TRIAL') {
         // Học thử
         dropoutSec.classList.remove('hidden');
-        if (dropoutLabel) dropoutLabel.innerText = "Ngày bắt đầu học thử (bắt buộc)";
+        if (dropoutLabel) dropoutLabel.innerText = "Ngày bắt đầu học thử ";
         trialDurationSec.classList.remove('hidden');
         resumptionSec.classList.add('hidden');
     } else if (tag === 'HANGING') {
         // Nghỉ luôn
         dropoutSec.classList.remove('hidden');
-        if (dropoutLabel) dropoutLabel.innerText = "Ngày bắt đầu nghỉ luôn (bắt buộc)";
+        if (dropoutLabel) dropoutLabel.innerText = "Ngày bắt đầu nghỉ";
         trialDurationSec.classList.add('hidden');
         resumptionSec.classList.add('hidden');
     } else if (tag === 'TEMPORARY_LEAVE') {
         // Nghỉ tạm thời
         dropoutSec.classList.remove('hidden');
-        if (dropoutLabel) dropoutLabel.innerText = "Ngày bắt đầu nghỉ (bắt buộc)";
+        if (dropoutLabel) dropoutLabel.innerText = "Ngày bắt đầu nghỉ";
         trialDurationSec.classList.add('hidden');
         resumptionSec.classList.remove('hidden');
-        if (resumptionLabel) resumptionLabel.innerText = "Ngày đi học lại dự kiến (không bắt buộc)";
+        if (resumptionLabel) resumptionLabel.innerText = "Ngày đi học lại dự kiến";
     } else {
         // Không áp dụng (Chính thức)
         dropoutSec.classList.add('hidden');
@@ -885,29 +885,29 @@ async function submitStatusRequest() {
     const classId = document.getElementById('req-class-id').value;
     const tag = document.getElementById('req-tag').value || null;
     const note = document.getElementById('req-note').value;
-    
+
     const toISODate = (value) => {
         if (!value) return null;
         const parts = value.split('/');
         if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
         return value;
     };
-    
+
     let requested_dropout_date = null;
     let requested_resumption_date = null;
-    
+
     if (tag) {
         const rawStartDate = document.getElementById('req-dropout-date').value;
         requested_dropout_date = toISODate(rawStartDate);
-        
+
         if (!requested_dropout_date) {
             let errorMsg = "Vui lòng chọn ngày bắt đầu!";
             if (tag === 'TRIAL') errorMsg = "Vui lòng chọn ngày bắt đầu học thử!";
-            if (tag === 'HANGING') errorMsg = "Vui lòng chọn ngày bắt đầu nghỉ luôn!";
+            if (tag === 'HANGING') errorMsg = "Vui lòng chọn ngày bắt đầu nghỉ!";
             if (tag === 'TEMPORARY_LEAVE') errorMsg = "Vui lòng chọn ngày bắt đầu nghỉ!";
             return alert(errorMsg);
         }
-        
+
         if (tag === 'TRIAL') {
             const durationVal = document.getElementById('req-trial-duration').value;
             if (durationVal) {
@@ -920,11 +920,11 @@ async function submitStatusRequest() {
             requested_resumption_date = toISODate(rawResumptionDate);
         }
     }
-    
+
     if (!note.trim()) return alert("Vui lòng nhập lý do thay đổi tình trạng học của bé!");
-    
+
     if (!await sysConfirm(`Gửi đề xuất thay đổi trạng thái cho bé ${name} gửi Admin phê duyệt?`)) return;
-    
+
     const payload = {
         student_name: name,
         class_id: classId,
@@ -936,14 +936,14 @@ async function submitStatusRequest() {
         requested_resumption_date,
         note
     };
-    
+
     try {
         const res = await fetch(`${API_URL_BASE}/teacher/students/${id}/status-request`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-api-key': SECRET_KEY },
             body: JSON.stringify(payload)
         });
-        
+
         const data = await res.json();
         if (data.success) {
             alert(`Đã gửi đề xuất thay đổi tình trạng học của bé ${name} thành công. Vui lòng chờ Ban quản lý phê duyệt.`);
