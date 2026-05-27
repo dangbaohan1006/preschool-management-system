@@ -189,6 +189,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const historyBtn = document.getElementById('history-btn');
     if (historyBtn) historyBtn.addEventListener('click', openHistoryModal);
 
+    // Class Status button
+    const classStatusBtn = document.getElementById('class-status-btn');
+    if (classStatusBtn) classStatusBtn.addEventListener('click', openClassStatusModal);
+
     // Set default history date
     // No manual value set needed for flatpickr inputs
     // document.getElementById('history-date-input').value = `${YYYY}-${MM}-${DD}`;
@@ -364,10 +368,6 @@ function renderStudents() {
                             <div class="text-[9px] font-black text-[#D3C9BD] uppercase tracking-widest flex items-center gap-2">
                                 <span>ID: ${s.id}</span>
                                 <span class="md:hidden">• ${s.birth_year || '----'}</span>
-                                <button onclick="openStatusRequestModal('${s.id}', '${s.name.replace(/'/g, "\\'")}', '${s.class_id}', '${s.tag || ''}', '${s.status || ''}')" 
-                                        class="ml-1 px-1.5 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-[#006C18] text-[8px] rounded font-bold ring-1 ring-emerald-200 flex items-center gap-1 transition-all active:scale-95">
-                                    ✏️ Tình trạng
-                                </button>
                             </div>
                         </div>
                     </div>
@@ -724,9 +724,83 @@ async function updateHistory() {
 }
 
 // --- Đề xuất thay đổi trạng thái học sinh (Teacher status change requests) ---
-function openStatusRequestModal(id, name, classId, currentTag, currentStatus) {
+async function openClassStatusModal() {
     if (!teacherInfo) return alert("Vui lòng đăng nhập trước khi thực hiện đề xuất!");
     
+    const select = document.getElementById('class-select');
+    if (!select) return;
+    const classId = select.value;
+
+    const listContainer = document.getElementById('status-request-students-list');
+    if (listContainer) {
+        listContainer.innerHTML = '<div class="text-center py-6 text-xs text-slate-400 font-bold">Đang tải danh sách học sinh...</div>';
+    }
+
+    // Reset view modes in modal
+    document.getElementById('status-request-list-container').classList.remove('hidden');
+    document.getElementById('status-request-form').classList.add('hidden');
+    
+    document.getElementById('status-modal-title').innerText = "Tình trạng học sinh";
+    document.getElementById('status-modal-subtitle').innerText = "Danh sách tình trạng lớp học";
+
+    document.getElementById('modal-status-request').classList.remove('hidden');
+
+    try {
+        const url = new URL(`${API_URL_BASE}/admin/students`, 'http://localhost');
+        url.searchParams.append('class_id', classId);
+        
+        const res = await fetch(url.toString(), { headers: { 'x-api-key': SECRET_KEY } });
+        const data = await res.json();
+        
+        const allStudents = data.results || [];
+        if (allStudents.length === 0) {
+            listContainer.innerHTML = '<div class="text-center py-6 text-xs text-slate-400 font-bold">Không có học sinh trong lớp này.</div>';
+            return;
+        }
+
+        let html = '';
+        allStudents.forEach(s => {
+            let tagBadge = '';
+            if (s.tag === 'TRIAL') {
+                tagBadge = '<span class="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[8px] rounded font-black ring-1 ring-amber-200">HỌC THỬ</span>';
+            } else if (s.tag === 'HANGING') {
+                tagBadge = '<span class="px-1.5 py-0.5 bg-rose-100 text-rose-700 text-[8px] rounded font-black ring-1 ring-rose-200">NGHỈ LUÔN</span>';
+            } else if (s.tag === 'TEMPORARY_LEAVE') {
+                tagBadge = '<span class="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-[8px] rounded font-black ring-1 ring-blue-200">NGHỈ TẠM THỜI</span>';
+            }
+
+            html += `
+                <div class="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
+                    <div class="flex flex-col gap-0.5">
+                        <div class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                            <span>${s.name}</span>
+                            ${tagBadge}
+                        </div>
+                        <span class="text-[9px] text-slate-400 font-black uppercase tracking-wider">ID: ${s.id}</span>
+                    </div>
+                    <button onclick="openStudentStatusForm('${s.id}', '${s.name.replace(/'/g, "\\'")}', '${s.class_id}', '${s.tag || ''}', '${s.status || ''}')"
+                        class="px-2.5 py-1.5 bg-[#006C18]/10 hover:bg-[#006C18]/20 text-[#006C18] text-[9px] rounded-lg font-black transition-all active:scale-95 flex items-center gap-1">
+                        ✏️ Đề xuất
+                    </button>
+                </div>
+            `;
+        });
+        
+        listContainer.innerHTML = html;
+    } catch (e) {
+        console.error("Lỗi khi tải danh sách đề xuất tình trạng:", e);
+        listContainer.innerHTML = '<div class="text-center py-6 text-xs text-red-500 font-bold">Lỗi khi tải danh sách học sinh!</div>';
+    }
+}
+
+function showStatusRequestList() {
+    openClassStatusModal();
+}
+
+function openStudentStatusForm(id, name, classId, currentTag, currentStatus) {
+    document.getElementById('status-modal-title').innerText = "Đề xuất tình trạng học";
+    document.getElementById('status-modal-subtitle').innerText = "Đề xuất đổi trạng thái, gửi Admin duyệt";
+
     document.getElementById('req-student-id').value = id;
     document.getElementById('req-class-id').value = classId;
     document.getElementById('req-student-name').value = name;
@@ -760,7 +834,9 @@ function openStatusRequestModal(id, name, classId, currentTag, currentStatus) {
     }
     
     toggleRequestFields();
-    document.getElementById('modal-status-request').classList.remove('hidden');
+    
+    document.getElementById('status-request-list-container').classList.add('hidden');
+    document.getElementById('status-request-form').classList.remove('hidden');
 }
 
 function closeStatusRequestModal() {
@@ -871,7 +947,7 @@ async function submitStatusRequest() {
         const data = await res.json();
         if (data.success) {
             alert(`Đã gửi đề xuất thay đổi tình trạng học của bé ${name} thành công. Vui lòng chờ Ban quản lý phê duyệt.`);
-            closeStatusRequestModal();
+            showStatusRequestList();
         } else {
             alert('Lỗi: ' + (data.error || 'Không thể gửi đề xuất.'));
         }
