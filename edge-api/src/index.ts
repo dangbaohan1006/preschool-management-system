@@ -240,7 +240,7 @@ app.post('/api/teacher/students/:id/status-request', async (c) => {
   }
 });
 
-app.get('/api/debug-schema', async (c) => {
+app.get('/debug-schema', async (c) => {
   try {
     const { results } = await c.env.DB.prepare("SELECT name, sql FROM sqlite_master WHERE type='table'").all();
     return c.json({ results });
