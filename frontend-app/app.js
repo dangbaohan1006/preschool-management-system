@@ -37,6 +37,7 @@ function showToast(message, type = 'success') {
 
 function logout() {
     localStorage.removeItem('teacher_session');
+    localStorage.removeItem('preschool_session');
     location.reload();
 }
 
@@ -98,7 +99,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // --- PHỤC HỒI SESSION ---
     const savedSession = localStorage.getItem('teacher_session');
-    if (savedSession) {
+    const adminSession = localStorage.getItem('preschool_session');
+    if (adminSession) {
+        try {
+            const adminData = JSON.parse(adminSession);
+            if (adminData && (adminData.role === 'admin' || adminData.class_id === 'MANAGEMENT')) {
+                const mockAdmin = {
+                    id: adminData.id || 'admin',
+                    name: adminData.name || 'Quản trị viên',
+                    class_id: 'MANAGEMENT',
+                    is_first_login: 0
+                };
+                await loginTeacher(mockAdmin, true);
+            }
+        } catch (e) {
+            console.error("Lỗi phục hồi session admin:", e);
+        }
+    } else if (savedSession) {
         try {
             const data = JSON.parse(savedSession);
             await loginTeacher(data, true);
@@ -213,7 +230,7 @@ async function fetchStudents() {
         asOfDate = `${yyyy}-${mm}-${dd}`;
 
         // Check if date is locked (Admin/MANAGEMENT bypasses daily lock)
-        const isLocked = (teacherInfo && teacherInfo.class_id === 'MANAGEMENT') ? false : await isDateLocked(dateVal);
+        const isLocked = (teacherInfo && (teacherInfo.class_id === 'MANAGEMENT' || teacherInfo.id === 'admin')) ? false : await isDateLocked(dateVal);
         window.currentDateLocked = isLocked;
 
         const submitBtn = document.getElementById('submit-btn');
@@ -302,18 +319,16 @@ async function loginTeacher(data, isRestore = false) {
     if (logoutBtn) logoutBtn.classList.remove('hidden');
 
     // Tự động chọn lớp giáo viên này quản lý và khóa lại (Admin được chọn bất kỳ lớp nào)
-    if (teacherInfo.class_id) {
-        const select = document.getElementById('class-select');
-        if (select) {
-            if (teacherInfo.class_id === 'MANAGEMENT') {
-                select.disabled = false; // Admin bypass class lock
-            } else {
-                select.value = teacherInfo.class_id;
-                select.disabled = true; // Khóa lớp để tránh điểm danh nhầm
-            }
-            await fetchStudents();
+    const select = document.getElementById('class-select');
+    if (select) {
+        if (teacherInfo.class_id === 'MANAGEMENT' || teacherInfo.id === 'admin') {
+            select.disabled = false; // Admin bypass class lock
+        } else if (teacherInfo.class_id) {
+            select.value = teacherInfo.class_id;
+            select.disabled = true; // Khóa lớp để tránh điểm danh nhầm
         }
     }
+    await fetchStudents();
 
     // KIỂM TRA ĐỔI MẬT KHẨU LẦN ĐẦU
     if (teacherInfo.is_first_login) {
@@ -402,7 +417,7 @@ async function handleSubmit() {
     if (!teacherInfo) return alert("Vui lòng đăng nhập trước!");
     
     // Kiểm tra khóa sổ một lần nữa trước khi hiện modal (Admin bypasses lock)
-    const isLocked = (teacherInfo && teacherInfo.class_id === 'MANAGEMENT') ? false : await isDateLocked(date);
+    const isLocked = (teacherInfo && (teacherInfo.class_id === 'MANAGEMENT' || teacherInfo.id === 'admin')) ? false : await isDateLocked(date);
     if (isLocked) {
         return alert(`Sổ điểm danh ngày ${date} đã bị khóa. Vui lòng liên hệ Admin.`);
     }
@@ -418,7 +433,7 @@ async function handleSubmit() {
     btn.innerText = "ĐANG GỬI...";
 
     try {
-        const activeClassId = teacherInfo.class_id === 'MANAGEMENT' ? document.getElementById('class-select').value : teacherInfo.class_id;
+        const activeClassId = (teacherInfo.class_id === 'MANAGEMENT' || teacherInfo.id === 'admin') ? document.getElementById('class-select').value : teacherInfo.class_id;
         const payload = students.map(s => ({
             student_id: s.id,
             student_name: s.name,
@@ -430,7 +445,7 @@ async function handleSubmit() {
             details: s.note || ''
         }));
 
-        const bypassParam = (teacherInfo && teacherInfo.class_id === 'MANAGEMENT') ? '?bypass_locks=true' : '';
+        const bypassParam = (teacherInfo && (teacherInfo.class_id === 'MANAGEMENT' || teacherInfo.id === 'admin')) ? '?bypass_locks=true' : '';
         const res = await fetch(`${API_URL_BASE}/admin/attendance${bypassParam}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-api-key': SECRET_KEY },
@@ -512,7 +527,7 @@ function closeHistoryModal() {
 
 async function loadHistory() {
     const date = document.getElementById('history-date-input').value;
-    const classId = (teacherInfo?.class_id && teacherInfo.class_id !== 'MANAGEMENT') ? teacherInfo.class_id : document.getElementById('class-select').value;
+    const classId = (teacherInfo?.class_id && teacherInfo.class_id !== 'MANAGEMENT' && teacherInfo.id !== 'admin') ? teacherInfo.class_id : document.getElementById('class-select').value;
     
     if (!date) return alert("Vui lòng chọn ngày!");
 
@@ -526,7 +541,7 @@ async function loadHistory() {
     tbody.innerHTML = `<tr><td colspan="4" class="p-12 text-center text-slate-400 font-bold">ĐANG TẢI...</td></tr>`;
 
     try {
-        const isLocked = (teacherInfo && teacherInfo.class_id === 'MANAGEMENT') ? false : await isDateLocked(date);
+        const isLocked = (teacherInfo && (teacherInfo.class_id === 'MANAGEMENT' || teacherInfo.id === 'admin')) ? false : await isDateLocked(date);
         window.historyDateLocked = isLocked;
 
         const studentsRes = await fetch(`${API_URL_BASE}/admin/students?class_id=${classId}&as_of_date=${toISODate(date)}&include_leave=false`, { headers: { 'x-api-key': SECRET_KEY } });
@@ -669,7 +684,7 @@ async function updateHistory() {
     btn.innerText = "ĐANG CẬP NHẬT...";
 
     try {
-        const activeClassId = teacherInfo.class_id === 'MANAGEMENT' ? document.getElementById('class-select').value : teacherInfo.class_id;
+        const activeClassId = (teacherInfo.class_id === 'MANAGEMENT' || teacherInfo.id === 'admin') ? document.getElementById('class-select').value : teacherInfo.class_id;
         const payload = changedRecords.map(s => ({
             student_id: s.id,
             student_name: s.name,
@@ -681,7 +696,7 @@ async function updateHistory() {
             details: s.note || ''
         }));
 
-        const bypassParam = (teacherInfo && teacherInfo.class_id === 'MANAGEMENT') ? '?bypass_locks=true' : '';
+        const bypassParam = (teacherInfo && (teacherInfo.class_id === 'MANAGEMENT' || teacherInfo.id === 'admin')) ? '?bypass_locks=true' : '';
         const res = await fetch(`${API_URL_BASE}/admin/attendance${bypassParam}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-api-key': SECRET_KEY },
