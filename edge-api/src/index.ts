@@ -30,6 +30,11 @@ app.use('/api/*', async (c, next) => {
   if (c.req.method === 'OPTIONS') {
     return await next();
   }
+
+  // BỎ QUA AUTH: Cho phép debug endpoint
+  if (c.req.path === '/api/debug-schema') {
+    return await next();
+  }
   
   const incomingKey = c.req.header('x-api-key');
   if (incomingKey !== "SECRET_INTERNAL_KEY_2026") {
@@ -240,7 +245,7 @@ app.post('/api/teacher/students/:id/status-request', async (c) => {
   }
 });
 
-app.get('/debug-schema', async (c) => {
+app.get('/api/debug-schema', async (c) => {
   try {
     const { results } = await c.env.DB.prepare("SELECT name, sql FROM sqlite_master WHERE type='table'").all();
     return c.json({ results });
