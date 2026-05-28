@@ -38,3 +38,8 @@ scratch/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Backups
+backup.sql
+edge-api/backup.sql
+

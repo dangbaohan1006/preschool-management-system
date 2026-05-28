@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Configuration
-const API_URL = 'https://preschool-edge-api.diemdanh-tds.workers.dev/api/admin/attendance';
+const API_URL = 'https://preschool-edge-api.tn-sys.workers.dev/api/admin/attendance';
 const API_KEY = 'SECRET_INTERNAL_KEY_2026';
 const CSV_FILE = path.join(__dirname, '../ĐIỂM DANH THÁNG 04.csv');
 const MONTH = '2026-04'; // April 2026

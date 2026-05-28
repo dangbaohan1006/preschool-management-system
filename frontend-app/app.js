@@ -1,7 +1,7 @@
 // --- Configuration ---
 const API_URL_BASE = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost'
     ? 'http://127.0.0.1:8787/api'
-    : 'https://preschool-edge-api.diemdanh-tds.workers.dev/api';
+    : 'https://preschool-edge-api.tn-sys.workers.dev/api';
 const SECRET_KEY = "SECRET_INTERNAL_KEY_2026";
 // --- State ---
 let teacherInfo = null;

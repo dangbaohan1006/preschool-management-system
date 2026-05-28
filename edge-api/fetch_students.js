@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const API_BASE = 'https://preschool-edge-api.diemdanh-tds.workers.dev/api';
+const API_BASE = 'https://preschool-edge-api.tn-sys.workers.dev/api';
 const API_KEY = 'SECRET_INTERNAL_KEY_2026';
 
 async function fetchAllStudents() {

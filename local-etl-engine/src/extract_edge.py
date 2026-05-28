@@ -1,6 +1,6 @@
 import requests
 
-EDGE_API_BASE_URL = "https://preschool-edge-api.diemdanh-tds.workers.dev/api/sync" 
+EDGE_API_BASE_URL = "https://preschool-edge-api.tn-sys.workers.dev/api/sync" 
 SECRET_KEY = "SECRET_INTERNAL_KEY_2026";
 
 def fetch_pending_from_edge():
