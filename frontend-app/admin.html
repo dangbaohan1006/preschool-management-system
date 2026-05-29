@@ -2772,7 +2772,7 @@
                     localStorage.setItem('preschool_session', JSON.stringify(currentUser));
                     enterDashboard();
                 } else {
-                    alert('Tài khoản hoặc PIN giáo viên không đúng!');
+                    alert(data.error || 'tài khoản hoặc mật khẩu không chính xác');
                     pInput.value = p; // Khôi phục nếu sai
                 }
             } catch (e) {

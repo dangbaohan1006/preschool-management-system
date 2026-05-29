@@ -295,7 +295,7 @@ async function checkPin(e) {
         if (data.success) {
             await loginTeacher(data);
         } else {
-            alert(data.error || "Tài khoản hoặc PIN giáo viên không đúng!");
+            alert(data.error || "tài khoản hoặc mật khẩu không chính xác");
             pinInput.value = pin; // Khôi phục mã PIN trên UI nếu sai
         }
     } catch (err) {

@@ -577,7 +577,7 @@ app.post('/api/auth/teacher', async (c) => {
   const { pin, id } = await c.req.json();
   const { auth } = getServices(c.env.DB);
   const teacher = await auth.authenticateTeacher(id, pin);
-  if (!teacher) return c.json({ error: 'Auth failed' }, 401);
+  if (!teacher) return c.json({ error: 'tài khoản hoặc mật khẩu không chính xác' }, 401);
   return c.json({ success: true, ...teacher });
 });
 
