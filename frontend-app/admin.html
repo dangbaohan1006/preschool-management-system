@@ -1797,7 +1797,7 @@
             </div>
 
             <!-- Class Attendance Detail Modal -->
-            <div id="modal-class-attendance-detail" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-6 modal-overlay">
+            <div id="modal-class-attendance-detail" onclick="if(event.target === this) closeModal('modal-class-attendance-detail')" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-6 modal-overlay">
                 <div class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 border-t-8 border-[#006C18]">
                     <div class="p-5 bg-white flex justify-between items-center border-b border-[#eee]">
                         <div>
@@ -1843,7 +1843,7 @@
             </div>
 
             <!-- Add/Edit Fee Modal -->
-            <div id="modal-fee" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-6 modal-overlay">
+            <div id="modal-fee" onclick="if(event.target === this) closeModal('modal-fee')" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-6 modal-overlay">
                 <div
                     class="bg-white w-full max-w-md rounded-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 border-t-4 border-[#006C18]">
                     <div class="p-5 bg-white flex justify-between items-center border-b border-[#eee]">
@@ -1925,7 +1925,7 @@
             </div>
 
             <!-- Modal: Class Management -->
-            <div id="modal-class-manager"
+            <div id="modal-class-manager" onclick="if(event.target === this) closeClassManager()"
                 class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
                 <div
                     class="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden scale-in">
@@ -1967,15 +1967,15 @@
             </div>
 
             <!-- Modal: Edit Class Form -->
-            <div id="modal-edit-class"
+            <div id="modal-edit-class" onclick="if(event.target === this) closeEditClass()"
                 class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4">
                 <div
                     class="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in duration-200">
                     <div
-                        class="p-5 border-b border-slate-100 flex justify-between items-center bg-[#FF8000] text-white">
-                        <h3 class="font-black text-sm headline uppercase tracking-widest">✏️ Cập nhật thông tin lớp</h3>
+                        class="py-3.5 px-5 border-b border-orange-100 flex justify-between items-center bg-orange-50 text-[#FF8000]">
+                        <h3 class="font-black text-xs headline uppercase tracking-widest">Cập nhật thông tin lớp</h3>
                         <button onclick="closeEditClass()"
-                            class="w-8 h-8 rounded-full hover:bg-white/20 flex items-center justify-center transition-colors">✕</button>
+                            class="w-7 h-7 flex items-center justify-center rounded-full bg-orange-200/40 text-[#FF8000] hover:bg-orange-200 transition-all font-bold">✕</button>
                     </div>
                     <div class="p-6 space-y-4">
                         <div class="space-y-1">
@@ -2192,15 +2192,15 @@
             </div>
 
             <!-- Modal: Student Transfer Request -->
-            <div id="modal-transfer-student"
+            <div id="modal-transfer-student" onclick="if(event.target === this) closeModal('modal-transfer-student')"
                 class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4">
                 <div
                     class="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in duration-200">
                     <div
-                        class="p-5 border-b border-slate-100 flex justify-between items-center bg-[#FF8000] text-white">
-                        <h3 class="font-black text-sm headline uppercase tracking-widest">🚚 Lên lịch chuyển lớp</h3>
+                        class="py-3.5 px-5 border-b border-orange-100 flex justify-between items-center bg-orange-50 text-[#FF8000]">
+                        <h3 class="font-black text-xs headline uppercase tracking-widest">Lên lịch chuyển lớp</h3>
                         <button onclick="closeModal('modal-transfer-student')"
-                            class="w-8 h-8 rounded-full hover:bg-white/20 flex items-center justify-center transition-colors">✕</button>
+                            class="w-7 h-7 flex items-center justify-center rounded-full bg-orange-200/40 text-[#FF8000] hover:bg-orange-200 transition-all font-bold">✕</button>
                     </div>
                     <div class="p-6 space-y-4">
                         <div class="space-y-1 text-left">
@@ -2242,7 +2242,7 @@
             </div>
 
             <!-- Modal: Billing Formula Settings -->
-            <div id="modal-bill-settings"
+            <div id="modal-bill-settings" onclick="if(event.target === this) this.classList.add('hidden')"
                 class="fixed inset-0 z-[200] hidden flex items-center justify-center p-6 modal-overlay">
                 <div
                     class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in duration-300 border-t-4 border-[#006C18]">
@@ -2344,7 +2344,7 @@
             </div>
 
             <!-- Modal: Fee Category Management -->
-            <div id="modal-fee-categories"
+            <div id="modal-fee-categories" onclick="if(event.target === this) this.classList.add('hidden')"
                 class="fixed inset-0 z-[200] hidden flex items-center justify-center p-6 modal-overlay">
                 <div
                     class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in duration-300 border-t-4 border-[#006C18]">
@@ -2366,7 +2366,7 @@
             </div>
 
             <!-- Modal: System Settings & Periods -->
-            <div id="modal-finance-system"
+            <div id="modal-finance-system" onclick="if(event.target === this) this.classList.add('hidden')"
                 class="fixed inset-0 z-[200] hidden flex items-center justify-center p-6 modal-overlay">
                 <div
                     class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in duration-300 border-t-4 border-[#006C18]">
@@ -2438,7 +2438,7 @@
             </div>
 
             <!-- Modal: Invoice Details -->
-            <div id="modal-invoice-detail"
+            <div id="modal-invoice-detail" onclick="if(event.target === this) closeInvoiceDetail()"
                 class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
                 <div
                     class="bg-white rounded-2xl w-full max-w-xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden scale-in">
@@ -9659,7 +9659,7 @@
     </div>
 
     <!-- Modal Bulk Transfer -->
-    <div id="modal-bulk-transfer"
+    <div id="modal-bulk-transfer" onclick="if(event.target === this) this.classList.add('hidden')"
         class="fixed inset-0 z-[200] hidden flex items-center justify-center p-6 modal-overlay">
         <div
             class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in duration-300 border-t-4 border-[#FF8000]">
@@ -9701,7 +9701,7 @@
     </div>
 
     <!-- Modal Bulk Status -->
-    <div id="modal-bulk-status" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-6 modal-overlay">
+    <div id="modal-bulk-status" onclick="if(event.target === this) this.classList.add('hidden')" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-6 modal-overlay">
         <div
             class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in duration-300 border-t-4 border-rose-500">
             <div class="p-5 bg-rose-50 flex justify-between items-center border-b border-rose-100">
@@ -9739,7 +9739,7 @@
     </div>
 
     <!-- Modal Print Invoice Review -->
-    <div id="modal-discount" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-6 modal-overlay">
+    <div id="modal-discount" onclick="if(event.target === this) this.classList.add('hidden')" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-6 modal-overlay">
         <div
             class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in duration-300 border-t-4 border-amber-500">
             <div class="p-5 bg-amber-50 flex justify-between items-center border-b border-amber-100">
@@ -9793,7 +9793,7 @@
     </div>
 
     <!-- Modal Receipt Config -->
-    <div id="modal-receipt-config"
+    <div id="modal-receipt-config" onclick="if(event.target === this) this.classList.add('hidden')"
         class="fixed inset-0 z-[200] hidden flex items-center justify-center p-6 modal-overlay">
         <div
             class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in duration-300 border-t-4 border-emerald-600">
@@ -9868,7 +9868,7 @@
     <div id="toast-container" class="toast-container no-print"></div>
 
     <!-- Modal: View/Info Holiday -->
-    <div id="modal-view-holiday"
+    <div id="modal-view-holiday" onclick="if(event.target === this) closeModal('modal-view-holiday')"
         class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[150] hidden flex items-center justify-center p-4 no-print">
         <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in duration-200 border-t-4 border-rose-500">
             <div class="py-3 px-5 border-b border-rose-100 flex justify-between items-center bg-rose-50">
@@ -9897,7 +9897,7 @@
     </div>
 
     <!-- Modal: Add Holiday -->
-    <div id="modal-add-holiday"
+    <div id="modal-add-holiday" onclick="if(event.target === this) closeModal('modal-add-holiday')"
         class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[150] hidden flex items-center justify-center p-4 no-print">
         <div
             class="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in duration-200">
@@ -9925,7 +9925,7 @@
     </div>
 
     <!-- Modal: Confirm Payment -->
-    <div id="modal-payment-confirm"
+    <div id="modal-payment-confirm" onclick="if(event.target === this) closeModal('modal-payment-confirm')"
         class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] hidden flex items-center justify-center p-4 no-print">
         <div
             class="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in duration-200 border-t-4 border-emerald-500">
@@ -9972,12 +9972,12 @@
 
 
     <!-- Modal: Add New Class -->
-    <div id="modal-add-class" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-6 modal-overlay">
+    <div id="modal-add-class" onclick="if(event.target === this) this.classList.add('hidden')" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-6 modal-overlay">
         <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in duration-300 border-t-4 border-[#006C18]">
-            <div class="p-5 bg-emerald-50 flex justify-between items-center border-b border-emerald-100">
-                <h3 class="text-sm font-black text-[#006C18] headline uppercase tracking-widest">➕ THÊM LỚP HỌC MỚI</h3>
+            <div class="py-3.5 px-5 bg-emerald-50 flex justify-between items-center border-b border-emerald-100">
+                <h3 class="text-xs font-black text-[#006C18] headline uppercase tracking-widest">Thêm lớp học mới</h3>
                 <button onclick="document.getElementById('modal-add-class').classList.add('hidden')"
-                    class="w-8 h-8 flex items-center justify-center rounded-full bg-emerald-200/50 text-[#006C18] hover:bg-emerald-200 transition-all font-bold">✕</button>
+                    class="w-7 h-7 flex items-center justify-center rounded-full bg-emerald-200/40 text-[#006C18] hover:bg-emerald-200 transition-all font-bold">✕</button>
             </div>
             <div class="p-6 space-y-4">
                 <div class="space-y-2 text-left">
@@ -10138,7 +10138,7 @@
     </div>
 
     <!-- Modal: Quick Permissions -->
-    <div id="modal-quick-permissions" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-6 modal-overlay">
+    <div id="modal-quick-permissions" onclick="if(event.target === this) this.classList.add('hidden')" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-6 modal-overlay">
         <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in duration-300 border-t-4 border-[#006C18]">
             <div class="p-5 bg-emerald-50 flex justify-between items-center border-b border-emerald-100">
                 <h3 id="quick-perm-title" class="text-sm font-black text-[#006C18] headline uppercase tracking-widest">🛡️ PHÂN QUYỀN HỆ THỐNG</h3>
@@ -10190,7 +10190,7 @@
     </div>
 
     <!-- Modal: Phê duyệt đề xuất thay đổi trạng thái -->
-    <div id="modal-review-request" class="fixed inset-0 z-[10000] hidden no-print modal-overlay flex items-center justify-center p-4">
+    <div id="modal-review-request" onclick="if(event.target === this) this.classList.add('hidden')" class="fixed inset-0 z-[10000] hidden no-print modal-overlay flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in duration-300 border-t-4 border-[#006C18]">
             <div class="p-5 bg-emerald-50 flex justify-between items-center border-b border-emerald-100">
                 <h3 class="text-xs font-black text-[#006C18] headline uppercase tracking-widest">✓ PHÊ DUYỆT ĐỀ XUẤT</h3>
