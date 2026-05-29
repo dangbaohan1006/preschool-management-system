@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS students (
     tag_created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     entry_date DATE,
     deleted_at DATETIME DEFAULT NULL,
+    profile_status TEXT DEFAULT NULL,
     FOREIGN KEY (class_id) REFERENCES classes(id)
 );
 

@@ -95,7 +95,7 @@ app.get('/api/admin/students', async (c) => {
 
 app.post('/api/admin/students', async (c) => {
   try {
-    const { id, name, class_id, tag, parent_name, address, phone, birthday, tag_expiry, entry_date, resumption_date } = await c.req.json();
+    const { id, name, class_id, tag, parent_name, address, phone, birthday, tag_expiry, entry_date, resumption_date, profile_status } = await c.req.json();
     
     if (!id || !name) {
       return c.json({ success: false, error: 'ID và Tên bé là bắt buộc' }, 400);
@@ -106,7 +106,7 @@ app.post('/api/admin/students', async (c) => {
     }
     
     const { admin } = getServices(c.env.DB);
-    await admin.addStudent(id, name, class_id, undefined, tag, parent_name, address, phone, birthday, tag_expiry, entry_date, resumption_date);
+    await admin.addStudent(id, name, class_id, undefined, tag, parent_name, address, phone, birthday, tag_expiry, entry_date, resumption_date, profile_status);
     return c.json({ success: true });
   } catch (err: any) {
     console.error('Error adding student:', err);

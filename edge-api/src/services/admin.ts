@@ -69,12 +69,12 @@ export class AdminService {
     return await (params.length > 0 ? stmt.bind(...params).all() : stmt.all());
   }
 
-  async addStudent(id: string, name: string, classId: string, birthYear?: number, tag?: string, parent_name?: string, address?: string, phone?: string, birthday?: string, tag_expiry?: string | null, entry_date?: string, resumption_date?: string | null) {
+  async addStudent(id: string, name: string, classId: string, birthYear?: number, tag?: string, parent_name?: string, address?: string, phone?: string, birthday?: string, tag_expiry?: string | null, entry_date?: string, resumption_date?: string | null, profile_status?: string | null) {
     // Nếu có Tag, mặc định status là ACTIVE
     const status = 'ACTIVE';
 
-    return await this.db.prepare('INSERT OR IGNORE INTO students (id, name, class_id, birth_year, tag, tag_expiry, resumption_date, parent_name, address, phone, birthday, status, entry_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-      .bind(id, name, classId, birthYear || null, tag || null, tag_expiry || null, resumption_date || null, parent_name || null, address || null, phone || null, birthday || null, status, entry_date || null)
+    return await this.db.prepare('INSERT OR IGNORE INTO students (id, name, class_id, birth_year, tag, tag_expiry, resumption_date, parent_name, address, phone, birthday, status, entry_date, profile_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .bind(id, name, classId, birthYear || null, tag || null, tag_expiry || null, resumption_date || null, parent_name || null, address || null, phone || null, birthday || null, status, entry_date || null, profile_status || null)
       .run();
   }
 
@@ -103,7 +103,7 @@ export class AdminService {
     return await this.db.batch(stmts);
   }
 
-  async updateStudent(id: string, data: { name?: string, class_id?: string, status?: string, birth_year?: number, tag?: string, parent_name?: string, address?: string, phone?: string, birthday?: string, tag_expiry?: string | null, resumption_date?: string | null, dropout_date?: string | null }) {
+  async updateStudent(id: string, data: { name?: string, class_id?: string, status?: string, birth_year?: number, tag?: string, parent_name?: string, address?: string, phone?: string, birthday?: string, tag_expiry?: string | null, resumption_date?: string | null, dropout_date?: string | null, profile_status?: string | null }) {
     const fields = [];
     const values = [];
     
@@ -113,6 +113,7 @@ export class AdminService {
     if (data.address !== undefined) { fields.push('address = ?'); values.push(data.address); }
     if (data.phone !== undefined) { fields.push('phone = ?'); values.push(data.phone); }
     if (data.birthday !== undefined) { fields.push('birthday = ?'); values.push(data.birthday); }
+    if (data.profile_status !== undefined) { fields.push('profile_status = ?'); values.push(data.profile_status); }
 
     if (data.status !== undefined) { 
         fields.push('status = ?'); 
