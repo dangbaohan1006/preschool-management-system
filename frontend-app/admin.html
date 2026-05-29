@@ -2028,7 +2028,7 @@
             </div>
 
             <!-- Modal: Edit Student Form -->
-            <div id="modal-edit-student"
+            <div id="modal-edit-student" onclick="if(event.target === this) closeEditStudent()"
                 class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4">
                 <div
                     class="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in duration-200">
@@ -2038,7 +2038,7 @@
                         <button onclick="closeEditStudent()"
                             class="w-8 h-8 rounded-full hover:bg-white/20 flex items-center justify-center transition-colors">✕</button>
                     </div>
-                    <div class="p-6 space-y-4">
+                    <div class="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
                         <div class="space-y-1 text-left">
                             <label class="text-[9px] font-black text-slate-400 uppercase">Mã học sinh (Cố định)</label>
                             <div class="flex gap-2">
@@ -9996,7 +9996,7 @@
     </div>
 
     <!-- Modal: Add New Student -->
-    <div id="modal-add-student" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-6 modal-overlay">
+    <div id="modal-add-student" onclick="if(event.target === this) this.classList.add('hidden')" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-6 modal-overlay">
         <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in duration-300 border-t-4 border-[#006C18]">
             <div class="p-5 bg-emerald-50 flex justify-between items-center border-b border-emerald-100">
                 <h3 class="text-sm font-black text-[#006C18] headline uppercase tracking-widest">👶 THÊM HỌC SINH MỚI</h3>
