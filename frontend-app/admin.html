@@ -2031,7 +2031,7 @@
             <div id="modal-edit-student" onclick="if(event.target === this) closeEditStudent()"
                 class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4">
                 <div
-                    class="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in duration-200">
+                    class="bg-white rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden animate-in zoom-in duration-200">
                     <div
                         class="p-5 border-b border-slate-100 flex justify-between items-center bg-[#006C18] text-white">
                         <h3 class="font-black text-sm headline uppercase tracking-widest">👶 Cập nhật thông tin bé</h3>
@@ -2146,14 +2146,14 @@
                         <!-- Tình trạng hồ sơ (Checklist động) -->
                         <div class="border border-emerald-100 rounded-xl overflow-hidden mt-4 bg-gradient-to-br from-emerald-50/10 to-teal-50/5 shadow-sm">
                             <button type="button" onclick="toggleProfileStatusSection('edit')" class="w-full flex items-center justify-between p-4 bg-emerald-50/50 hover:bg-emerald-50 transition-all font-bold text-xs uppercase tracking-wider text-[#006C18] select-none">
-                                <span class="flex items-center gap-2">📋 Tình trạng hồ sơ bé</span>
+                                <span class="flex items-center gap-2">Tình trạng hồ sơ bé</span>
                                 <span class="transform transition-transform duration-200" id="edit-profile-arrow">▼</span>
                             </button>
                             <div id="edit-profile-status-content" class="hidden p-4 space-y-3 bg-white border-t border-emerald-100 text-left">
                                 <label class="flex items-center gap-3 p-3 border border-slate-100 hover:border-emerald-200 rounded-xl cursor-pointer hover:bg-emerald-50/10 transition-all select-none">
                                     <input type="checkbox" id="edit-std-vaccination" class="w-4 h-4 cursor-pointer accent-[#006C18]">
                                     <div class="flex flex-col">
-                                        <span class="text-xs font-bold text-[#006C18]">📔 Sổ tiêm chủng</span>
+                                        <span class="text-xs font-bold text-[#006C18]">Sổ tiêm chủng</span>
                                         <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wide mt-0.5">Đã nộp sổ tiêm chủng của bé</span>
                                     </div>
                                 </label>
@@ -2161,25 +2161,17 @@
                                 <label class="flex items-center gap-3 p-3 border border-slate-100 hover:border-emerald-200 rounded-xl cursor-pointer hover:bg-emerald-50/10 transition-all select-none">
                                     <input type="checkbox" id="edit-std-birth-cert" class="w-4 h-4 cursor-pointer accent-[#006C18]">
                                     <div class="flex flex-col">
-                                        <span class="text-xs font-bold text-[#006C18]">📝 Ảnh chụp giấy khai sinh</span>
+                                        <span class="text-xs font-bold text-[#006C18]">Ảnh chụp giấy khai sinh</span>
                                         <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wide mt-0.5">Đã nộp ảnh chụp giấy khai sinh</span>
                                     </div>
                                 </label>
 
-                                <label class="flex items-center gap-3 p-3 border border-slate-100 hover:border-emerald-200 rounded-xl cursor-pointer hover:bg-emerald-50/10 transition-all select-none">
-                                    <input type="checkbox" id="edit-std-child-id" class="w-4 h-4 cursor-pointer accent-[#006C18]">
-                                    <div class="flex flex-col">
-                                        <span class="text-xs font-bold text-[#006C18]">👶 Định danh của bé</span>
-                                        <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wide mt-0.5">Đã hoàn thành định danh cá nhân bé</span>
-                                    </div>
-                                </label>
-
-                                <!-- Định danh gia đình -->
+                                <!-- Định danh bé & gia đình -->
                                 <div class="p-4 border border-emerald-100/50 bg-[#F0FDF4]/30 rounded-xl space-y-3">
                                     <div class="flex items-center justify-between">
                                         <div class="flex flex-col text-left">
-                                            <span class="text-xs font-bold text-[#006C18] flex items-center gap-2">👥 Định danh gia đình</span>
-                                            <span class="text-[8px] text-slate-400 font-black uppercase tracking-widest mt-0.5">Các thành viên hộ gia đình (bao gồm chủ hộ)</span>
+                                            <span class="text-xs font-bold text-[#006C18] flex items-center gap-2">Định danh bé & gia đình</span>
+                                            <span class="text-[8px] text-slate-400 font-black uppercase tracking-widest mt-0.5">Các thành viên hộ gia đình (bao gồm học sinh và chủ hộ)</span>
                                         </div>
                                         <button type="button" onclick="addFamilyMemberRow('edit')" class="bg-[#006C18] hover:bg-[#FF8000] text-white px-2.5 py-1 rounded text-[8px] font-black uppercase tracking-widest shadow-sm hover:scale-105 transition-all">
                                             + Thêm
@@ -4718,35 +4710,41 @@
                     if (s.profile_status) {
                         try {
                             const ps = JSON.parse(s.profile_status);
-                            const items = [];
-                            let totalItems = 3;
                             let completedItems = 0;
+                            const totalItems = 3;
 
-                            if (ps.vaccination_book) { items.push('📔'); completedItems++; }
-                            if (ps.birth_certificate) { items.push('📝'); completedItems++; }
-                            if (ps.child_identity) { items.push('👶'); completedItems++; }
+                            if (ps.vaccination_book) completedItems++;
+                            if (ps.birth_certificate) completedItems++;
+
+                            const familyTotal = (ps.family_members && Array.isArray(ps.family_members)) ? ps.family_members.length : 0;
+                            const familyVerified = (ps.family_members && Array.isArray(ps.family_members)) ? ps.family_members.filter(m => m.verified).length : 0;
+                            const familyAllVerified = familyTotal > 0 && familyVerified === familyTotal;
+                            if (familyAllVerified) completedItems++;
+
+                            const itemsText = [];
+                            itemsText.push(ps.vaccination_book 
+                                ? 'Tiêm chủng' 
+                                : '<span class="opacity-40 font-normal">Tiêm chủng</span>');
                             
-                            let familyTotal = 0;
-                            let familyVerified = 0;
-                            if (ps.family_members && Array.isArray(ps.family_members)) {
-                                familyTotal = ps.family_members.length;
-                                familyVerified = ps.family_members.filter(m => m.verified).length;
+                            itemsText.push(ps.birth_certificate 
+                                ? 'Khai sinh' 
+                                : '<span class="opacity-40 font-normal">Khai sinh</span>');
+
+                            if (familyAllVerified) {
+                                itemsText.push('Định danh');
+                            } else {
+                                itemsText.push(`<span class="opacity-40 font-normal">Định danh</span> <span class="text-[7.5px] font-bold">(${familyVerified}/${familyTotal})</span>`);
                             }
-                            
-                            if (familyTotal > 0) {
-                                items.push(`👥 ${familyVerified}/${familyTotal}`);
-                                totalItems++;
-                                if (familyVerified === familyTotal) completedItems++;
-                            }
-                            
+
                             const isComplete = completedItems === totalItems;
                             const bgClass = isComplete ? 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm' : 'bg-amber-50/60 text-amber-700 border-amber-200/50';
                             
                             profileBadge = `
                                 <div class="flex items-center gap-1 mt-1 border px-2 py-0.5 rounded-full text-[8.5px] font-black ${bgClass} w-fit transition-all duration-300">
                                     <span>Hồ sơ:</span>
-                                    <span>${items.join(' ')}</span>
-                                    ${isComplete ? '<span class="text-emerald-600 font-extrabold ml-1">✓ Hoàn thành</span>' : '<span class="text-amber-500 font-extrabold ml-1">⚠️ Thiếu</span>'}
+                                    <span class="flex items-center gap-1">${itemsText.join(' | ')}</span>
+                                    <span class="ml-1 text-[8px] font-bold">(${completedItems}/${totalItems})</span>
+                                    ${isComplete ? '<span class="text-emerald-600 font-extrabold ml-1">Hoàn thành</span>' : '<span class="text-amber-500 font-extrabold ml-1">Thiếu</span>'}
                                 </div>
                             `;
                         } catch (e) {
@@ -4756,7 +4754,7 @@
                         profileBadge = `
                             <div class="flex items-center gap-1 mt-1 border border-rose-100 bg-rose-50/50 text-rose-700 px-2 py-0.5 rounded-full text-[8.5px] font-black w-fit animate-pulse">
                                 <span>Hồ sơ:</span>
-                                <span class="text-rose-500 font-extrabold">⚠️ Chưa cập nhật</span>
+                                <span class="text-rose-500 font-extrabold">Chưa cập nhật</span>
                             </div>
                         `;
                     }
@@ -6153,7 +6151,7 @@
             if (tagSelect) tagSelect.value = student.tag || '';
 
             // Tải dữ liệu checklist tình trạng hồ sơ
-            let ps = { vaccination_book: false, birth_certificate: false, child_identity: false, family_members: [] };
+            let ps = { vaccination_book: false, birth_certificate: false, family_members: [] };
             if (student.profile_status) {
                 try {
                     ps = JSON.parse(student.profile_status);
@@ -6163,14 +6161,18 @@
             }
             document.getElementById('edit-std-vaccination').checked = ps.vaccination_book || false;
             document.getElementById('edit-std-birth-cert').checked = ps.birth_certificate || false;
-            document.getElementById('edit-std-child-id').checked = ps.child_identity || false;
 
             const editList = document.getElementById('edit-family-members-list');
             if (editList) {
                 editList.innerHTML = '';
                 if (ps.family_members && ps.family_members.length > 0) {
+                    // Kiểm tra xem dòng Học sinh (Bé) đã tồn tại chưa, nếu chưa thì tự động thêm vào đầu
+                    const hasStudent = ps.family_members.some(m => m.relation === 'HỌCSINH');
+                    if (!hasStudent) {
+                        addFamilyMemberRow('edit', 'HỌCSINH', student.name, false);
+                    }
                     ps.family_members.forEach(m => {
-                        addFamilyMemberRow('edit', m.relation, m.name, m.verified);
+                        addFamilyMemberRow('edit', m.relation, m.relation === 'HỌCSINH' ? student.name : m.name, m.verified);
                     });
                 } else {
                     // Mặc định template nếu trống
@@ -6391,31 +6393,38 @@
 
         function createFamilyMemberElement(relation = 'CHUHÔ', name = '', verified = false, prefix = 'new') {
             const relations = [
-                {value: 'CHUHÔ', label: '🔑 Chủ hộ'},
-                {value: 'BỐ', label: '👨 Bố'},
-                {value: 'MẸ', label: '👩 Mẹ'},
-                {value: 'ÔNG', label: '👴 Ông'},
-                {value: 'BÀ', label: '👵 Bà'},
-                {value: 'ANH_CHỊ', label: '👦 Anh/Chị'},
-                {value: 'EM', label: '👶 Em'},
-                {value: 'KHÁC', label: '👥 Khác'}
+                {value: 'HỌCSINH', label: 'Học sinh (Bé)'},
+                {value: 'CHUHÔ', label: 'Chủ hộ'},
+                {value: 'BỐ', label: 'Bố'},
+                {value: 'MẸ', label: 'Mẹ'},
+                {value: 'ÔNG', label: 'Ông'},
+                {value: 'BÀ', label: 'Bà'},
+                {value: 'ANH_CHỊ', label: 'Anh/Chị'},
+                {value: 'EM', label: 'Em'},
+                {value: 'KHÁC', label: 'Khác'}
             ];
 
+            const isStudent = relation === 'HỌCSINH';
             const row = document.createElement('div');
             row.className = 'flex items-center gap-2 bg-white p-2 rounded-lg border border-slate-100 hover:border-emerald-200 transition-all shadow-sm';
             
             let options = relations.map(r => `<option value="${r.value}" ${r.value === relation ? 'selected' : ''}>${r.label}</option>`).join('');
             
+            const selectDisabled = isStudent ? 'disabled' : '';
+            const nameInputClass = isStudent ? 'bg-slate-50 font-bold text-slate-500' : '';
+            const nameInputAttr = isStudent ? 'readonly' : '';
+            const deleteBtn = isStudent ? '<div class="w-6"></div>' : `<button type="button" onclick="this.closest('div').remove()" class="w-6 h-6 flex items-center justify-center rounded bg-rose-50 hover:bg-rose-500 text-rose-500 hover:text-white transition-all text-xs font-bold">✕</button>`;
+
             row.innerHTML = `
-                <select class="relation-select border border-slate-200 rounded p-1 text-[10px] font-bold text-[#006C18] outline-none cursor-pointer">
+                <select ${selectDisabled} class="relation-select border border-slate-200 rounded p-1 text-[10px] font-bold text-[#006C18] outline-none cursor-pointer">
                     ${options}
                 </select>
-                <input type="text" placeholder="Họ tên..." value="${name}" class="name-input flex-1 border border-slate-200 rounded p-1 text-[10px] font-bold text-[#006C18] outline-none focus:border-[#006C18]">
+                <input type="text" placeholder="Họ tên..." value="${name}" ${isStudent ? 'id="' + prefix + '-std-profile-name"' : ''} ${nameInputAttr} class="name-input ${nameInputClass} flex-1 border border-slate-200 rounded p-1 text-[10px] font-bold text-[#006C18] outline-none focus:border-[#006C18]">
                 <label class="flex items-center gap-1 cursor-pointer select-none">
                     <input type="checkbox" ${verified ? 'checked' : ''} class="verified-checkbox w-3.5 h-3.5 cursor-pointer accent-[#006C18]">
                     <span class="text-[9px] font-bold text-slate-500">Đã định danh</span>
                 </label>
-                <button type="button" onclick="this.closest('div').remove()" class="w-6 h-6 flex items-center justify-center rounded bg-rose-50 hover:bg-rose-500 text-rose-500 hover:text-white transition-all text-xs font-bold">🗑️</button>
+                ${deleteBtn}
             `;
             return row;
         }
@@ -6432,6 +6441,12 @@
             const list = document.getElementById(`${prefix}-family-members-list`);
             if (list) {
                 list.innerHTML = '';
+                
+                let stdName = '';
+                const nameInput = document.getElementById(prefix === 'new' ? 'new-std-name' : 'edit-std-name');
+                if (nameInput) stdName = nameInput.value.trim();
+
+                addFamilyMemberRow(prefix, 'HỌCSINH', stdName, false);
                 addFamilyMemberRow(prefix, 'CHUHÔ', '', false);
                 addFamilyMemberRow(prefix, 'BỐ', '', false);
                 addFamilyMemberRow(prefix, 'MẸ', '', false);
@@ -6441,14 +6456,14 @@
         function getProfileStatusJSON(prefix) {
             const vaccination_book = document.getElementById(`${prefix}-std-vaccination`).checked;
             const birth_certificate = document.getElementById(`${prefix}-std-birth-cert`).checked;
-            const child_identity = document.getElementById(`${prefix}-std-child-id`).checked;
             
             const family_members = [];
             const list = document.getElementById(`${prefix}-family-members-list`);
             if (list) {
                 const rows = list.querySelectorAll(':scope > div');
                 rows.forEach(row => {
-                    const relation = row.querySelector('.relation-select').value;
+                    const selectEl = row.querySelector('.relation-select');
+                    const relation = selectEl.value;
                     const name = row.querySelector('.name-input').value.trim();
                     const verified = row.querySelector('.verified-checkbox').checked;
                     family_members.push({ relation, name, verified });
@@ -6458,10 +6473,21 @@
             return JSON.stringify({
                 vaccination_book,
                 birth_certificate,
-                child_identity,
                 family_members
             });
         }
+
+        // Tự động đồng bộ tên bé sang mục định danh
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('new-std-name')?.addEventListener('input', (e) => {
+                const el = document.getElementById('new-std-profile-name');
+                if (el) el.value = e.target.value;
+            });
+            document.getElementById('edit-std-name')?.addEventListener('input', (e) => {
+                const el = document.getElementById('edit-std-profile-name');
+                if (el) el.value = e.target.value;
+            });
+        });
 
         function toggleTagExpiryUI(type) {
             const tag = document.getElementById(`${type}-std-tag`).value;
@@ -7482,7 +7508,6 @@
             // Khởi tạo/Reset trạng thái checklist hồ sơ
             document.getElementById('new-std-vaccination').checked = false;
             document.getElementById('new-std-birth-cert').checked = false;
-            document.getElementById('new-std-child-id').checked = false;
             initDefaultFamilyMembers('new');
             
             const content = document.getElementById('new-profile-status-content');
@@ -7566,7 +7591,6 @@
                     
                     document.getElementById('new-std-vaccination').checked = false;
                     document.getElementById('new-std-birth-cert').checked = false;
-                    document.getElementById('new-std-child-id').checked = false;
                     initDefaultFamilyMembers('new');
 
                     document.getElementById('modal-add-student').classList.add('hidden');
@@ -9997,7 +10021,7 @@
 
     <!-- Modal: Add New Student -->
     <div id="modal-add-student" onclick="if(event.target === this) this.classList.add('hidden')" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-6 modal-overlay">
-        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in duration-300 border-t-4 border-[#006C18]">
+        <div class="bg-white w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in duration-300 border-t-4 border-[#006C18]">
             <div class="p-5 bg-emerald-50 flex justify-between items-center border-b border-emerald-100">
                 <h3 class="text-sm font-black text-[#006C18] headline uppercase tracking-widest">👶 THÊM HỌC SINH MỚI</h3>
                 <button onclick="document.getElementById('modal-add-student').classList.add('hidden')"
@@ -10066,14 +10090,14 @@
                     <!-- Tình trạng hồ sơ (Checklist động) -->
                     <div class="col-span-2 border border-emerald-100 rounded-xl overflow-hidden mt-2 bg-gradient-to-br from-emerald-50/10 to-teal-50/5 shadow-sm">
                         <button type="button" onclick="toggleProfileStatusSection('new')" class="w-full flex items-center justify-between p-4 bg-emerald-50/50 hover:bg-emerald-50 transition-all font-bold text-xs uppercase tracking-wider text-[#006C18] select-none">
-                            <span class="flex items-center gap-2">📋 Tình trạng hồ sơ bé</span>
+                            <span class="flex items-center gap-2">Tình trạng hồ sơ bé</span>
                             <span class="transform transition-transform duration-200" id="new-profile-arrow">▼</span>
                         </button>
                         <div id="new-profile-status-content" class="hidden p-4 space-y-3 bg-white border-t border-emerald-100 text-left">
                             <label class="flex items-center gap-3 p-3 border border-slate-100 hover:border-emerald-200 rounded-xl cursor-pointer hover:bg-emerald-50/10 transition-all select-none">
                                 <input type="checkbox" id="new-std-vaccination" class="w-4 h-4 cursor-pointer accent-[#006C18]">
                                 <div class="flex flex-col">
-                                    <span class="text-xs font-bold text-[#006C18]">📔 Sổ tiêm chủng</span>
+                                    <span class="text-xs font-bold text-[#006C18]">Sổ tiêm chủng</span>
                                     <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wide mt-0.5">Đã nộp sổ tiêm chủng của bé</span>
                                 </div>
                             </label>
@@ -10081,25 +10105,17 @@
                             <label class="flex items-center gap-3 p-3 border border-slate-100 hover:border-emerald-200 rounded-xl cursor-pointer hover:bg-emerald-50/10 transition-all select-none">
                                 <input type="checkbox" id="new-std-birth-cert" class="w-4 h-4 cursor-pointer accent-[#006C18]">
                                 <div class="flex flex-col">
-                                    <span class="text-xs font-bold text-[#006C18]">📝 Ảnh chụp giấy khai sinh</span>
+                                    <span class="text-xs font-bold text-[#006C18]">Ảnh chụp giấy khai sinh</span>
                                     <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wide mt-0.5">Đã nộp ảnh chụp giấy khai sinh</span>
                                 </div>
                             </label>
 
-                            <label class="flex items-center gap-3 p-3 border border-slate-100 hover:border-emerald-200 rounded-xl cursor-pointer hover:bg-emerald-50/10 transition-all select-none">
-                                <input type="checkbox" id="new-std-child-id" class="w-4 h-4 cursor-pointer accent-[#006C18]">
-                                <div class="flex flex-col">
-                                    <span class="text-xs font-bold text-[#006C18]">👶 Định danh của bé</span>
-                                    <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wide mt-0.5">Đã hoàn thành định danh cá nhân bé</span>
-                                </div>
-                            </label>
-
-                            <!-- Định danh gia đình -->
+                            <!-- Định danh bé & gia đình -->
                             <div class="p-4 border border-emerald-100/50 bg-[#F0FDF4]/30 rounded-xl space-y-3">
                                 <div class="flex items-center justify-between">
                                     <div class="flex flex-col text-left">
-                                        <span class="text-xs font-bold text-[#006C18] flex items-center gap-2">👥 Định danh gia đình</span>
-                                        <span class="text-[8px] text-slate-400 font-black uppercase tracking-widest mt-0.5">Các thành viên hộ gia đình (bao gồm chủ hộ)</span>
+                                        <span class="text-xs font-bold text-[#006C18] flex items-center gap-2">Định danh bé & gia đình</span>
+                                        <span class="text-[8px] text-slate-400 font-black uppercase tracking-widest mt-0.5">Các thành viên hộ gia đình (bao gồm học sinh và chủ hộ)</span>
                                     </div>
                                     <button type="button" onclick="addFamilyMemberRow('new')" class="bg-[#006C18] hover:bg-[#FF8000] text-white px-2.5 py-1 rounded text-[8px] font-black uppercase tracking-widest shadow-sm hover:scale-105 transition-all">
                                         + Thêm
