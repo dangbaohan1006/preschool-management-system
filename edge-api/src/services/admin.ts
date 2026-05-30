@@ -70,10 +70,20 @@ export class AdminService {
   }
 
   async addStudent(id: string, name: string, classId: string, birthYear?: number, tag?: string, parent_name?: string, address?: string, phone?: string, birthday?: string, tag_expiry?: string | null, entry_date?: string, resumption_date?: string | null, profile_status?: string | null) {
+    // Kiểm tra xem ID học sinh đã tồn tại chưa (kể cả đã bị xóa - DELETED)
+    const existing = await this.db.prepare('SELECT status, name FROM students WHERE id = ?').bind(id).first<{ status: string, name: string }>();
+    if (existing) {
+      if (existing.status === 'DELETED') {
+        throw new Error(`Mã học sinh [${id}] đã tồn tại trong Thùng rác (bé [${existing.name}]). Vui lòng sử dụng mã khác hoặc khôi phục/xóa vĩnh viễn học sinh cũ.`);
+      } else {
+        throw new Error(`Mã học sinh [${id}] đã tồn tại trên hệ thống (bé [${existing.name}]).`);
+      }
+    }
+
     // Nếu có Tag, mặc định status là ACTIVE
     const status = 'ACTIVE';
 
-    return await this.db.prepare('INSERT OR IGNORE INTO students (id, name, class_id, birth_year, tag, tag_expiry, resumption_date, parent_name, address, phone, birthday, status, entry_date, profile_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    return await this.db.prepare('INSERT INTO students (id, name, class_id, birth_year, tag, tag_expiry, resumption_date, parent_name, address, phone, birthday, status, entry_date, profile_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
       .bind(id, name, classId, birthYear || null, tag || null, tag_expiry || null, resumption_date || null, parent_name || null, address || null, phone || null, birthday || null, status, entry_date || null, profile_status || null)
       .run();
   }
