@@ -2537,6 +2537,7 @@
 
         let currentClasses = [];
         let currentStudentsStore = [];
+        let currentTrashStore = [];
         let currentUser = null;
         let appSettings = [];
         let activeFeeTab = 'STANDARD'; // Mặc định chọn Hệ tiêu chuẩn
@@ -4579,14 +4580,16 @@
         async function loadAllData(renderOnly = false) {
             try {
                 if (!renderOnly) {
-                    const [clsRes, stdRes] = await Promise.all([
+                    const [clsRes, stdRes, trashRes] = await Promise.all([
                         fetch(`${API_BASE}/admin/classes`, { headers: { 'x-api-key': SECRET } }),
-                        fetch(`${API_BASE}/admin/students`, { headers: { 'x-api-key': SECRET } })
+                        fetch(`${API_BASE}/admin/students`, { headers: { 'x-api-key': SECRET } }),
+                        fetch(`${API_BASE}/admin/students/trash`, { headers: { 'x-api-key': SECRET } })
                     ]);
 
                     const classes = (await clsRes.json()).results || [];
                     currentClasses = sortClassesList(classes).filter(c => c.id !== 'MANAGEMENT');
                     currentStudentsStore = (await stdRes.json()).results || [];
+                    currentTrashStore = (await trashRes.json()).results || [];
                 }
 
                 const students = currentStudentsStore;
@@ -7483,7 +7486,7 @@
         function suggestNextStudentId() {
             const prefix = "72710305";
             let maxSeq = 0;
-            const allStudents = currentStudentsStore || [];
+            const allStudents = [...(currentStudentsStore || []), ...(currentTrashStore || [])];
             
             allStudents.forEach(s => {
                 // Kiểm tra cả tiền tố cũ (7271005) và mới (72710305) 
