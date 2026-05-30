@@ -292,14 +292,22 @@ export class AdminService {
 
   async bulkUpdateStatus(studentIds: string[], status: string) {
     if (!studentIds || studentIds.length === 0) return;
-    const isDropoutOrPenalty = status === 'DROPOUT' || status === 'PENALTY';
-    const dropoutDate = isDropoutOrPenalty ? 'CURRENT_DATE' : 'NULL';
-    const classIdUpdates = status === 'DROPOUT' ? ", class_id = 'DROPOUT'" : "";
-    const tagUpdates = status === 'DROPOUT' ? ", tag = NULL, tag_expiry = NULL" : "";
-
-    const stmts = studentIds.map(sid => 
-      this.db.prepare(`UPDATE students SET status = ?, dropout_date = ${dropoutDate}${classIdUpdates}${tagUpdates} WHERE id = ?`).bind(status, sid)
-    );
+    const stmts = [];
+    for (const sid of studentIds) {
+      if (status === 'HANGING') {
+        // Nghỉ luôn (Hanging): tag = 'HANGING', status = 'ACTIVE', tag_expiry = 2 months, resumption_date = null, class_id remains
+        stmts.push(this.db.prepare("UPDATE students SET status = 'ACTIVE', tag = 'HANGING', tag_expiry = date('now', '+2 months'), resumption_date = NULL, dropout_date = CURRENT_DATE WHERE id = ?").bind(sid));
+      } else if (status === 'TEMPORARY_LEAVE') {
+        // Nghỉ tạm thời (Leave): tag = 'TEMPORARY_LEAVE', status = 'ACTIVE', resumption_date = NULL, tag_expiry = NULL
+        stmts.push(this.db.prepare("UPDATE students SET status = 'ACTIVE', tag = 'TEMPORARY_LEAVE', tag_expiry = NULL, resumption_date = NULL, dropout_date = CURRENT_DATE WHERE id = ?").bind(sid));
+      } else if (status === 'DROPOUT') {
+        // Ra trường (Dropout): status = 'DROPOUT', class_id = 'DROPOUT', tag = NULL, tag_expiry = NULL, resumption_date = NULL, dropout_date = CURRENT_DATE
+        stmts.push(this.db.prepare("UPDATE students SET status = 'DROPOUT', class_id = 'DROPOUT', tag = NULL, tag_expiry = NULL, resumption_date = NULL, dropout_date = CURRENT_DATE WHERE id = ?").bind(sid));
+      } else if (status === 'ACTIVE') {
+        // Đang học (Active): status = 'ACTIVE', tag = NULL, tag_expiry = NULL, resumption_date = NULL, dropout_date = NULL
+        stmts.push(this.db.prepare("UPDATE students SET status = 'ACTIVE', tag = NULL, tag_expiry = NULL, resumption_date = NULL, dropout_date = NULL WHERE id = ?").bind(sid));
+      }
+    }
     if (stmts.length > 0) await this.db.batch(stmts);
   }
 

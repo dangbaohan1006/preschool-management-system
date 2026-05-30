@@ -2082,7 +2082,7 @@
                                 <input type="text" id="edit-std-birthday"
                                     class="w-full border border-[#ddd] rounded-md p-3 text-xs outline-none focus:border-[#006C18] font-black">
                             </div>
-                            <div class="space-y-1 text-left">
+                            <div class="hidden space-y-1 text-left">
                                 <label
                                     class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tag</label>
                                 <select id="edit-std-tag" onchange="toggleTagExpiryUI('edit')"
@@ -2091,6 +2091,23 @@
                                     <option value="TRIAL">Học thử (Trial)</option>
                                     <option value="HANGING">Nghỉ luôn (Hanging)</option>
                                     <option value="TEMPORARY_LEAVE">Nghỉ tạm thời (Leave)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-1 text-left opacity-50">
+                                <label class="text-[9px] font-black text-slate-400 uppercase">Năm sinh (Cũ)</label>
+                                <input type="number" id="edit-std-birth" disabled
+                                    class="w-full border border-slate-200 rounded-md p-3 text-xs bg-slate-50 font-black">
+                            </div>
+                            <div class="space-y-1 text-left col-span-2">
+                                <label class="text-[9px] font-black text-slate-400 uppercase">Trạng thái học tập</label>
+                                <select id="edit-std-status" onchange="onEditStatusChange()"
+                                    class="w-full border border-[#ddd] rounded-md p-3 text-xs outline-none cursor-pointer font-black italic">
+                                    <option value="ACTIVE">🟢 Đang học</option>
+                                    <option value="HANGING">🔴 Nghỉ luôn</option>
+                                    <option value="TEMPORARY_LEAVE">🔵 Nghỉ tạm thời</option>
+                                    <option value="DROPOUT">🚪 Ra trường</option>
                                 </select>
                             </div>
                         </div>
@@ -6091,36 +6108,65 @@
 
         function onEditStatusChange() {
             const status = document.getElementById('edit-std-status').value;
-            const section = document.getElementById('edit-dropout-section');
-            const hangingCheckbox = document.getElementById('edit-std-hanging');
-            const dropoutInput = document.getElementById('edit-std-dropout-date');
+            const dropoutSection = document.getElementById('edit-dropout-section');
+            const expiryContainer = document.getElementById('edit-std-expiry-container');
+            const resumptionInput = document.getElementById('edit-std-resumption');
+            const durationInput = document.getElementById('edit-std-duration');
+            const expiryLabel = document.getElementById('edit-std-expiry-label');
 
-            if (status === 'DROPOUT' || status === 'PENALTY') {
-                if (section) section.classList.remove('hidden');
-                
-                // Initialize flatpickr if not already initialized
-                if (dropoutInput && !dropoutInput._flatpickr) {
-                    flatpickr(dropoutInput, {
-                        dateFormat: "d/m/Y",
-                        locale: "vn",
-                        allowInput: true
-                    });
-                }
-
-                // If input is empty, default to today
-                if (dropoutInput && !dropoutInput.value) {
-                    const today = new Date();
-                    dropoutInput.value = today.toLocaleDateString('vi-VN');
-                    if (dropoutInput._flatpickr) {
-                        dropoutInput._flatpickr.setDate(today);
+            // Sync hidden tagSelect
+            const tagSelect = document.getElementById('edit-std-tag');
+            if (tagSelect) {
+                if (status === 'HANGING') {
+                    tagSelect.value = 'HANGING';
+                } else if (status === 'TEMPORARY_LEAVE') {
+                    tagSelect.value = 'TEMPORARY_LEAVE';
+                } else if (status === 'DROPOUT') {
+                    tagSelect.value = '';
+                } else if (status === 'ACTIVE') {
+                    if (tagSelect.value !== 'TRIAL') {
+                        tagSelect.value = '';
                     }
                 }
+            }
 
-                if (hangingCheckbox) {
-                    hangingCheckbox.checked = (status === 'PENALTY');
+            if (dropoutSection) dropoutSection.classList.add('hidden');
+            if (expiryContainer) expiryContainer.classList.add('hidden');
+            if (resumptionInput) resumptionInput.classList.add('hidden');
+            if (durationInput) durationInput.classList.add('hidden');
+
+            if (status === 'DROPOUT' || status === 'HANGING') {
+                if (dropoutSection) dropoutSection.classList.remove('hidden');
+                const dropoutInput = document.getElementById('edit-std-dropout-date');
+                if (dropoutInput) {
+                    if (!dropoutInput._flatpickr) {
+                        flatpickr(dropoutInput, {
+                            dateFormat: "d/m/Y",
+                            locale: "vn",
+                            allowInput: true
+                        });
+                    }
+                    if (!dropoutInput.value) {
+                        const today = new Date();
+                        dropoutInput.value = today.toLocaleDateString('vi-VN');
+                        if (dropoutInput._flatpickr) {
+                            dropoutInput._flatpickr.setDate(today);
+                        }
+                    }
                 }
-            } else {
-                if (section) section.classList.add('hidden');
+            } else if (status === 'TEMPORARY_LEAVE') {
+                if (expiryContainer) expiryContainer.classList.remove('hidden');
+                if (resumptionInput) {
+                    resumptionInput.classList.remove('hidden');
+                    if (expiryLabel) expiryLabel.innerText = "Ngày đi học lại dự kiến";
+                    if (!resumptionInput._flatpickr) {
+                        flatpickr(resumptionInput, {
+                            dateFormat: "d/m/Y",
+                            locale: "vn",
+                            allowInput: true
+                        });
+                    }
+                }
             }
         }
 
@@ -6142,7 +6188,19 @@
             document.getElementById('edit-std-parent').value = student.parent_name || '';
             document.getElementById('edit-std-phone').value = student.phone || '';
             document.getElementById('edit-std-address').value = student.address || '';
-            document.getElementById('edit-std-status').value = student.status || 'ACTIVE';
+            // Populate combined status
+            const statusSelect = document.getElementById('edit-std-status');
+            if (statusSelect) {
+                if (student.tag === 'HANGING' || student.status === 'PENALTY') {
+                    statusSelect.value = 'HANGING';
+                } else if (student.tag === 'TEMPORARY_LEAVE') {
+                    statusSelect.value = 'TEMPORARY_LEAVE';
+                } else if (student.status === 'DROPOUT') {
+                    statusSelect.value = 'DROPOUT';
+                } else {
+                    statusSelect.value = 'ACTIVE';
+                }
+            }
             document.getElementById('edit-std-resumption').value = student.resumption_date ? student.resumption_date.split('-').reverse().join('/') : '';
 
             // Populate class select
@@ -6201,56 +6259,21 @@
                 }
             }
 
-            // Load dropout date and display section if status is DROPOUT or PENALTY
-            const statusVal = student.status || 'ACTIVE';
-            const dropoutSection = document.getElementById('edit-dropout-section');
-            const hangingCheckbox = document.getElementById('edit-std-hanging');
+            // Load dropout date and display section based on our new status dropdown
             const dropoutInput = document.getElementById('edit-std-dropout-date');
-
-            if (statusVal === 'DROPOUT' || statusVal === 'PENALTY') {
-                if (dropoutSection) dropoutSection.classList.remove('hidden');
-                if (hangingCheckbox) hangingCheckbox.checked = (statusVal === 'PENALTY');
-                
-                if (dropoutInput) {
-                    // Ensure flatpickr is initialized
-                    if (!dropoutInput._flatpickr) {
-                        flatpickr(dropoutInput, {
-                            dateFormat: "d/m/Y",
-                            locale: "vn",
-                            allowInput: true
-                        });
-                    }
-
-                    if (student.dropout_date) {
-                        const parts = student.dropout_date.split('-');
-                        const formatted = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : student.dropout_date;
-                        dropoutInput.value = formatted;
-                        if (dropoutInput._flatpickr) {
-                            dropoutInput._flatpickr.setDate(student.dropout_date);
-                        }
-                    } else {
-                        const today = new Date();
-                        dropoutInput.value = today.toLocaleDateString('vi-VN');
-                        if (dropoutInput._flatpickr) {
-                            dropoutInput._flatpickr.setDate(today);
-                        }
-                    }
-                }
-            } else {
-                if (dropoutSection) dropoutSection.classList.add('hidden');
-                if (hangingCheckbox) hangingCheckbox.checked = false;
-                if (dropoutInput) {
+            if (dropoutInput) {
+                if (student.dropout_date) {
+                    const parts = student.dropout_date.split('-');
+                    const formatted = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : student.dropout_date;
+                    dropoutInput.value = formatted;
+                } else {
                     dropoutInput.value = '';
-                    if (dropoutInput._flatpickr) {
-                        dropoutInput._flatpickr.clear();
-                    }
                 }
             }
 
+            onEditStatusChange();
+
             document.getElementById('modal-edit-student').classList.remove('hidden');
-            
-            // Tự động kiểm tra và hiển thị UI học thử/treo sĩ số nếu có
-            toggleTagExpiryUI('edit');
         }
 
         async function convertTrialToOfficial() {
@@ -6335,7 +6358,7 @@
             }
 
             let dropout_date = null;
-            if (status === 'DROPOUT' || status === 'PENALTY') {
+            if (status === 'DROPOUT' || status === 'HANGING') {
                 const dropout_date_raw = document.getElementById('edit-std-dropout-date').value;
                 if (dropout_date_raw) {
                     const [dd, mm, yyyy] = dropout_date_raw.split('/');
@@ -6343,11 +6366,17 @@
                 }
             }
 
+            // Adjust status for HANGING and TEMPORARY_LEAVE tag states
+            let finalStatus = status;
+            if (status === 'HANGING' || status === 'TEMPORARY_LEAVE') {
+                finalStatus = 'ACTIVE';
+            }
+
             try {
                 const res = await fetch(`${API_BASE}/admin/students/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'x-api-key': SECRET },
-                    body: JSON.stringify({ name, birthday, parent_name, phone, address, class_id, tag, status, tag_expiry, resumption_date, dropout_date, profile_status })
+                    body: JSON.stringify({ name, birthday, parent_name, phone, address, class_id, tag, status: finalStatus, tag_expiry, resumption_date, dropout_date, profile_status })
                 });
 
                 if (res.ok) {
@@ -9724,8 +9753,10 @@
                         mới</label>
                     <select id="bulk-status-select"
                         class="w-full border border-[#ddd] rounded-md p-3 text-xs outline-none cursor-pointer font-black">
-                        <option value="ACTIVE" class="text-emerald-600">🟢 Cập nhật thành: ĐANG HỌC (ACTIVE)</option>
-                        <option value="DROPOUT" class="text-rose-600">🔴 Cập nhật thành: NGHỈ HẲN (DROPOUT)</option>
+                        <option value="ACTIVE" class="text-emerald-600">🟢 Cập nhật thành: ĐANG HỌC</option>
+                        <option value="HANGING" class="text-rose-600">🔴 Cập nhật thành: NGHỈ LUÔN</option>
+                        <option value="TEMPORARY_LEAVE" class="text-blue-600">🔵 Cập nhật thành: NGHỈ TẠM THỜI</option>
+                        <option value="DROPOUT" class="text-slate-600">🚪 Cập nhật thành: RA TRƯỜNG</option>
                     </select>
                 </div>
                 <div class="pt-4 mt-2 border-t border-slate-100">
