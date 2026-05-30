@@ -2046,7 +2046,7 @@
                                     class="flex-1 border border-slate-200 rounded-md p-3 text-xs bg-slate-50 font-black text-slate-400">
                                 <button id="btn-convert-trial" onclick="convertTrialToOfficial()"
                                     class="hidden px-2 py-1 bg-emerald-500 text-white text-[8px] font-black rounded uppercase hover:bg-emerald-600 transition-all">
-                                    ✨ Cấp mã chính thức
+                                    Cấp mã chính thức
                                 </button>
                             </div>
                         </div>
@@ -2082,35 +2082,20 @@
                                 <input type="text" id="edit-std-birthday"
                                     class="w-full border border-[#ddd] rounded-md p-3 text-xs outline-none focus:border-[#006C18] font-black">
                             </div>
-                            <div class="hidden space-y-1 text-left">
-                                <label
-                                    class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tag</label>
-                                <select id="edit-std-tag" onchange="toggleTagExpiryUI('edit')"
-                                    class="w-full border border-[#ddd] rounded-md p-3 text-xs outline-none cursor-pointer font-black">
-                                    <option value="">Chính thức</option>
-                                    <option value="TRIAL">Học thử (Trial)</option>
-                                    <option value="HANGING">Nghỉ luôn (Hanging)</option>
-                                    <option value="TEMPORARY_LEAVE">Nghỉ tạm thời (Leave)</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="space-y-1 text-left opacity-50">
-                                <label class="text-[9px] font-black text-slate-400 uppercase">Năm sinh (Cũ)</label>
-                                <input type="number" id="edit-std-birth" disabled
-                                    class="w-full border border-slate-200 rounded-md p-3 text-xs bg-slate-50 font-black">
-                            </div>
-                            <div class="space-y-1 text-left col-span-2">
+                            <div class="space-y-1 text-left">
                                 <label class="text-[9px] font-black text-slate-400 uppercase">Trạng thái học tập</label>
                                 <select id="edit-std-status" onchange="onEditStatusChange()"
                                     class="w-full border border-[#ddd] rounded-md p-3 text-xs outline-none cursor-pointer font-black italic">
-                                    <option value="ACTIVE">🟢 Đang học</option>
-                                    <option value="HANGING">🔴 Nghỉ luôn</option>
-                                    <option value="TEMPORARY_LEAVE">🔵 Nghỉ tạm thời</option>
-                                    <option value="DROPOUT">🚪 Ra trường</option>
+                                    <option value="ACTIVE">Đang học</option>
+                                    <option value="HANGING">Nghỉ luôn</option>
+                                    <option value="TEMPORARY_LEAVE">Nghỉ tạm thời</option>
+                                    <option value="DROPOUT">Ra trường</option>
                                 </select>
                             </div>
                         </div>
+                        <!-- Hidden inputs to maintain script compatibility -->
+                        <input type="hidden" id="edit-std-tag">
+                        <input type="hidden" id="edit-std-birth">
                         <div id="edit-std-expiry-container"
                             class="hidden grid grid-cols-2 gap-4 animate-in slide-in-from-top-1 duration-200">
                             <div class="col-span-2 space-y-1 text-left">
@@ -2127,36 +2112,13 @@
                             <input type="text" id="edit-std-address"
                                 class="w-full border border-[#ddd] rounded-md p-3 text-xs outline-none focus:border-[#006C18] font-black text-slate-500">
                         </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="space-y-1 text-left opacity-50">
-                                <label class="text-[9px] font-black text-slate-400 uppercase">Năm sinh (Cũ)</label>
-                                <input type="number" id="edit-std-birth" disabled
-                                    class="w-full border border-slate-200 rounded-md p-3 text-xs bg-slate-50 font-black">
-                            </div>
-                            <div class="space-y-1 text-left">
-                                <label class="text-[9px] font-black text-slate-400 uppercase">Trạng thái</label>
-                                <select id="edit-std-status" onchange="onEditStatusChange()"
-                                    class="w-full border border-[#ddd] rounded-md p-3 text-xs outline-none cursor-pointer font-black italic">
-                                    <option value="ACTIVE">✅ Đang học</option>
-                                    <option value="DROPOUT">🚪 Nghỉ hẳn</option>
-                                    <option value="PENALTY">⚠️ Phạt treo sĩ số</option>
-                                </select>
-                            </div>
-                        </div>
                         
-                        <!-- Phân vùng Ngày nghỉ học / Phạt Treo sĩ số -->
+                        <!-- Phân vùng Ngày nghỉ học / Ra trường -->
                         <div id="edit-dropout-section" class="hidden space-y-3 bg-rose-50/50 border border-rose-100/70 p-4 rounded-xl animate-in slide-in-from-top-1 duration-200 text-left">
                             <div class="space-y-1">
-                                <label class="text-[9px] font-black text-rose-600 uppercase">Ngày nghỉ học / Ra trường</label>
-                                <input type="text" id="edit-std-dropout-date" placeholder="Chọn ngày nghỉ học (dd/mm/yyyy)"
+                                <label id="edit-dropout-label" class="text-[9px] font-black text-rose-600 uppercase">Ngày nghỉ học / Ra trường</label>
+                                <input type="text" id="edit-std-dropout-date" placeholder="Chọn ngày (dd/mm/yyyy)"
                                     class="w-full border border-rose-200 bg-white rounded-md p-3 text-xs outline-none focus:border-rose-500 font-black font-sans">
-                            </div>
-                            <div class="flex items-center gap-2 pt-1">
-                                <input type="checkbox" id="edit-std-hanging" onchange="onEditHangingChange(this)"
-                                    class="w-4 h-4 rounded border-rose-300 text-rose-600 focus:ring-rose-500 cursor-pointer">
-                                <label for="edit-std-hanging" class="text-[10px] font-bold text-rose-700 cursor-pointer select-none">
-                                    Treo sĩ số (Tự động phạt vắng đỏ ✘ đến hết tháng)
-                                </label>
                             </div>
                         </div>
                         
@@ -6533,7 +6495,7 @@
 
             if (tag === 'TRIAL') {
                 container.classList.remove('hidden');
-                label.innerText = '⏱️ Nhập thời hạn học thử (số ngày):';
+                label.innerText = 'Nhập thời hạn học thử (số ngày):';
                 input.classList.remove('hidden');
                 input.placeholder = "Ví dụ: 7";
                 if (type === 'new' && !input.value) input.value = "7";
@@ -6545,12 +6507,12 @@
             } else if (tag === 'HANGING') {
                 container.classList.remove('hidden');
                 const months = appSettings.find(s => s.key === 'hanging_duration_months')?.value || '2';
-                label.innerText = `⏳ Tự động áp dụng thời hạn: ${months} tháng (theo cấu hình)`;
+                label.innerText = `Tự động áp dụng thời hạn: ${months} tháng (theo cấu hình)`;
                 input.classList.add('hidden');
                 resInput.classList.add('hidden');
             } else if (tag === 'TEMPORARY_LEAVE') {
                 container.classList.remove('hidden');
-                label.innerText = '📅 Ngày bé đi học lại (dự kiến):';
+                label.innerText = 'Ngày bé đi học lại (dự kiến):';
                 input.classList.add('hidden');
                 resInput.classList.remove('hidden');
                 
@@ -9753,10 +9715,10 @@
                         mới</label>
                     <select id="bulk-status-select"
                         class="w-full border border-[#ddd] rounded-md p-3 text-xs outline-none cursor-pointer font-black">
-                        <option value="ACTIVE" class="text-emerald-600">🟢 Cập nhật thành: ĐANG HỌC</option>
-                        <option value="HANGING" class="text-rose-600">🔴 Cập nhật thành: NGHỈ LUÔN</option>
-                        <option value="TEMPORARY_LEAVE" class="text-blue-600">🔵 Cập nhật thành: NGHỈ TẠM THỜI</option>
-                        <option value="DROPOUT" class="text-slate-600">🚪 Cập nhật thành: RA TRƯỜNG</option>
+                        <option value="ACTIVE" class="text-emerald-600">Cập nhật thành: ĐANG HỌC</option>
+                        <option value="HANGING" class="text-rose-600">Cập nhật thành: NGHỈ LUÔN</option>
+                        <option value="TEMPORARY_LEAVE" class="text-blue-600">Cập nhật thành: NGHỈ TẠM THỜI</option>
+                        <option value="DROPOUT" class="text-slate-600">Cập nhật thành: RA TRƯỜNG</option>
                     </select>
                 </div>
                 <div class="pt-4 mt-2 border-t border-slate-100">
