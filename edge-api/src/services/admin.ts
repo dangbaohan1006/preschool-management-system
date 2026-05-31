@@ -34,13 +34,18 @@ export class AdminService {
   }
 
   // --- Students ---
-  async getStudents(classId?: string, asOfDate?: string, includeLeave: boolean = true) {
+  async getStudents(classId?: string, asOfDate?: string, includeLeave: boolean = true, includeDropout: boolean = false) {
     let query = 'SELECT * FROM students';
     const conditions = [];
     const params: any[] = [];
     
-    // Mặc định chỉ lấy học sinh hoạt động, ẩn các bé đã bị xóa
-    conditions.push("status = 'ACTIVE'");
+    // Mặc định chỉ lấy học sinh hoạt động, ẩn các bé đã bị xóa.
+    // Nếu includeDropout là true, lấy thêm học sinh Nghỉ hẳn (DROPOUT) và Penalty
+    if (includeDropout) {
+      conditions.push("status IN ('ACTIVE', 'DROPOUT', 'PENALTY')");
+    } else {
+      conditions.push("status = 'ACTIVE'");
+    }
     
     if (classId) {
       conditions.push(`class_id = ?`);
@@ -51,6 +56,13 @@ export class AdminService {
     if (asOfDate) {
       conditions.push(`(entry_date IS NULL OR entry_date <= ?)`);
       params.push(asOfDate);
+      
+      // Nếu có include_dropout, lọc để chỉ lấy các học sinh chưa ra trường trước ngày đầu tiên của tháng xem báo cáo
+      if (includeDropout) {
+        const firstDayOfMonth = asOfDate.substring(0, 8) + '01'; // 'YYYY-MM-01'
+        conditions.push(`(dropout_date IS NULL OR dropout_date >= ?)`);
+        params.push(firstDayOfMonth);
+      }
     }
 
     // Nếu không include học sinh nghỉ tạm thời (Bảo lưu)
@@ -82,6 +94,14 @@ export class AdminService {
 
     // Nếu có Tag, mặc định status là ACTIVE
     const status = 'ACTIVE';
+
+    // Tự động tính birthYear từ birthday nếu không có
+    if (!birthYear && birthday) {
+      const match = birthday.match(/(\d{4})/);
+      if (match) {
+        birthYear = parseInt(match[1]);
+      }
+    }
 
     return await this.db.prepare('INSERT INTO students (id, name, class_id, birth_year, tag, tag_expiry, resumption_date, parent_name, address, phone, birthday, status, entry_date, profile_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
       .bind(id, name, classId, birthYear || null, tag || null, tag_expiry || null, resumption_date || null, parent_name || null, address || null, phone || null, birthday || null, status, entry_date || null, profile_status || null)
@@ -141,6 +161,13 @@ export class AdminService {
     } else if (data.dropout_date !== undefined) {
         fields.push('dropout_date = ?');
         values.push(data.dropout_date);
+    }
+    // Tự động tính birth_year nếu có birthday nhưng không truyền birth_year
+    if (data.birth_year === undefined && data.birthday !== undefined) {
+      const match = data.birthday.match(/(\d{4})/);
+      if (match) {
+        data.birth_year = parseInt(match[1]);
+      }
     }
     if (data.birth_year !== undefined) { fields.push('birth_year = ?'); values.push(data.birth_year); }
 

@@ -4781,8 +4781,8 @@
                             <span class="text-[10px] text-slate-500 line-clamp-2 leading-tight">${s.address || '---'}</span>
                         </td>
                         <td class="p-4 text-right flex gap-2 justify-end">
-                            <button onclick="openEditStudentModal('${s.id}')" class="bg-[#006C18] text-white px-3 py-2 rounded-lg text-[9px] uppercase font-black tracking-widest shadow-md shadow-emerald-100 hover:scale-105 transition-all">✏️ Sửa</button>
-                            <button onclick="confirmDeleteStudent('${s.id}', '${s.name.replace(/'/g, "\\'")}')" class="bg-rose-500 text-white px-3 py-2 rounded-lg text-[9px] uppercase font-black tracking-widest shadow-md shadow-rose-100 hover:scale-105 transition-all">🗑️ Xoá</button>
+                            <button onclick="openEditStudentModal('${s.id}')" class="bg-[#006C18] text-white px-3 py-2 rounded-lg text-[9px] uppercase font-black tracking-widest shadow-md shadow-emerald-100 hover:scale-105 transition-all">Sửa</button>
+                            <button onclick="confirmDeleteStudent('${s.id}', '${s.name.replace(/'/g, "\\'")}')" class="bg-rose-500 text-white px-3 py-2 rounded-lg text-[9px] uppercase font-black tracking-widest shadow-md shadow-rose-100 hover:scale-105 transition-all">Xoá</button>
                         </td>
                     </tr>
                 `;
@@ -6759,7 +6759,7 @@
             try {
                 const [logsRes, allStudentsRes, holidaysRes] = await Promise.all([
                     fetch(`${API_BASE}/admin/report/class-grid?start_date=${startDate}&end_date=${endDate}&class_id=${classId}`, { headers: { 'x-api-key': 'SECRET_INTERNAL_KEY_2026' } }),
-                    fetch(`${API_BASE}/admin/students?as_of_date=${endDate}`, { headers: { 'x-api-key': 'SECRET_INTERNAL_KEY_2026' } }),
+                    fetch(`${API_BASE}/admin/students?as_of_date=${endDate}&include_dropout=true`, { headers: { 'x-api-key': 'SECRET_INTERNAL_KEY_2026' } }),
                     fetch(`${API_BASE}/admin/holidays?month=${startDate.substring(0, 7)}`, { headers: { 'x-api-key': 'SECRET_INTERNAL_KEY_2026' } })
                 ]);
 
@@ -6888,9 +6888,17 @@
             let rowsHtml = students.map((s, index) => {
                 let totalPresent = 0;
                 let totalAbsent = 0;
+                
+                let nameDisplay = s.name;
+                if (s.status === 'DROPOUT' || s.status === 'PENALTY') {
+                    const parts = s.dropout_date ? s.dropout_date.split('-') : [];
+                    const formattedDate = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : (s.dropout_date || '');
+                    nameDisplay += ` <span class="text-rose-500 font-medium text-[8px] block mt-0.5">(Ra trường từ: ${formattedDate})</span>`;
+                }
+
                 let rowHtml = `<tr class="hover:bg-slate-50 transition-colors border-b border-slate-100 text-[10px]">
                                 <td class="p-2 text-center font-bold text-slate-500 border-r border-slate-100 sticky left-0 bg-white/95 z-10">${index + 1}</td>
-                                <td class="p-2.5 text-left font-bold text-slate-800 border-r border-slate-100 sticky left-[40px] bg-white/95 z-10">${s.name}</td>`;
+                                <td class="p-2.5 text-left font-bold text-slate-800 border-r border-slate-100 sticky left-[40px] bg-white/95 z-10">${nameDisplay}</td>`;
 
                 dateList.forEach(dateStr => {
                     let cell = '';
@@ -7594,6 +7602,20 @@
                     initDefaultFamilyMembers('new');
 
                     document.getElementById('modal-add-student').classList.add('hidden');
+
+                    // Tự động chỉnh bộ lọc hiển thị bé vừa thêm ngay lập tức để tránh nhầm lẫn
+                    const searchInput = document.getElementById('search-student');
+                    if (searchInput) searchInput.value = name;
+
+                    const filterCls = document.getElementById('filter-class');
+                    if (filterCls) filterCls.value = class_id;
+
+                    const filterYr = document.getElementById('filter-birth-year');
+                    if (filterYr) filterYr.value = '';
+
+                    const filterTg = document.getElementById('filter-tag');
+                    if (filterTg) filterTg.value = '';
+
                     loadAllData();
                 } else {
                     alert('Lỗi: ' + (data.error || 'Không thể thêm học sinh'));

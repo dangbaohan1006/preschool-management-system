@@ -80,6 +80,7 @@ app.get('/api/admin/students', async (c) => {
   const classId = c.req.query('class_id');
   const asOfDate = c.req.query('as_of_date');
   const includeLeave = c.req.query('include_leave') !== 'false';
+  const includeDropout = c.req.query('include_dropout') === 'true';
   const { admin } = getServices(c.env.DB);
   
   // Tự động kích hoạt lại các bé hết hạn bảo lưu (nghỉ tạm thời)
@@ -89,7 +90,7 @@ app.get('/api/admin/students', async (c) => {
     console.error("Auto resume failed:", e);
   }
   
-  const { results } = await admin.getStudents(classId, asOfDate, includeLeave);
+  const { results } = await admin.getStudents(classId, asOfDate, includeLeave, includeDropout);
   return c.json({ results });
 });
 
