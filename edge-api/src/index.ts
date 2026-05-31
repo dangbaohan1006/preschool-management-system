@@ -32,7 +32,7 @@ app.use('/api/*', async (c, next) => {
   }
 
   // BỎ QUA AUTH: Cho phép debug endpoint
-  if (c.req.path === '/api/admin/debug-schema') {
+  if (c.req.path === '/api/admin/debug-schema' || c.req.path === '/api/admin/debug-count') {
     return await next();
   }
   
@@ -250,6 +250,16 @@ app.get('/api/admin/debug-schema', async (c) => {
   try {
     const { results } = await c.env.DB.prepare("SELECT name, sql FROM sqlite_master WHERE type='table'").all();
     return c.json({ results });
+  } catch (err: any) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+app.get('/api/admin/debug-count', async (c) => {
+  try {
+    const { results } = await c.env.DB.prepare("SELECT COUNT(*) as count FROM students").all<{ count: number }>();
+    const { results: recent } = await c.env.DB.prepare("SELECT id, name, class_id, status, entry_date, birth_year, birthday FROM students ORDER BY rowid DESC LIMIT 5").all();
+    return c.json({ total: results?.[0]?.count, recent });
   } catch (err: any) {
     return c.json({ error: err.message }, 500);
   }
