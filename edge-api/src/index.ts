@@ -94,6 +94,16 @@ app.get('/api/admin/students', async (c) => {
   return c.json({ results });
 });
 
+app.get('/api/admin/students/next-id', async (c) => {
+  const { admin } = getServices(c.env.DB);
+  try {
+    const nextId = await admin.suggestNextStudentId();
+    return c.json({ success: true, nextId });
+  } catch (err: any) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
 app.post('/api/admin/students', async (c) => {
   try {
     const { id, name, class_id, tag, parent_name, address, phone, birthday, tag_expiry, entry_date, resumption_date, profile_status } = await c.req.json();

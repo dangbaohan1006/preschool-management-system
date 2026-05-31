@@ -7531,8 +7531,20 @@
             return prefix + (maxSeq + 1).toString().padStart(3, '0');
         }
 
-        function openAddStudentModal() {
-            const nextId = suggestNextStudentId();
+        async function openAddStudentModal() {
+            let nextId = suggestNextStudentId();
+            
+            // Tải mã học sinh tiếp theo từ máy chủ để tránh trùng với học sinh ẩn (PENALTY/DROPOUT)
+            try {
+                const res = await fetch(`${API_BASE}/admin/students/next-id`, { headers: { 'x-api-key': SECRET } });
+                const data = await res.json();
+                if (data.success && data.nextId) {
+                    nextId = data.nextId;
+                }
+            } catch (e) {
+                console.error("Lỗi tự động gợi ý mã học sinh từ máy chủ:", e);
+            }
+            
             const idInput = document.getElementById('new-std-id');
             if (idInput) {
                 idInput.value = nextId;

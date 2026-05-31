@@ -81,6 +81,20 @@ export class AdminService {
     return await (params.length > 0 ? stmt.bind(...params).all() : stmt.all());
   }
 
+  async suggestNextStudentId(): Promise<string> {
+    const { results } = await this.db.prepare("SELECT id FROM students WHERE id LIKE '72710305%' OR id LIKE '7271005%'").all<{ id: string }>();
+    const prefix = "72710305";
+    let maxSeq = 0;
+    for (const r of results || []) {
+      const match = r.id.match(/^(7271005|72710305)(\d{3,})$/);
+      if (match) {
+        const seq = parseInt(match[2]);
+        if (seq > maxSeq) maxSeq = seq;
+      }
+    }
+    return prefix + (maxSeq + 1).toString().padStart(3, '0');
+  }
+
   async addStudent(id: string, name: string, classId: string, birthYear?: number, tag?: string, parent_name?: string, address?: string, phone?: string, birthday?: string, tag_expiry?: string | null, entry_date?: string, resumption_date?: string | null, profile_status?: string | null) {
     // Kiểm tra xem ID học sinh đã tồn tại chưa (kể cả đã bị xóa - DELETED)
     const existing = await this.db.prepare('SELECT status, name FROM students WHERE id = ?').bind(id).first<{ status: string, name: string }>();
