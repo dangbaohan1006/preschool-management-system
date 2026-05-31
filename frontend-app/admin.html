@@ -1148,39 +1148,45 @@
             <div id="view-report" class="hidden space-y-4 mt-2">
                 <div
                     class="bg-[#006C18] p-6 rounded-lg text-white flex flex-col lg:flex-row justify-between items-center gap-6 shadow-lg relative overflow-hidden">
-                    <div class="space-y-1 text-center lg:text-left relative z-10">
+                    <div class="space-y-1 text-center lg:text-left relative z-10 w-full lg:w-auto">
                         <h2 class="text-xl font-black tracking-tight text-white">Sổ điểm danh điện tử</h2>
-                        <p class="text-[#FAEBCC] text-[9px] font-black uppercase tracking-widest opacity-80">Quản lý
-                            chuyên cần 31 ngày</p>
+                        <p class="text-[#FAEBCC] text-[9px] font-black uppercase tracking-widest opacity-80">Quản lý chuyên cần 31 ngày</p>
                     </div>
-                    <div class="flex flex-wrap justify-center items-center gap-3 relative z-10">
-                        <select id="report-class"
-                            class="bg-white/10 border border-white/20 rounded-md h-10 px-4 text-white text-xs font-bold outline-none focus:bg-white/20 transition-all cursor-pointer">
-                            <option value="" class="text-slate-900">Chọn lớp</option>
-                        </select>
-                        <input type="text" id="report-start" placeholder="Từ ngày"
-                            class="bg-white/10 border border-white/20 rounded-md h-10 px-4 text-white text-xs font-bold outline-none focus:bg-white/20 transition-all cursor-pointer">
-                        <input type="text" id="report-end" placeholder="Đến ngày"
-                            class="bg-white/10 border border-white/20 rounded-md h-10 px-4 text-white text-xs font-bold outline-none focus:bg-white/20 transition-all cursor-pointer">
-                        <button onclick="loadMonthlyReport()"
-                            class="bg-[#FF8000] hover:bg-orange-600 h-10 px-6 rounded-md font-bold uppercase tracking-widest text-[10px] transition-all">Xem
-                            báo cáo</button>
-                        <button onclick="loadClassAttendanceReport()"
-                            class="bg-emerald-500 hover:bg-emerald-600 h-10 px-6 rounded-md font-bold uppercase tracking-widest text-[10px] transition-all flex items-center gap-2">
-                            📊 Tỷ lệ chuyên cần theo lớp
-                        </button>
-                        <button id="btn-edit-report" onclick="toggleReportEditMode()"
-                            class="hidden bg-amber-500 hover:bg-amber-600 h-10 px-6 rounded-md font-bold uppercase tracking-widest text-[10px] transition-all flex items-center gap-2">
-                            ✏️ Chỉnh sửa
-                        </button>
-                        <button id="btn-save-report" onclick="saveReportEdits()"
-                            class="hidden bg-emerald-600 hover:bg-emerald-700 h-10 px-6 rounded-md font-bold uppercase tracking-widest text-[10px] transition-all flex items-center gap-2">
-                            💾 Lưu thay đổi
-                        </button>
-                        <button id="btn-cancel-report" onclick="cancelReportEdits()"
-                            class="hidden bg-rose-500 hover:bg-rose-600 h-10 px-6 rounded-md font-bold uppercase tracking-widest text-[10px] transition-all flex items-center gap-2">
-                            ✕ Hủy
-                        </button>
+                    <div class="flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-3 items-center w-full lg:w-auto relative z-10">
+                        <!-- Filters Group -->
+                        <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                            <select id="report-class"
+                                class="bg-white/10 border border-white/20 rounded-md h-10 px-4 text-white text-xs font-bold outline-none focus:bg-white/20 transition-all cursor-pointer w-full sm:w-36">
+                                <option value="" class="text-slate-900">Chọn lớp</option>
+                            </select>
+                            <input type="text" id="report-start" placeholder="Từ ngày"
+                                class="bg-white/10 border border-white/20 rounded-md h-10 px-4 text-white text-xs font-bold outline-none focus:bg-white/20 transition-all cursor-pointer w-full sm:w-28">
+                            <input type="text" id="report-end" placeholder="Đến ngày"
+                                class="bg-white/10 border border-white/20 rounded-md h-10 px-4 text-white text-xs font-bold outline-none focus:bg-white/20 transition-all cursor-pointer w-full sm:w-28">
+                        </div>
+                        <!-- Actions Group -->
+                        <div class="flex flex-wrap items-center justify-center sm:justify-start lg:justify-end gap-2 w-full sm:w-auto">
+                            <button onclick="loadMonthlyReport()"
+                                class="bg-[#FF8000] hover:bg-orange-600 h-10 px-4 rounded-md font-bold uppercase tracking-widest text-[10px] transition-all whitespace-nowrap shadow-sm hover:scale-[1.02] active:scale-[0.98]">
+                                Xem báo cáo
+                            </button>
+                            <button onclick="loadClassAttendanceReport()"
+                                class="bg-emerald-500 hover:bg-emerald-600 h-10 px-4 rounded-md font-bold uppercase tracking-widest text-[10px] transition-all flex items-center gap-2 whitespace-nowrap shadow-sm hover:scale-[1.02] active:scale-[0.98]">
+                                Tỷ lệ chuyên cần theo lớp
+                            </button>
+                            <button id="btn-edit-report" onclick="toggleReportEditMode()"
+                                class="hidden bg-amber-500 hover:bg-amber-600 h-10 px-4 rounded-md font-bold uppercase tracking-widest text-[10px] transition-all flex items-center gap-2 whitespace-nowrap shadow-sm hover:scale-[1.02] active:scale-[0.98]">
+                                Chỉnh sửa
+                            </button>
+                            <button id="btn-save-report" onclick="saveReportEdits()"
+                                class="hidden bg-emerald-600 hover:bg-emerald-700 h-10 px-4 rounded-md font-bold uppercase tracking-widest text-[10px] transition-all flex items-center gap-2 whitespace-nowrap shadow-sm hover:scale-[1.02] active:scale-[0.98]">
+                                Lưu thay đổi
+                            </button>
+                            <button id="btn-cancel-report" onclick="cancelReportEdits()"
+                                class="hidden bg-rose-500 hover:bg-rose-600 h-10 px-4 rounded-md font-bold uppercase tracking-widest text-[10px] transition-all flex items-center gap-2 whitespace-nowrap shadow-sm hover:scale-[1.02] active:scale-[0.98]">
+                                Hủy
+                            </button>
+                        </div>
                     </div>
                 </div>
 
