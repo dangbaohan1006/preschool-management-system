@@ -3904,8 +3904,8 @@
 
             try {
                 // 1. Tải danh sách học sinh
-                let url = `${API_BASE}/admin/students`;
-                if (class_id) url += `?class_id=${class_id}`;
+                let url = `${API_BASE}/admin/students?_t=${Date.now()}`;
+                if (class_id) url += `&class_id=${class_id}`;
                 const stdRes = await fetch(url, { headers: { 'x-api-key': SECRET } });
                 const stdData = await stdRes.json();
                 const students = (stdData.results || []).filter(s => s.status === 'ACTIVE');
@@ -4561,14 +4561,39 @@
             loadAllData(true);
         }
 
+        // Helper to normalize and compare Vietnamese strings safely (handles NFC, NFD, and accent-stripping)
+        function matchVietnameseSearch(sourceStr, queryStr) {
+            if (!sourceStr) return false;
+            if (!queryStr) return true;
+
+            const s = sourceStr.toLowerCase().trim();
+            const q = queryStr.toLowerCase().trim();
+
+            // 1. NFC match
+            const sNFC = s.normalize('NFC');
+            const qNFC = q.normalize('NFC');
+            if (sNFC.includes(qNFC)) return true;
+
+            // 2. NFD match
+            const sNFD = s.normalize('NFD');
+            const qNFD = q.normalize('NFD');
+            if (sNFD.includes(qNFD)) return true;
+
+            // 3. Accent-stripped match (bỏ dấu)
+            const strip = (str) => str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
+            if (strip(sNFC).includes(strip(qNFC))) return true;
+
+            return false;
+        }
+
         // Management Functions
         async function loadAllData(renderOnly = false) {
             try {
                 if (!renderOnly) {
                     const [clsRes, stdRes, trashRes] = await Promise.all([
-                        fetch(`${API_BASE}/admin/classes`, { headers: { 'x-api-key': SECRET } }),
-                        fetch(`${API_BASE}/admin/students`, { headers: { 'x-api-key': SECRET } }),
-                        fetch(`${API_BASE}/admin/students/trash`, { headers: { 'x-api-key': SECRET } })
+                        fetch(`${API_BASE}/admin/classes?_t=${Date.now()}`, { headers: { 'x-api-key': SECRET } }),
+                        fetch(`${API_BASE}/admin/students?_t=${Date.now()}`, { headers: { 'x-api-key': SECRET } }),
+                        fetch(`${API_BASE}/admin/students/trash?_t=${Date.now()}`, { headers: { 'x-api-key': SECRET } })
                     ]);
 
                     const classes = (await clsRes.json()).results || [];
@@ -4616,9 +4641,9 @@
 
                 if (searchQuery) {
                     filtered = filtered.filter(s => 
-                        s.name.toLowerCase().includes(searchQuery) || 
-                        s.id.toLowerCase().includes(searchQuery) ||
-                        (s.parent_name && s.parent_name.toLowerCase().includes(searchQuery))
+                        matchVietnameseSearch(s.name, searchQuery) || 
+                        matchVietnameseSearch(s.id, searchQuery) ||
+                        (s.parent_name && matchVietnameseSearch(s.parent_name, searchQuery))
                     );
                 }
 
