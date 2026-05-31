@@ -7093,14 +7093,14 @@
             // Get current status
             let currentStatus = tdElement.getAttribute('data-status') || 'EMPTY';
             
-            // Determine new status
+            // Determine new status: 1st click = PRESENT (✔), 2nd click = ABSENT (✘), 3rd click = EMPTY (-)
             let newStatus = 'PRESENT';
             if (currentStatus === 'PRESENT') {
                 newStatus = 'ABSENT';
             } else if (currentStatus === 'ABSENT') {
-                newStatus = 'PRESENT';
+                newStatus = 'EMPTY';
             } else {
-                newStatus = 'PRESENT'; // default for empty/no status
+                newStatus = 'PRESENT';
             }
             
             // Update data attribute
@@ -7109,8 +7109,10 @@
             // Update visual indicator immediately
             if (newStatus === 'PRESENT') {
                 tdElement.innerHTML = '<span class="text-emerald-500 font-black">✔</span>';
-            } else {
+            } else if (newStatus === 'ABSENT') {
                 tdElement.innerHTML = '<span class="text-rose-500 font-black">✘</span>';
+            } else {
+                tdElement.innerHTML = '<span class="text-slate-300">-</span>';
             }
             
             // Track the edit

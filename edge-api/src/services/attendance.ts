@@ -112,6 +112,15 @@ export class AttendanceService {
             if (data.status === 'PRESENT') actionText = 'ĐIỂM DANH: CÓ';
             if (data.status === 'TRANSFER') actionText = 'ĐIỂM DANH: CHUYỂN LỚP';
 
+            if (finalStatus === 'EMPTY' || finalStatus === 'NULL' || finalStatus === null) {
+                // Remove the insert statement we just pushed
+                stmts.pop();
+                
+                // Add a delete statement to remove attendance on this day for the student
+                stmts.push(this.db.prepare('DELETE FROM Raw_Attendance WHERE student_id = ? AND date = ?').bind(data.student_id, data.date));
+                actionText = 'HỦY ĐIỂM DANH';
+            }
+
             stmts.push(this.db.prepare(
                 'INSERT INTO audit_logs (teacher_id, teacher_name, action, student_id, student_name, details) VALUES (?, ?, ?, ?, ?, ?)'
             ).bind(
