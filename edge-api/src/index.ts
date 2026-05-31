@@ -31,8 +31,8 @@ app.use('/api/*', async (c, next) => {
     return await next();
   }
 
-  // BỎ QUA AUTH: Cho phép debug endpoint
-  if (c.req.path === '/api/admin/debug-schema' || c.req.path === '/api/admin/debug-count') {
+  // BỎ QUA AUTH: Cho phép các đường dẫn debug
+  if (c.req.path.includes('debug-schema') || c.req.path.includes('debug-count')) {
     return await next();
   }
   
