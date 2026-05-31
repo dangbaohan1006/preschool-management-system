@@ -344,7 +344,7 @@ export class AttendanceService {
           FROM LatestLogs l
           JOIN students s ON l.student_id = s.id
           WHERE l.rn = 1
-            AND s.class_id = ?
+            AND l.class_id = ?
             AND (s.entry_date IS NULL OR s.entry_date <= l.date)
         `;
         const { results } = await this.db.prepare(query).bind(normalStart, normalEnd, classId).all();
